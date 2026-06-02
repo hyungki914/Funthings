@@ -20,6 +20,12 @@ const C = {
   PLAYER_SPEED: 64,   // px/s (16px 타일 * 4 스케일 기준 보정)
   STEALTH_SPEED: 38,  // px/s
   SETBACK_MEM: 3,
+  // 코어 동사 (v2 증분)
+  PROJECT_COST: 0.8,  // 기억 비추기: 초당 빛 소모
+  PROJECT_LEN: 46,    // 투사 콘 길이(px)
+  PROJECT_HALFDEG: 32,// 투사 콘 반각(도)
+  TRAIL_CD: 6.0,      // 발자국 추적 쿨다운(s)
+  TRAIL_LIFE: 3.0,    // 발자국 잔존(s)
 };
 
 // ---- 헬퍼 ----
@@ -174,10 +180,21 @@ function chapterClear(state) {
   return state.coreOrder.length >= state.coresNeeded;
 }
 
+// 투사 콘 판정(순수): (ox,oy)에서 faceAngle 방향 len·halfDeg 콘 안에 (px,py)가 드는가
+function inCone(ox, oy, faceAngle, len, halfDeg, px, py) {
+  const dx = px - ox, dy = py - oy;
+  const dist = Math.hypot(dx, dy);
+  if (dist > len) return false;
+  if (dist < 0.0001) return true;
+  const a = normAngle(Math.atan2(dy, dx) - faceAngle);
+  return Math.abs(a) <= halfDeg * Math.PI / 180;
+}
+
 const Core = {
   C,
   clamp,
   normAngle,
+  inCone,
   newState,
   collect,
   contact,

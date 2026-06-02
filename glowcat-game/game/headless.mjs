@@ -10,6 +10,7 @@ globalThis.Core = require("./core.js");
 globalThis.DATA = require("./data.js");
 globalThis.window = globalThis;
 require("./audio.js"); // window.Audio2 설정 (AudioContext 미지원 → 안전 폴백)
+try { require("./journal.js"); } catch (e) { /* journal.js 아직 없으면 main이 가드 처리 */ }
 
 // 스텁
 const ctx = new Proxy({}, {
@@ -52,6 +53,9 @@ try {
     if (i % 130 === 0) { fire("keydown", ev(" ")); fire("keyup", ev(" ")); }  // 회상 닫기
     if (i % 200 === 0) { fire("keydown", ev("Shift")); }                       // 은신
     if (i % 60 === 0) { fire("keydown", ev("m")); fire("keyup", ev("m")); }    // 음소거 토글
+    if (i % 50 < 8) fire("keydown", ev("q")); else fire("keyup", ev("q"));     // 기억 비추기(홀드)
+    if (i % 75 === 0) { fire("keydown", ev("l")); fire("keyup", ev("l")); }    // 발자국 추적
+    if (i % 110 === 0) { fire("keydown", ev("Tab")); fire("keyup", ev("Tab")); } // 일지 토글
     t += 16;
     if (theFrame) theFrame(t);
     frames++;

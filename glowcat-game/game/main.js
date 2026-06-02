@@ -23,8 +23,8 @@
   let phase = "title";                  // title | play | recall | setback | cleared
   const st = Core.newState(D);
   const px = (t) => t * TILE + TILE / 2;
-  const player = { x: px(D.spawn[0]), y: px(D.spawn[1]), vx: 0, vy: 0,
-                   facing: "down", flip: false, animT: 0, frame: 0, w: 10, h: 8 };
+  const player = { x: px(D.spawn[0]), y: px(D.spawn[1]), vx: 0, vy: 0, dir: Math.PI/2,
+                   facing: "down", flip: false, animT: 0, frame: 0, step: 0, w: 10, h: 8 };
   const colls = D.collision.map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
   const safes = (D.safeZones||[]).map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
   const door = D.door ? { x: px(D.door.tile[0]), y: px(D.door.tile[1]) } : null;
@@ -34,20 +34,22 @@
     speed:m.speed||38, sightPx:(m.sightTiles||3.3)*TILE, fov:(m.fovDeg||90)*Math.PI/180,
     faceAngle:0, chasing:false, lost:0 }));
   let recall = null, hintTimer = 0, hintTarget = null, setbackT = 0, flash = 0, muted = false, shake = 0;
+  let trail = [], trailCD = 0, projecting = false; const illuminated = new Set();
 
   // ── 입력 ──────────────────────────────────────────────────
   const keys = {}; const edge = {};
   function setKey(e, v) {
-    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const k = (e.key || "").toLowerCase();   // 모든 키 소문자 정규화(shift/arrow/tab 포함)
     if (v && !keys[k]) edge[k] = true;
     keys[k] = v;
-    if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(e.key.toLowerCase?.()||e.key)) e.preventDefault();
+    if (["arrowup","arrowdown","arrowleft","arrowright"," ","tab"].includes(k) && e.preventDefault) e.preventDefault();
   }
   addEventListener("keydown", e => setKey(e, true));
   addEventListener("keyup", e => setKey(e, false));
   cv.addEventListener("mousedown", () => { firstGesture(); if (phase === "title") phase = "play"; else if (phase === "recall") closeRecall(); });
   function firstGesture() { try { if (window.Audio2) { Audio2.init(); Audio2.ambient(true); } } catch (e) {} }
   addEventListener("keydown", firstGesture, { once: true });
+  function clearEdges() { for (const k in edge) edge[k] = false; }
 
   // ── 헬퍼 ──────────────────────────────────────────────────
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -61,7 +63,9 @@
   function update(dt) {
     if (phase === "title" || phase === "cleared") return;
     if (phase === "recall") { if (edge[" "] || edge["enter"]) closeRecall(); return; }
-    if (phase === "setback") { setbackT -= dt; if (setbackT <= 0) phase = "play"; return; }
+    if (phase === "setback") { setbackT -= dt; if (setbackT <= 0) phase = "play"; clearEdges(); return; }
+    if (phase === "journal") { if (edge["tab"] || edge["escape"]) phase = "play"; clearEdges(); return; }
+    if (edge["tab"]) { phase = "journal"; clearEdges(); return; }   // 기억 일지 열기
 
     // 이동 입력
     const stealth = keys["shift"];
@@ -82,13 +86,37 @@
     if (moving) {
       if (Math.abs(ix) >= Math.abs(iy) && ix !== 0) { player.facing = "side"; player.flip = ix > 0; }
       else player.facing = "down";
+      player.dir = Math.atan2(player.vy, player.vx);
       player.animT += dt; if (player.animT > 0.16) { player.animT = 0; player.frame ^= 1; player.step = (player.step||0) + 1; }
     } else player.frame = 0;
+
+    // 기억 비추기(Q) — 빛 자원 소모 콘. 숨은 조각 드러냄 + Murk 밀어냄
+    illuminated.clear(); projecting = false;
+    if (keys["q"] && st.light > 0) {
+      projecting = true;
+      st.light = Math.max(0, st.light - C.PROJECT_COST * dt);
+      for (const s of D.shards) {
+        if (s.hidden && !isDone(s)) { const c = shardCenter(s);
+          if (Core.inCone(player.x, player.y, player.dir, C.PROJECT_LEN, C.PROJECT_HALFDEG, c.x, c.y)) illuminated.add(s.id); }
+      }
+    }
+
+    // 발자국 추적(L) — 가장 가까운 미발견 코어로 시안 발자국 흔적(무료, 쿨다운)
+    if (trailCD > 0) trailCD -= dt;
+    if (edge["l"] && trailCD <= 0) {
+      let best = null, bd = 1e9;
+      for (const s of D.shards) if (s.type === "core" && !isDone(s)) { const c = shardCenter(s), dd = dist(player.x, player.y, c.x, c.y); if (dd < bd) { bd = dd; best = c; } }
+      if (best) { trail = []; const n = 7; for (let i = 1; i <= n; i++) trail.push({ x: player.x + (best.x - player.x) * i / n, y: player.y + (best.y - player.y) * i / n, age: 0 }); trailCD = C.TRAIL_CD; }
+    }
+    for (const p of trail) p.age += dt; trail = trail.filter(p => p.age < C.TRAIL_LIFE);
 
     // Murk
     let danger = false;
     for (const m of murks) {
-      const tgt = player;
+      if (projecting && Core.inCone(player.x, player.y, player.dir, C.PROJECT_LEN, C.PROJECT_HALFDEG, m.x, m.y)) {
+        const dd = dist(player.x, player.y, m.x, m.y) || 1;
+        m.x += (m.x - player.x) / dd * 46 * dt; m.y += (m.y - player.y) / dd * 46 * dt; m.chasing = false;
+      }
       const sees = Core.murkSees({ x: m.x, y: m.y, faceAngle: m.faceAngle, sight: m.sightPx, fov: m.fov }, player.x, player.y)
                    && !stealth || (Core.murkSees({ x:m.x,y:m.y,faceAngle:m.faceAngle,sight:m.sightPx*0.6,fov:m.fov }, player.x, player.y) && stealth);
       if (sees) { m.chasing = true; m.lost = 0; }
@@ -121,6 +149,7 @@
     nearShard = null;
     for (const s of D.shards) {
       if (isDone(s)) continue;
+      if (s.hidden && !illuminated.has(s.id)) continue;   // 숨은 조각은 비출 때만
       if (dist(player.x, player.y, shardCenter(s).x, shardCenter(s).y) < (s.radius||1.3) * TILE) { nearShard = s; break; }
     }
     if (edge["e"] && nearShard) doCollect(nearShard);
@@ -146,7 +175,7 @@
     if (Core.chapterClear(st) && door && dist(player.x, player.y, door.x, door.y) < 14) phase = "cleared";
 
     if (flash > 0) flash -= dt; if (shake > 0) shake -= dt * 24;
-    for (const k in edge) edge[k] = false;
+    clearEdges();
   }
 
   let nearShard = null;
@@ -193,6 +222,16 @@
       ctx.fillStyle = "#34e2e2"; ctx.fillRect(door.x-7, door.y-7, 14, 14); ctx.restore();
     }
 
+    // 발자국 추적 흔적
+    for (const p of trail) { const a = 1 - p.age / C.TRAIL_LIFE; ctx.save(); ctx.globalAlpha = 0.55 * a; ctx.fillStyle = "#34e2e2";
+      ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 2.2, 1.6, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x - 1.6, p.y - 1.6, 0.8, 0, 7); ctx.arc(p.x + 1.6, p.y - 1.6, 0.8, 0, 7); ctx.fill(); ctx.restore(); }
+    // 기억 비추기 콘
+    if (projecting) { const h = C.PROJECT_HALFDEG * Math.PI / 180; ctx.save(); ctx.globalAlpha = 0.2;
+      ctx.shadowColor = "#34e2e2"; ctx.shadowBlur = 6; ctx.fillStyle = "#9af6f6";
+      ctx.beginPath(); ctx.moveTo(player.x, player.y - 4);
+      ctx.arc(player.x, player.y - 4, C.PROJECT_LEN, player.dir - h, player.dir + h); ctx.closePath(); ctx.fill(); ctx.restore(); }
+
     // 근처 조각만 표시(글로우 OFF·3단 발견)
     if (nearShard && IMG.shard) {
       const c = shardCenter(nearShard);
@@ -234,6 +273,7 @@
     if (phase === "recall" && recall) overlayRecall();
     if (phase === "setback") overlayCenter("…어둡다. 여기는…", "#9ab", "기억이 흩어졌다 — 마지막 안전한 곳으로");
     if (phase === "cleared") overlayCenter("챕터 1 클리어 · 「지로의 방」", "#8ef548", "지로가 첫 기억들을 되찾았다.");
+    if (phase === "journal" && window.Journal) { try { Journal.draw(ctx, cv, st, DATA, IMG); } catch (e) { console.error(e); } }
   }
 
   function glow(fn, color, blur) { ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = blur; fn(); ctx.restore(); }
@@ -279,7 +319,11 @@
     // 빛 게이지 바(코어 카운터 아래)
     ctx.fillStyle = "#16262a"; ctx.fillRect(26, 50, 100, 6);
     ctx.fillStyle = "#34e2e2"; ctx.fillRect(26, 50, 100 * (st.light / C.LIGHT_MAX), 6);
-    ctx.fillStyle = "#6b8a8c"; ctx.font = "11px 'Noto Sans KR',sans-serif"; ctx.fillText("빛 " + st.light + "  ([H] 힌트)", 132, 56);
+    ctx.fillStyle = "#6b8a8c"; ctx.font = "11px 'Noto Sans KR',sans-serif";
+    ctx.fillText("빛 " + (st.light||0).toFixed(1) + "   [Q] 비추기 · [H] 힌트", 132, 56);
+    ctx.fillStyle = trailCD > 0 ? "#5a7375" : "#8ef548";
+    ctx.fillText(trailCD > 0 ? "[L] 발자국 추적  " + trailCD.toFixed(0) + "s" : "[L] 발자국 추적  준비", 26, 70);
+    ctx.fillStyle = "#5a7375"; ctx.fillText("[Tab] 기억 일지", 26, 86);
     ctx.restore();
   }
   function paw(cx, cy, col) { ctx.fillStyle = col; ctx.beginPath();
