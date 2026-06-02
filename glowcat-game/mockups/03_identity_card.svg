@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="'Noto Sans CJK KR',sans-serif">
+  <defs>
+    <radialGradient id="bg3" cx="50%" cy="38%" r="80%"><stop offset="0%" stop-color="#0f1d24"/><stop offset="100%" stop-color="#05080c"/></radialGradient>
+    <linearGradient id="eye3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8ff8a"/><stop offset="100%" stop-color="#8ef548"/></linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg3)"/>
+
+  <!-- header -->
+  <text x="80" y="86" font-size="44" font-weight="800" fill="#eafaff">정체성 카드</text>
+  <text x="84" y="118" font-size="18" letter-spacing="6" fill="#34e2e2">I D E N T I T Y</text>
+  <text x="1200" y="100" font-size="22" font-weight="700" fill="#8ef548" text-anchor="end">3 / 5 복원</text>
+
+  <!-- portrait evolution row -->
+  <g transform="translate(80,160)">
+    <text x="0" y="-8" font-size="16" fill="#6b8a8c">기억이 차오를수록 또렷해진다</text>
+    <!-- stage 1 : ? -->
+    <g transform="translate(60,70)"><circle r="46" fill="#0e0f13" stroke="#1d3236" stroke-width="2"/><text y="16" font-size="46" font-weight="800" fill="#34e2e2" text-anchor="middle">?</text></g>
+    <!-- stage 2 : silhouette -->
+    <g transform="translate(190,70)"><circle r="46" fill="#0e0f13" stroke="#1d3236" stroke-width="2"/><path d="M -30,-6 L -16,-40 L -4,-8 Z M 30,-6 L 16,-40 L 4,-8 Z" fill="#1a2228"/><ellipse cy="6" rx="34" ry="30" fill="#1a2228"/></g>
+    <!-- stage 3 : eyes -->
+    <g transform="translate(320,70)"><circle r="46" fill="#0e0f13" stroke="#2a4a4e" stroke-width="2"/><ellipse cx="-15" cy="0" rx="12" ry="15" fill="url(#eye3)"/><ellipse cx="15" cy="0" rx="12" ry="15" fill="url(#eye3)"/></g>
+    <!-- stage 4 : face -->
+    <g transform="translate(450,70)"><circle r="46" fill="#0e0f13" stroke="#34e2e2" stroke-width="2"/><path d="M -34,-10 L -18,-46 L -4,-12 Z M 34,-10 L 18,-46 L 4,-12 Z" fill="#0d0d10"/><path d="M -30,-16 L -19,-38 L -10,-16 Z M 30,-16 L 19,-38 L 10,-16 Z" fill="#34e2e2"/><ellipse cx="-16" cy="2" rx="14" ry="17" fill="url(#eye3)" stroke="#34e2e2" stroke-width="2"/><ellipse cx="16" cy="2" rx="14" ry="17" fill="url(#eye3)" stroke="#34e2e2" stroke-width="2"/><path d="M -8,24 Q 0,32 8,24" stroke="#34e2e2" stroke-width="2.5" fill="none"/></g>
+    <!-- stage 5 : name -->
+    <g transform="translate(580,70)"><circle r="46" fill="#0e0f13" stroke="#34e2e2" stroke-width="2" stroke-dasharray="4 5" opacity="0.6"/><text y="10" font-size="22" font-weight="800" fill="#34e2e2" text-anchor="middle">?</text><text y="74" font-size="15" fill="#6b8a8c" text-anchor="middle">이름</text></g>
+    <!-- arrows -->
+    <g fill="#2a4a4e"><text x="118" y="78" font-size="26">›</text><text x="248" y="78" font-size="26">›</text><text x="378" y="78" font-size="26">›</text><text x="508" y="78" font-size="26">›</text></g>
+  </g>
+
+  <!-- identity slots -->
+  <g transform="translate(80,330)">
+    <!-- slot template helper inlined -->
+    <!-- slot 1 종 (unlocked) -->
+    <g transform="translate(0,0)">
+      <rect width="540" height="78" rx="12" fill="#0a1418" stroke="#2a6e72" stroke-width="1.5"/>
+      <circle cx="42" cy="39" r="22" fill="#10262a"/><text x="42" y="47" font-size="22" text-anchor="middle" fill="#34e2e2">種</text>
+      <text x="82" y="34" font-size="16" fill="#6b8a8c">종 (種)</text>
+      <text x="82" y="60" font-size="24" font-weight="700" fill="#eafaff">고양이</text>
+      <text x="512" y="48" font-size="24" fill="#8ef548" text-anchor="end">✓</text>
+    </g>
+    <!-- slot 2 집 (unlocked) -->
+    <g transform="translate(560,0)">
+      <rect width="540" height="78" rx="12" fill="#0a1418" stroke="#2a6e72" stroke-width="1.5"/>
+      <circle cx="42" cy="39" r="22" fill="#10262a"/><text x="42" y="47" font-size="20" text-anchor="middle" fill="#34e2e2">家</text>
+      <text x="82" y="34" font-size="16" fill="#6b8a8c">사는 곳</text>
+      <text x="82" y="60" font-size="24" font-weight="700" fill="#eafaff">하루의 집</text>
+      <text x="512" y="48" font-size="24" fill="#8ef548" text-anchor="end">✓</text>
+    </g>
+    <!-- slot 3 주인 (unlocked) -->
+    <g transform="translate(0,100)">
+      <rect width="540" height="78" rx="12" fill="#0a1418" stroke="#2a6e72" stroke-width="1.5"/>
+      <circle cx="42" cy="39" r="22" fill="#10262a"/><text x="42" y="47" font-size="20" text-anchor="middle" fill="#34e2e2">人</text>
+      <text x="82" y="34" font-size="16" fill="#6b8a8c">주인</text>
+      <text x="82" y="60" font-size="24" font-weight="700" fill="#eafaff">하루</text>
+      <text x="512" y="48" font-size="24" fill="#8ef548" text-anchor="end">✓</text>
+    </g>
+    <!-- slot 4 이름 (in progress) -->
+    <g transform="translate(560,100)">
+      <rect width="540" height="78" rx="12" fill="#0a1418" stroke="#8ef548" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <circle cx="42" cy="39" r="22" fill="#1c2a14"/><text x="42" y="47" font-size="22" text-anchor="middle" fill="#8ef548">名</text>
+      <text x="82" y="34" font-size="16" fill="#6b8a8c">이름 · 복원 중</text>
+      <text x="82" y="60" font-size="24" font-weight="700" fill="#dff3f3">N · · · ·</text>
+      <text x="512" y="48" font-size="18" fill="#8ef548" text-anchor="end">60%</text>
+    </g>
+    <!-- slot 5 왜 잊었나 (locked) -->
+    <g transform="translate(280,200)">
+      <rect width="540" height="78" rx="12" fill="#080c0f" stroke="#243036" stroke-width="1.5"/>
+      <circle cx="42" cy="39" r="22" fill="#11181d"/><path d="M 37,40 v-6 a5,5 0 0 1 10,0 v6" fill="none" stroke="#3a5557" stroke-width="3"/><rect x="33" y="40" width="18" height="14" rx="3" fill="#3a5557"/>
+      <text x="82" y="34" font-size="16" fill="#3a5557">??? · 잠김</text>
+      <text x="82" y="60" font-size="24" font-weight="700" fill="#3a5557">왜 나는 잊었는가</text>
+      <text x="512" y="48" font-size="15" fill="#3a5557" text-anchor="end">최종 챕터</text>
+    </g>
+  </g>
+
+  <text x="640" y="700" font-size="16" fill="#3a5557" text-anchor="middle">조각을 모을수록 잠긴 칸이 열린다 · 마지막 칸은 진실 (왜 기억을 잃었는가)</text>
+</svg>

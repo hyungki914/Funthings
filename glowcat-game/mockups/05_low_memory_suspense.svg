@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="720" viewBox="0 0 1280 720" font-family="'Noto Sans CJK KR',sans-serif">
+  <defs>
+    <radialGradient id="vig" cx="50%" cy="50%" r="62%"><stop offset="55%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity="0.92"/></radialGradient>
+    <radialGradient id="murk5" cx="50%" cy="40%" r="60%"><stop offset="0%" stop-color="#2c2c30"/><stop offset="100%" stop-color="#070708"/></radialGradient>
+    <!-- desaturated cat (memory fading = color draining) -->
+    <g id="cat5">
+      <ellipse cx="0" cy="120" rx="62" ry="78" fill="#15151a"/>
+      <ellipse cx="-26" cy="188" rx="17" ry="24" fill="#3a4a4c"/><ellipse cx="26" cy="188" rx="17" ry="24" fill="#3a4a4c"/>
+      <ellipse cx="-58" cy="118" rx="16" ry="30" fill="#3a4a4c" transform="rotate(12 -58 118)"/><ellipse cx="58" cy="118" rx="16" ry="30" fill="#3a4a4c" transform="rotate(-12 58 118)"/>
+      <path d="M -78,-58 L -38,-150 L -8,-60 Z" fill="#15151a"/><path d="M -62,-66 L -40,-120 L -24,-66 Z" fill="#3a4a4c"/>
+      <path d="M 78,-58 L 38,-150 L 8,-60 Z" fill="#15151a"/><path d="M 62,-66 L 40,-120 L 24,-66 Z" fill="#3a4a4c"/>
+      <ellipse cx="0" cy="-8" rx="98" ry="92" fill="#191a1f"/>
+      <ellipse cx="-40" cy="-10" rx="36" ry="42" fill="#5a6a40" stroke="#4a5a5c" stroke-width="5"/>
+      <ellipse cx="40" cy="-10" rx="36" ry="42" fill="#5a6a40" stroke="#4a5a5c" stroke-width="5"/>
+      <path d="M -14,30 Q 0,22 14,30" fill="none" stroke="#4a5a5c" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <!-- desaturated room -->
+  <rect width="1280" height="720" fill="#0a0a0c"/>
+  <rect x="120" y="70" width="1040" height="560" rx="10" fill="#161616"/>
+  <g stroke="#1f1f1f" stroke-width="2">
+    <line x1="120" y1="230" x2="1160" y2="230"/><line x1="120" y1="390" x2="1160" y2="390"/><line x1="120" y1="550" x2="1160" y2="550"/>
+    <line x1="360" y1="70" x2="360" y2="630"/><line x1="600" y1="70" x2="600" y2="630"/><line x1="840" y1="70" x2="840" y2="630"/><line x1="1000" y1="70" x2="1000" y2="630"/>
+  </g>
+  <rect x="150" y="430" width="230" height="170" rx="14" fill="#262626"/>
+  <rect x="820" y="110" width="250" height="110" rx="8" fill="#222"/>
+
+  <!-- chromatic-aberration shake on cat (offset red/cyan ghosts) -->
+  <use xlink:href="#cat5" href="#cat5" transform="translate(636,360) scale(0.62)" opacity="0.4" fill="#ff4d4d"/>
+  <use xlink:href="#cat5" href="#cat5" transform="translate(644,360) scale(0.62)" opacity="0.4"/>
+  <use xlink:href="#cat5" href="#cat5" transform="translate(640,360) scale(0.62)"/>
+
+  <!-- enemies closing in -->
+  <g transform="translate(880,300)"><ellipse rx="50" ry="54" fill="url(#murk5)"/><circle cx="-16" cy="-6" r="6" fill="#9a86d8"/><circle cx="16" cy="-6" r="6" fill="#9a86d8"/></g>
+  <g transform="translate(430,460)"><ellipse rx="44" ry="48" fill="url(#murk5)"/><circle cx="-14" cy="-4" r="5" fill="#9a86d8"/><circle cx="14" cy="-4" r="5" fill="#9a86d8"/></g>
+  <!-- Echo (wispy) -->
+  <g transform="translate(520,180)" opacity="0.85"><path d="M 0,-34 C 30,-30 36,10 18,34 C 6,50 -16,46 -30,30 C -42,14 -34,-30 0,-34 Z" fill="#23202e"/><circle cx="-10" cy="-4" r="4" fill="#8a78c0"/><circle cx="10" cy="-4" r="4" fill="#8a78c0"/></g>
+
+  <!-- hallucination: flickering FALSE shard with ? (ghosted) -->
+  <g transform="translate(760,500)" opacity="0.55">
+    <path d="M 0,-26 L 18,0 L 0,26 L -18,0 Z" fill="none" stroke="#7a5cff" stroke-width="2" stroke-dasharray="4 4"/>
+    <text y="6" font-size="22" fill="#7a5cff" text-anchor="middle">?</text>
+    <path d="M 6,-26 L 24,0 L 6,26 L -12,0 Z" fill="none" stroke="#7a5cff" stroke-width="1" opacity="0.4"/>
+  </g>
+
+  <!-- heavy vignette -->
+  <rect width="1280" height="720" fill="url(#vig)"/>
+
+  <!-- shake frame lines -->
+  <rect x="6" y="6" width="1268" height="708" fill="none" stroke="#3a0a0a" stroke-width="2" opacity="0.6"/>
+
+  <!-- WARNING banner -->
+  <text x="640" y="120" font-size="40" font-weight="800" fill="#ff5a5a" text-anchor="middle" opacity="0.92">기억이 흐려진다…</text>
+  <text x="640" y="156" font-size="18" fill="#a06a6a" text-anchor="middle">남은 기억 1칸 — 0이 되면 모든 것을 잊고 처음으로</text>
+
+  <!-- identity portrait reverting to ? -->
+  <g transform="translate(28,26)">
+    <rect width="300" height="92" rx="12" fill="#0a0a0c" stroke="#3a1a1a" stroke-width="1.5"/>
+    <circle cx="48" cy="46" r="34" fill="#15151a" stroke="#ff5a5a" stroke-width="2"/>
+    <text x="48" y="60" font-size="40" font-weight="800" fill="#ff5a5a" text-anchor="middle">?</text>
+    <text x="96" y="42" font-size="20" font-weight="700" fill="#caa">정체가 흐려진다</text>
+    <text x="96" y="68" font-size="15" fill="#7a5a5a">복원한 기억이 위태롭다</text>
+  </g>
+
+  <!-- memory meter: 1/10 red -->
+  <g transform="translate(400,646)">
+    <rect x="-22" y="-14" width="524" height="58" rx="14" fill="#0a0a0c" stroke="#3a1a1a" stroke-width="1.5"/>
+    <text x="2" y="20" font-size="18" font-weight="700" fill="#ff5a5a">기억</text>
+    <g transform="translate(58,2)">
+      <g fill="#ff5a5a"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g fill="#2a1414"><g transform="translate(40,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g transform="translate(80,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g transform="translate(120,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g transform="translate(160,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g transform="translate(200,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g transform="translate(240,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g transform="translate(280,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g transform="translate(320,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g transform="translate(360,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g></g>
+      <text x="400" y="26" font-size="16" fill="#ff5a5a">1 / 10</text>
+    </g>
+  </g>
+</svg>

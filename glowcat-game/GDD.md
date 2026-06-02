@@ -7,6 +7,7 @@
 > 1회차 플레이 타임: 약 2~4시간 (챕터 5개 기준)
 
 > **상세 문서:** [① 스토리 대본 & 기억 조각](./01_story_script.md) · [② 맵 레이아웃 & 히든 오브젝트 배치](./02_level_design.md) · [③ 적 패턴 & 시스템 밸런싱](./03_systems_enemies.md)
+> **UI / 컨셉 목업:** [mockups/](./mockups/) — 메인 메뉴, HUD, 정체성 카드, 회상 컷신, 서스펜스 상태 ([컨셉 보드 이미지](./mockups/png/board.png))
 
 ---
 

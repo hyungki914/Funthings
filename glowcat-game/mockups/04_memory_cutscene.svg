@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="'Noto Sans CJK KR',sans-serif">
+  <defs>
+    <radialGradient id="warm" cx="50%" cy="42%" r="60%"><stop offset="0%" stop-color="#f4d9a8"/><stop offset="45%" stop-color="#d9a86a"/><stop offset="80%" stop-color="#8a5a2e"/><stop offset="100%" stop-color="#2a1a10"/></radialGradient>
+    <radialGradient id="dark4" cx="50%" cy="42%" r="75%"><stop offset="0%" stop-color="#0a141a"/><stop offset="100%" stop-color="#020406"/></radialGradient>
+    <radialGradient id="shard4" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffffff"/><stop offset="60%" stop-color="#34e2e2"/><stop offset="100%" stop-color="#0a5a5a"/></radialGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#dark4)"/>
+
+  <!-- floating dust/particles -->
+  <g fill="#34e2e2" opacity="0.25"><circle cx="320" cy="180" r="2"/><circle cx="980" cy="220" r="2.4"/><circle cx="900" cy="520" r="1.8"/><circle cx="380" cy="560" r="2.2"/><circle cx="640" cy="120" r="1.6"/></g>
+
+  <text x="640" y="92" font-size="22" letter-spacing="14" fill="#34e2e2" text-anchor="middle">─  회 상  ─</text>
+
+  <!-- warm flashback frame -->
+  <g transform="translate(640,330)">
+    <circle r="222" fill="#34e2e2" opacity="0.06"/>
+    <circle r="200" fill="url(#warm)"/>
+    <circle r="200" fill="none" stroke="#f4d9a8" stroke-width="2" opacity="0.5"/>
+
+    <!-- hand reaching from top (silhouette) -->
+    <path d="M -70,-210 C -40,-150 -30,-120 -34,-92 C -50,-96 -64,-86 -58,-70 C -44,-70 -36,-66 -30,-58 C -10,-44 30,-44 52,-66 C 70,-84 64,-150 86,-210 Z" fill="#5a3a1e" opacity="0.85"/>
+
+    <!-- collar (cyan glow) -->
+    <ellipse cx="6" cy="44" rx="62" ry="20" fill="none" stroke="#34e2e2" stroke-width="6" opacity="0.9"/>
+    <circle cx="6" cy="62" r="9" fill="#8ef548"/>
+
+    <!-- small cat (warm-lit, dark) -->
+    <g transform="translate(6,60)">
+      <path d="M -52,-6 L -30,-58 L -10,-8 Z M 52,-6 L 30,-58 L 10,-8 Z" fill="#1a120c"/>
+      <ellipse cy="6" rx="56" ry="50" fill="#1a120c"/>
+      <ellipse cx="-22" cy="2" rx="16" ry="20" fill="#9fe06a"/><ellipse cx="22" cy="2" rx="16" ry="20" fill="#9fe06a"/>
+      <ellipse cy="80" rx="48" ry="56" fill="#1a120c"/>
+    </g>
+    <text y="150" font-size="17" fill="#f0dcb8" text-anchor="middle" opacity="0.8">…따뜻했다.</text>
+  </g>
+
+  <!-- shard dissolving above frame -->
+  <g transform="translate(640,82)"><path d="M 0,-22 L 15,0 L 0,22 L -15,0 Z" fill="url(#shard4)"/></g>
+
+  <!-- caption box -->
+  <g transform="translate(190,560)">
+    <rect width="900" height="110" rx="14" fill="#050a0e" stroke="#1d3236" stroke-width="1.5" opacity="0.96"/>
+    <rect width="6" height="110" rx="3" fill="#34e2e2"/>
+    <text x="32" y="44" font-size="20" font-weight="700" fill="#34e2e2">[회상 · 기억 조각: 이름표 목걸이]</text>
+    <text x="32" y="80" font-size="22" fill="#e8f4f4">따뜻한 손이 내 목에 무언가를 채워준다. 글자는 흐려서 보이지 않는다…</text>
+  </g>
+
+  <!-- identity unlock toast (top-right) -->
+  <g transform="translate(900,130)">
+    <rect width="320" height="120" rx="14" fill="#0a1814" stroke="#8ef548" stroke-width="1.5"/>
+    <text x="24" y="40" font-size="16" fill="#8ef548">정체성 해금</text>
+    <text x="24" y="74" font-size="26" font-weight="800" fill="#eafaff">種 · 나는 고양이다</text>
+    <g transform="translate(24,90)" fill="#34e2e2"><ellipse cx="12" cy="16" rx="8" ry="6"/><circle cx="5" cy="7" r="3"/><circle cx="12" cy="4" r="3.2"/><circle cx="19" cy="7" r="3"/></g>
+    <text x="48" y="112" font-size="17" font-weight="700" fill="#34e2e2">기억 +1 칸</text>
+  </g>
+
+  <text x="640" y="700" font-size="16" fill="#5a7a7c" text-anchor="middle">계속하려면  아무 키 / 화면 탭</text>
+</svg>

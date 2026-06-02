@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1280" height="720" viewBox="0 0 1280 720" font-family="'Noto Sans CJK KR',sans-serif">
+  <defs>
+    <linearGradient id="eye2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8ff8a"/><stop offset="100%" stop-color="#8ef548"/></linearGradient>
+    <radialGradient id="shard" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#bfffff"/><stop offset="55%" stop-color="#34e2e2"/><stop offset="100%" stop-color="#0a5a5a"/></radialGradient>
+    <radialGradient id="lightpool" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#34e2e2" stop-opacity="0.45"/><stop offset="100%" stop-color="#34e2e2" stop-opacity="0"/></radialGradient>
+    <radialGradient id="murk" cx="50%" cy="40%" r="60%"><stop offset="0%" stop-color="#3a2b55"/><stop offset="100%" stop-color="#0c0a14"/></radialGradient>
+
+    <!-- reusable chibi cat (front-view, on-brand) -->
+    <g id="cat2">
+      <path d="M 70,150 C 150,140 175,60 120,20 C 150,75 110,120 55,118 Z" fill="#0d0d10"/>
+      <path d="M 138,38 C 160,55 152,90 122,98 C 150,78 150,55 132,42 Z" fill="#34e2e2"/>
+      <ellipse cx="0" cy="120" rx="62" ry="78" fill="#0d0d10"/>
+      <ellipse cx="-26" cy="188" rx="17" ry="24" fill="#34e2e2"/>
+      <ellipse cx="26" cy="188" rx="17" ry="24" fill="#34e2e2"/>
+      <ellipse cx="-58" cy="118" rx="16" ry="30" fill="#34e2e2" transform="rotate(12 -58 118)"/>
+      <ellipse cx="58" cy="118" rx="16" ry="30" fill="#34e2e2" transform="rotate(-12 58 118)"/>
+      <g fill="#34e2e2"><ellipse cx="0" cy="125" rx="13" ry="11"/><circle cx="-11" cy="108" r="4.5"/><circle cx="0" cy="103" r="4.8"/><circle cx="11" cy="108" r="4.5"/></g>
+      <path d="M -78,-58 L -38,-150 L -8,-60 Z" fill="#0d0d10"/><path d="M -62,-66 L -40,-120 L -24,-66 Z" fill="#34e2e2"/>
+      <path d="M 78,-58 L 38,-150 L 8,-60 Z" fill="#0d0d10"/><path d="M 62,-66 L 40,-120 L 24,-66 Z" fill="#34e2e2"/>
+      <ellipse cx="0" cy="-8" rx="98" ry="92" fill="#0e0f13"/>
+      <ellipse cx="-40" cy="-10" rx="36" ry="42" fill="url(#eye2)" stroke="#34e2e2" stroke-width="5"/>
+      <ellipse cx="40" cy="-10" rx="36" ry="42" fill="url(#eye2)" stroke="#34e2e2" stroke-width="5"/>
+      <rect x="-43" y="-34" width="6" height="40" rx="3" fill="#5af0f0"/><rect x="37" y="-34" width="6" height="40" rx="3" fill="#5af0f0"/>
+      <path d="M -12,34 Q 0,46 12,34" fill="none" stroke="#34e2e2" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <!-- ===== ROOM (top-down) ===== -->
+  <rect width="1280" height="720" fill="#06090d"/>
+  <rect x="120" y="70" width="1040" height="560" rx="10" fill="#15110d"/>
+  <!-- floor grid -->
+  <g stroke="#211a12" stroke-width="2">
+    <line x1="120" y1="150" x2="1160" y2="150"/><line x1="120" y1="230" x2="1160" y2="230"/><line x1="120" y1="310" x2="1160" y2="310"/><line x1="120" y1="390" x2="1160" y2="390"/><line x1="120" y1="470" x2="1160" y2="470"/><line x1="120" y1="550" x2="1160" y2="550"/>
+    <line x1="200" y1="70" x2="200" y2="630"/><line x1="280" y1="70" x2="280" y2="630"/><line x1="360" y1="70" x2="360" y2="630"/><line x1="440" y1="70" x2="440" y2="630"/><line x1="520" y1="70" x2="520" y2="630"/><line x1="600" y1="70" x2="600" y2="630"/><line x1="680" y1="70" x2="680" y2="630"/><line x1="760" y1="70" x2="760" y2="630"/><line x1="840" y1="70" x2="840" y2="630"/><line x1="920" y1="70" x2="920" y2="630"/><line x1="1000" y1="70" x2="1000" y2="630"/><line x1="1080" y1="70" x2="1080" y2="630"/>
+  </g>
+  <rect x="120" y="70" width="1040" height="560" rx="10" fill="none" stroke="#0a0d12" stroke-width="16"/>
+
+  <!-- furniture (top-down) -->
+  <!-- bed -->
+  <g><rect x="150" y="430" width="230" height="170" rx="14" fill="#23303a"/><rect x="160" y="440" width="210" height="60" rx="10" fill="#34464f"/><text x="200" y="540" font-size="20" fill="#7fb0b3">침대 (안전지대)</text></g>
+  <ellipse cx="265" cy="515" rx="150" ry="90" fill="url(#lightpool)"/>
+  <!-- desk + computer -->
+  <g><rect x="820" y="110" width="250" height="110" rx="8" fill="#2a2118"/><rect x="900" y="120" width="90" height="60" rx="4" fill="#0e1418"/><rect x="906" y="126" width="78" height="48" fill="#1c6e72"/><text x="845" y="200" font-size="20" fill="#9c8a6f">컴퓨터 책상</text></g>
+  <!-- game console -->
+  <g><rect x="540" y="120" width="120" height="80" rx="8" fill="#241a22"/><circle cx="600" cy="160" r="16" fill="#34e2e2" opacity="0.5"/><text x="540" y="222" font-size="18" fill="#8c6f86">게임기</text></g>
+  <!-- wardrobe -->
+  <g><rect x="980" y="470" width="150" height="140" rx="6" fill="#241c14"/><line x1="1055" y1="470" x2="1055" y2="610" stroke="#3a2e20" stroke-width="3"/><text x="985" y="640" font-size="18" fill="#9c8a6f">옷장</text></g>
+
+  <!-- memory shard (collectible) -->
+  <g transform="translate(470,300)">
+    <ellipse cx="0" cy="0" rx="70" ry="70" fill="url(#lightpool)"/>
+    <path d="M 0,-34 L 22,0 L 0,34 L -22,0 Z" fill="url(#shard)" stroke="#bfffff" stroke-width="2"/>
+    <circle cx="-26" cy="-20" r="2.5" fill="#bfffff"/><circle cx="28" cy="14" r="2" fill="#bfffff"/><circle cx="18" cy="-26" r="1.6" fill="#bfffff"/>
+    <g transform="translate(0,-66)"><rect x="-52" y="-26" width="104" height="34" rx="17" fill="#0a1518" stroke="#34e2e2" stroke-width="1.5"/><text x="0" y="-3" font-size="18" fill="#bfffff" text-anchor="middle">조사 [E]</text></g>
+  </g>
+
+  <!-- cat -->
+  <use xlink:href="#cat2" href="#cat2" transform="translate(640,360) scale(0.62)"/>
+
+  <!-- Murk enemy with sight cone -->
+  <g transform="translate(1010,300)">
+    <path d="M 0,0 L -150,-70 L -160,0 L -150,70 Z" fill="#34e2e2" opacity="0.07"/>
+    <path d="M 0,0 L -150,-70 L -160,0 L -150,70 Z" fill="none" stroke="#34e2e2" stroke-width="1" opacity="0.2"/>
+    <ellipse cx="0" cy="0" rx="42" ry="46" fill="url(#murk)"/>
+    <path d="M -40,-30 Q -55,-50 -38,-44 M 36,-32 Q 54,-52 40,-42 M -10,40 Q -16,60 -2,48 M 22,40 Q 30,58 16,46" stroke="#1a1430" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <circle cx="-14" cy="-6" r="5" fill="#7a5cff"/><circle cx="14" cy="-6" r="5" fill="#7a5cff"/>
+    <text x="0" y="74" font-size="16" fill="#8a78c0" text-anchor="middle">그림자 안개 (Murk)</text>
+  </g>
+
+  <!-- ====================== HUD OVERLAY ====================== -->
+  <!-- top-left: identity portrait -->
+  <g transform="translate(28,26)">
+    <rect x="0" y="0" width="300" height="92" rx="12" fill="#0a1014" stroke="#1d3236" stroke-width="1.5"/>
+    <circle cx="48" cy="46" r="34" fill="#0e0f13" stroke="#34e2e2" stroke-width="2"/>
+    <text x="48" y="60" font-size="40" font-weight="800" fill="#34e2e2" text-anchor="middle">?</text>
+    <text x="96" y="38" font-size="22" font-weight="700" fill="#eafaff">정체 미상</text>
+    <text x="96" y="64" font-size="16" fill="#6b8a8c">정체성 1 / 5 복원</text>
+    <rect x="96" y="74" width="180" height="6" rx="3" fill="#16262a"/>
+    <rect x="96" y="74" width="36" height="6" rx="3" fill="#8ef548"/>
+  </g>
+
+  <!-- top-right: journal + minimap -->
+  <g transform="translate(1010,26)">
+    <rect x="0" y="0" width="242" height="92" rx="12" fill="#0a1014" stroke="#1d3236" stroke-width="1.5"/>
+    <rect x="14" y="18" width="56" height="56" rx="6" fill="#11202a" stroke="#34e2e2" stroke-width="1.5"/>
+    <line x1="24" y1="34" x2="60" y2="34" stroke="#34e2e2" stroke-width="2"/><line x1="24" y1="46" x2="60" y2="46" stroke="#2a6e72" stroke-width="2"/><line x1="24" y1="58" x2="50" y2="58" stroke="#2a6e72" stroke-width="2"/>
+    <text x="86" y="40" font-size="18" font-weight="700" fill="#eafaff">기억 일지</text>
+    <text x="86" y="66" font-size="15" fill="#6b8a8c">[Tab] 단서 4개</text>
+  </g>
+
+  <!-- bottom-center: MEMORY METER (10 paws) -->
+  <g transform="translate(400,646)">
+    <rect x="-22" y="-14" width="524" height="58" rx="14" fill="#0a1014" stroke="#1d3236" stroke-width="1.5"/>
+    <text x="2" y="20" font-size="18" font-weight="700" fill="#bfffff">기억</text>
+    <!-- 10 paw icons: 4 filled, 6 empty -->
+    <g transform="translate(58,2)">
+      <!-- filled (4) -->
+      <g fill="#34e2e2"><g transform="translate(0,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g></g>
+      <g fill="#34e2e2" transform="translate(40,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g fill="#34e2e2" transform="translate(80,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g fill="#34e2e2" transform="translate(120,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <!-- empty (6) -->
+      <g fill="#16262a" transform="translate(160,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g fill="#16262a" transform="translate(200,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g fill="#16262a" transform="translate(240,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g fill="#16262a" transform="translate(280,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g fill="#16262a" transform="translate(320,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <g fill="#16262a" transform="translate(360,0)"><ellipse cx="14" cy="22" rx="9" ry="7"/><circle cx="6" cy="11" r="3.4"/><circle cx="13" cy="7" r="3.6"/><circle cx="21" cy="9" r="3.4"/><circle cx="26" cy="15" r="3"/></g>
+      <text x="400" y="26" font-size="16" fill="#6b8a8c">4 / 10</text>
+    </g>
+  </g>
+
+  <!-- bottom-right: stealth button -->
+  <g transform="translate(1086,628)">
+    <rect x="0" y="0" width="166" height="68" rx="34" fill="#0a1014" stroke="#34e2e2" stroke-width="1.5"/>
+    <g fill="#34e2e2" transform="translate(20,16)"><ellipse cx="14" cy="26" rx="11" ry="9"/><circle cx="5" cy="13" r="4"/><circle cx="14" cy="8" r="4.4"/><circle cx="23" cy="13" r="4"/></g>
+    <text x="62" y="32" font-size="17" font-weight="700" fill="#eafaff">살금살금</text>
+    <text x="62" y="52" font-size="14" fill="#6b8a8c">[Shift] / 홀드</text>
+  </g>
+</svg>

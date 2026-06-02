@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="'Noto Sans CJK KR','Noto Sans KR',sans-serif">
+  <defs>
+    <radialGradient id="bg" cx="42%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#10202a"/>
+      <stop offset="55%" stop-color="#0a121a"/>
+      <stop offset="100%" stop-color="#05080c"/>
+    </radialGradient>
+    <linearGradient id="eye" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c8ff8a"/>
+      <stop offset="100%" stop-color="#8ef548"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="720" fill="url(#bg)"/>
+
+  <!-- floating paw motifs -->
+  <g fill="#2fd4d4" opacity="0.16">
+    <g transform="translate(150,120) scale(1.1)"><ellipse cx="20" cy="26" rx="11" ry="9"/><circle cx="9" cy="14" r="4"/><circle cx="18" cy="9" r="4.2"/><circle cx="28" cy="11" r="4.2"/><circle cx="34" cy="18" r="3.6"/></g>
+    <g transform="translate(1060,180) scale(1.6) rotate(20)"><ellipse cx="20" cy="26" rx="11" ry="9"/><circle cx="9" cy="14" r="4"/><circle cx="18" cy="9" r="4.2"/><circle cx="28" cy="11" r="4.2"/><circle cx="34" cy="18" r="3.6"/></g>
+    <g transform="translate(980,560) scale(0.9) rotate(-15)"><ellipse cx="20" cy="26" rx="11" ry="9"/><circle cx="9" cy="14" r="4"/><circle cx="18" cy="9" r="4.2"/><circle cx="28" cy="11" r="4.2"/><circle cx="34" cy="18" r="3.6"/></g>
+    <g transform="translate(220,540) scale(1.3) rotate(8)"><ellipse cx="20" cy="26" rx="11" ry="9"/><circle cx="9" cy="14" r="4"/><circle cx="18" cy="9" r="4.2"/><circle cx="28" cy="11" r="4.2"/><circle cx="34" cy="18" r="3.6"/></g>
+  </g>
+
+  <!-- ====== CAT ====== -->
+  <g transform="translate(400,360)">
+    <!-- glow halo -->
+    <ellipse cx="0" cy="0" rx="180" ry="190" fill="#2fd4d4" opacity="0.05"/>
+    <ellipse cx="0" cy="0" rx="130" ry="140" fill="#2fd4d4" opacity="0.05"/>
+
+    <!-- tail -->
+    <path d="M 70,150 C 150,140 175,60 120,20 C 150,75 110,120 55,118 Z" fill="#0d0d10"/>
+    <path d="M 138,38 C 160,55 152,90 122,98 C 150,78 150,55 132,42 Z" fill="#34e2e2"/>
+
+    <!-- body -->
+    <ellipse cx="0" cy="120" rx="62" ry="78" fill="#0d0d10"/>
+    <!-- feet -->
+    <ellipse cx="-26" cy="188" rx="17" ry="24" fill="#34e2e2"/>
+    <ellipse cx="26" cy="188" rx="17" ry="24" fill="#34e2e2"/>
+    <!-- arms -->
+    <ellipse cx="-58" cy="118" rx="16" ry="30" fill="#34e2e2" transform="rotate(12 -58 118)"/>
+    <ellipse cx="58" cy="118" rx="16" ry="30" fill="#34e2e2" transform="rotate(-12 58 118)"/>
+    <!-- chest paw mark -->
+    <g fill="#34e2e2" opacity="0.95"><ellipse cx="0" cy="125" rx="13" ry="11"/><circle cx="-11" cy="108" r="4.5"/><circle cx="0" cy="103" r="4.8"/><circle cx="11" cy="108" r="4.5"/></g>
+
+    <!-- ears -->
+    <path d="M -78,-58 L -38,-150 L -8,-60 Z" fill="#0d0d10"/>
+    <path d="M -62,-66 L -40,-120 L -24,-66 Z" fill="#34e2e2"/>
+    <path d="M 78,-58 L 38,-150 L 8,-60 Z" fill="#0d0d10"/>
+    <path d="M 62,-66 L 40,-120 L 24,-66 Z" fill="#34e2e2"/>
+
+    <!-- head -->
+    <ellipse cx="0" cy="-8" rx="98" ry="92" fill="#0e0f13"/>
+
+    <!-- eyes -->
+    <ellipse cx="-40" cy="-10" rx="36" ry="42" fill="url(#eye)" stroke="#34e2e2" stroke-width="5"/>
+    <ellipse cx="40" cy="-10" rx="36" ry="42" fill="url(#eye)" stroke="#34e2e2" stroke-width="5"/>
+    <rect x="-43" y="-34" width="6" height="40" rx="3" fill="#5af0f0" opacity="0.85"/>
+    <rect x="37" y="-34" width="6" height="40" rx="3" fill="#5af0f0" opacity="0.85"/>
+    <!-- nose/mouth -->
+    <path d="M -12,34 Q 0,46 12,34" fill="none" stroke="#34e2e2" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- subtle ? hovering near cat (mystery) -->
+  <text x="560" y="240" font-size="120" font-weight="700" fill="#34e2e2" opacity="0.18">?</text>
+
+  <!-- ====== TITLE & MENU ====== -->
+  <g transform="translate(720,250)">
+    <text x="0" y="0" font-size="78" font-weight="800" fill="#eafaff" letter-spacing="2">잊혀진 발자국</text>
+    <text x="4" y="48" font-size="30" font-weight="500" fill="#34e2e2" letter-spacing="10">L O S T   P A W P R I N T</text>
+    <text x="4" y="92" font-size="20" fill="#6b8a8c">나를 모두 잊기 전에, 흩어진 기억을 되찾아라</text>
+
+    <!-- menu items -->
+    <g transform="translate(0,150)" font-size="30" fill="#dff3f3">
+      <g><rect x="-14" y="-30" width="6" height="40" fill="#8ef548"/><text x="14" y="0" font-weight="700" fill="#eafaff">새 기억 › New Game</text></g>
+      <text x="14" y="62">이어하기 · Continue</text>
+      <text x="14" y="124">기억 일지 · Journal</text>
+      <text x="14" y="186">설정 · Settings</text>
+    </g>
+  </g>
+
+  <!-- vignette -->
+  <rect width="1280" height="720" fill="url(#bg)" opacity="0" />
+  <rect x="0" y="0" width="1280" height="14" fill="#05080c"/>
+  <rect x="0" y="706" width="1280" height="14" fill="#05080c"/>
+  <text x="40" y="690" font-size="16" fill="#3a5557">v0.1 concept · 미스터리 탐험</text>
+</svg>
