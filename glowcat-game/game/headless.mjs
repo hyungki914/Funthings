@@ -28,20 +28,28 @@ let theFrame = null;
 globalThis.requestAnimationFrame = (fn) => { theFrame = fn; return 1; };
 const winHandlers = {};
 globalThis.addEventListener = (t, fn) => { (winHandlers[t] = winHandlers[t] || []).push(fn); };
-globalThis.performance = { now: () => Date.now() };
+let clock = 1000;                              // 합성 시계(프레임 dt와 동기)
+globalThis.performance = { now: () => clock };
 
 // main.js 로드(즉시 IIFE 실행 → 핸들러 등록 + 첫 rAF 캡처)
 const code = readFileSync(new URL("./main.js", import.meta.url), "utf8");
 (0, eval)(code);
 
 function fire(type, ev) { (winHandlers[type] || []).forEach(fn => fn(ev)); }
-const ev = (key) => ({ key, preventDefault() {} });
+const ev = (key, code) => ({ key, code, preventDefault() {} });
 
-// 시작(타이틀→플레이)
-if (cvHandlers.mousedown) cvHandlers.mousedown();
-fire("keydown", ev("a")); // 한 번 firstGesture(once) 소모 + 이동 시작
-
-let t = 1000, errors = 0, frames = 0;
+// ── 입력 회귀 검증: '키로 시작'(타이틀→플레이) + 물리코드(KeyD)로 이동(한글 IME 무관) ──
+const s0 = window.__ziro ? window.__ziro() : null;
+fire("keydown", ev("ㅇ", "KeyD"));   // e.key는 한글, e.code=KeyD → 우측 이동되어야 함
+let errors = 0, frames = 0;
+for (let i = 0; i < 30; i++) { clock += 16; if (theFrame) theFrame(clock); }
+const s1 = window.__ziro ? window.__ziro() : null;
+if (s1) {
+  if (s1.phase !== "play") { console.log("FAIL: 키로 시작 안 됨 (phase=" + s1.phase + ")"); process.exit(1); }
+  if (!(s1.px > s0.px + 1)) { console.log("FAIL: KeyD 물리코드 이동 안 됨 (px " + s0.px + "→" + s1.px + ")"); process.exit(1); }
+  console.log("INPUT OK — 키로 시작 + KeyD 이동(IME 무관) px " + s0.px.toFixed(0) + "→" + s1.px.toFixed(0));
+}
+fire("keyup", ev("ㅇ", "KeyD"));
 const walk = ["d", "d", "s", "s", "a", "w", "d", "s"];
 try {
   for (let i = 0; i < 700; i++) {
@@ -56,8 +64,8 @@ try {
     if (i % 50 < 8) fire("keydown", ev("q")); else fire("keyup", ev("q"));     // 기억 비추기(홀드)
     if (i % 75 === 0) { fire("keydown", ev("l")); fire("keyup", ev("l")); }    // 발자국 추적
     if (i % 110 === 0) { fire("keydown", ev("Tab")); fire("keyup", ev("Tab")); } // 일지 토글
-    t += 16;
-    if (theFrame) theFrame(t);
+    clock += 16;
+    if (theFrame) theFrame(clock);
     frames++;
   }
 } catch (e) { errors++; console.error("RUNTIME ERROR:", e && e.stack || e); }

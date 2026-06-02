@@ -41,10 +41,18 @@
 
   // ── 입력 ──────────────────────────────────────────────────
   const keys = {}; const edge = {};
+  // 물리 키 코드 매핑 — 한글 IME/레이아웃과 무관하게 동작(WASD가 ㅈㅁㄴㅇ로 들어와도 OK).
+  const CODEMAP = {
+    KeyW:"w", KeyA:"a", KeyS:"s", KeyD:"d", KeyE:"e", KeyL:"l", KeyQ:"q", KeyH:"h", KeyM:"m",
+    ArrowUp:"arrowup", ArrowDown:"arrowdown", ArrowLeft:"arrowleft", ArrowRight:"arrowright",
+    Space:" ", Enter:"enter", NumpadEnter:"enter", Tab:"tab", Escape:"escape",
+    ShiftLeft:"shift", ShiftRight:"shift"
+  };
   function setKey(e, v) {
-    const k = (e.key || "").toLowerCase();   // 모든 키 소문자 정규화(shift/arrow/tab 포함)
+    const k = CODEMAP[e.code] || (e.key || "").toLowerCase();   // e.code 우선 → IME 영향 없음
     if (v && !keys[k]) edge[k] = true;
     keys[k] = v;
+    if (v && phase === "title") phase = "play";                 // '아무 키로 시작' 실제 동작
     if (["arrowup","arrowdown","arrowleft","arrowright"," ","tab"].includes(k) && e.preventDefault) e.preventDefault();
   }
   addEventListener("keydown", e => setKey(e, true));
@@ -455,5 +463,7 @@
   function frame(now) { let dt = (now - last) / 1000; last = now; if (dt > 0.05) dt = 0.05;
     try { update(dt); } catch (e) { console.error(e); }
     draw(); requestAnimationFrame(frame); }
+  // 디버그 스냅샷(테스트용, 무해): 상태 읽기 전용
+  if (typeof window !== 'undefined') window.__ziro = () => ({ phase, px: player.x, py: player.y, mem: st.mem });
   requestAnimationFrame(frame);
 })();
