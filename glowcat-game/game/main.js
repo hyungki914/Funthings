@@ -4,6 +4,7 @@
   const cv = document.getElementById("game");
   const ctx = cv.getContext("2d");
   ctx.imageSmoothingEnabled = false;
+  try { cv.setAttribute("tabindex", "0"); cv.style.outline = "none"; cv.focus(); } catch (e) {}  // 키 포커스 확보
 
   const D = DATA.chapter1;
   const TILE = D.tile, NW = D.cols * TILE, NH = D.rows * TILE;   // 네이티브 352x224
@@ -38,6 +39,19 @@
   // 온보딩/피드백 상태
   let elapsed = 0, lTutDone = false, corePulse = 0; let toasts = [];   // toasts: {text,color,t}
   let sawMurk = false;
+  // 인트로(콜드 오픈) / 스테이지 전환
+  let introT = 0, transT = 0;
+  const INTRO = [
+    { at: 0.0, line: "…어둡다." },
+    { at: 2.2, line: "여기는… 어디지." },
+    { at: 4.6, line: "나는… 나는 누… ?" },
+    { at: 7.1, line: "무언가 빠져나가고 있어 — 흩어지기 전에, 붙잡아야 해." },
+  ];
+  const INTRO_END = 9.8;
+  function startIntro() { phase = "intro"; introT = 0; firstGesture(); if (window.Audio2 && Audio2.music) try { Audio2.music("intro"); } catch (e) {} }
+  function skipIntro() { if (introT < 0.5) return; endIntro(); }
+  function endIntro() { phase = "play"; if (window.Audio2 && Audio2.music) try { Audio2.music(D.music || "room"); } catch (e) {} }
+  function beginTransition() { phase = "transition"; transT = 0; if (window.Audio2 && Audio2.music) try { Audio2.music(null); } catch (e) {} }
 
   // ── 입력 ──────────────────────────────────────────────────
   const keys = {}; const edge = {};
@@ -48,17 +62,20 @@
     Space:" ", Enter:"enter", NumpadEnter:"enter", Tab:"tab", Escape:"escape",
     ShiftLeft:"shift", ShiftRight:"shift"
   };
+  const GAMEKEYS = ["w","a","s","d","e","l","q","h","m","tab","shift"," ","arrowup","arrowdown","arrowleft","arrowright"];
   function setKey(e, v) {
     const k = CODEMAP[e.code] || (e.key || "").toLowerCase();   // e.code 우선 → IME 영향 없음
     if (v && !keys[k]) edge[k] = true;
     keys[k] = v;
-    if (v && phase === "title") phase = "play";                 // '아무 키로 시작' 실제 동작
-    if (["arrowup","arrowdown","arrowleft","arrowright"," ","tab"].includes(k) && e.preventDefault) e.preventDefault();
+    if (v) { if (phase === "title") startIntro(); else if (phase === "intro") skipIntro(); }
+    if (GAMEKEYS.includes(k) && e.preventDefault) e.preventDefault();  // 브라우저 단축키 가로채기 방지
   }
   addEventListener("keydown", e => setKey(e, true));
   addEventListener("keyup", e => setKey(e, false));
-  cv.addEventListener("mousedown", () => { firstGesture(); if (phase === "title") phase = "play"; else if (phase === "recall") closeRecall(); });
-  function firstGesture() { try { if (window.Audio2) { Audio2.init(); Audio2.ambient(true); } } catch (e) {} }
+  function onClick() { try { cv.focus(); } catch (e) {} firstGesture();
+    if (phase === "title") startIntro(); else if (phase === "intro") skipIntro(); else if (phase === "recall") closeRecall(); }
+  cv.addEventListener("mousedown", onClick);
+  function firstGesture() { try { if (window.Audio2) Audio2.init(); } catch (e) {} }  // BGM은 music()이 담당
   addEventListener("keydown", firstGesture, { once: true });
   function clearEdges() { for (const k in edge) edge[k] = false; }
 
@@ -73,6 +90,8 @@
   // ── 업데이트 ──────────────────────────────────────────────
   function update(dt) {
     if (phase === "title" || phase === "cleared") return;
+    if (phase === "intro") { introT += dt; if (introT >= INTRO_END) endIntro(); clearEdges(); return; }
+    if (phase === "transition") { transT += dt; clearEdges(); return; }
     if (phase === "recall") { if (edge[" "] || edge["enter"]) closeRecall(); return; }
     if (phase === "setback") { setbackT -= dt; if (setbackT <= 0) phase = "play"; clearEdges(); return; }
     if (phase === "journal") { if (edge["tab"] || edge["escape"]) phase = "play"; clearEdges(); return; }
@@ -185,8 +204,8 @@
     // 위험 오디오
     if (window.Audio2) { Audio2.drone(danger ? 0.8 : 0); Audio2.heartbeat(st.mem <= 2 ? 96 : 0); }
 
-    // 클리어
-    if (Core.chapterClear(st) && door && dist(player.x, player.y, door.x, door.y) < 14) phase = "cleared";
+    // 클리어 → 전환 시퀀스(부드러운 페이드 + 챕터 카드)
+    if (Core.chapterClear(st) && door && dist(player.x, player.y, door.x, door.y) < 14) beginTransition();
 
     if (flash > 0) flash -= dt; if (shake > 0) shake -= dt * 24;
     if (corePulse > 0) corePulse -= dt;
@@ -314,7 +333,47 @@
     if (phase === "recall" && recall) overlayRecall();
     if (phase === "setback") overlayCenter("…어둡다. 여기는…", "#9ab", "방금 떠올린 기억이 다시 어둠에 잠겼다 · 같은 자리에서 되찾을 수 있다");
     if (phase === "cleared") overlayCenter("챕터 1 클리어 · 「지로의 방」", "#8ef548", "지로가 첫 기억들을 되찾았다.");
+    if (phase === "intro") overlayIntro();
+    if (phase === "transition") overlayTransition();
     if (phase === "journal" && window.Journal) { try { Journal.draw(ctx, cv, st, DATA, IMG); } catch (e) { console.error(e); } }
+  }
+
+  // 인트로(콜드 오픈) — 어둠 속에서 눈을 뜨는 지로 + 흐릿한 독백 (01 §2-1)
+  function overlayIntro() {
+    ctx.save();
+    ctx.fillStyle = "#03060a"; ctx.fillRect(0, 0, cv.width, cv.height);
+    const eo = Math.min(1, Math.max(0, (introT - 1.0) / 1.6));   // 눈 서서히 켜짐
+    if (eo > 0) {
+      ctx.globalAlpha = eo * 0.92; ctx.fillStyle = "#9bf24a"; ctx.shadowColor = "#34e2e2"; ctx.shadowBlur = 18;
+      const cy = cv.height / 2 - 50;
+      ctx.beginPath(); ctx.ellipse(cv.width / 2 - 28, cy, 13, 19, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(cv.width / 2 + 28, cy, 13, 19, 0, 0, 7); ctx.fill();
+      ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+    }
+    let cur = INTRO[0]; for (const b of INTRO) if (introT >= b.at) cur = b;
+    ctx.globalAlpha = Math.min(1, (introT - cur.at) / 0.6);
+    ctx.textAlign = "center"; ctx.fillStyle = "#cfe6e6"; ctx.font = "20px 'Noto Sans KR',sans-serif";
+    ctx.fillText(cur.line, cv.width / 2, cv.height / 2 + 70);
+    ctx.globalAlpha = 0.5; ctx.fillStyle = "#5a7375"; ctx.font = "13px 'Noto Sans KR',sans-serif";
+    ctx.fillText("아무 키 / 클릭 — 건너뛰기", cv.width / 2, cv.height - 40);
+    ctx.restore();
+  }
+
+  // 스테이지 전환 — 페이드 아웃 + 챕터 카드
+  function overlayTransition() {
+    const fade = Math.min(1, transT / 1.0);
+    ctx.save();
+    ctx.fillStyle = "rgba(3,5,9," + fade + ")"; ctx.fillRect(0, 0, cv.width, cv.height);
+    if (transT > 1.0) {
+      ctx.globalAlpha = Math.min(1, (transT - 1.0) / 0.7); ctx.textAlign = "center";
+      ctx.fillStyle = "#8ef548"; ctx.font = "bold 30px 'Noto Sans KR',sans-serif";
+      ctx.fillText("CHAPTER 1 · 클리어", cv.width / 2, cv.height / 2 - 12);
+      ctx.fillStyle = "#eafaff"; ctx.font = "20px 'Noto Sans KR',sans-serif";
+      ctx.fillText("「지로의 방」", cv.width / 2, cv.height / 2 + 22);
+      ctx.fillStyle = "#9fb6b6"; ctx.font = "14px 'Noto Sans KR',sans-serif";
+      ctx.fillText("지로가 첫 기억들을 되찾았다 — 다음 이야기는 곧…", cv.width / 2, cv.height / 2 + 54);
+    }
+    ctx.restore();
   }
 
   function glow(fn, color, blur) { ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = blur; fn(); ctx.restore(); }
@@ -412,12 +471,14 @@
       ctx.fillStyle = "rgba(8,14,18,.92)"; rrect(spx - tw / 2, spy - 74, tw, 26, 8); ctx.fill();
       ctx.fillStyle = "#8ef548"; ctx.fillText(txt, spx, spy - 56); ctx.restore();
     }
-    // 조작 힌트(하단, 초반/첫 코어 전)
-    if (cores === 0 || elapsed < 14) {
+    // 조작 힌트(하단) — 이 스테이지에서 쓰는 단축키만(data의 controls)
+    if (cores === 0 || elapsed < 16) {
+      const list = (D.controls && D.controls.length) ? D.controls
+        : [["이동", "WASD"], ["조사", "E"], ["추적", "L"], ["일지", "Tab"]];
+      const txt = list.map(c => "[" + c[1] + "] " + c[0]).join("   ·   ");
       ctx.save(); ctx.textAlign = "center"; ctx.font = "12px 'Noto Sans KR',sans-serif";
-      const txt = "[WASD] 이동 · [E] 조사 · [L] 추적 · [Q] 비추기 · [Tab] 일지";
       const tw = ctx.measureText(txt).width + 24;
-      ctx.fillStyle = "rgba(8,14,18,.72)"; rrect((W - tw) / 2, cv.height - 74, tw, 22, 8); ctx.fill();
+      ctx.fillStyle = "rgba(8,14,18,.75)"; rrect((W - tw) / 2, cv.height - 74, tw, 22, 8); ctx.fill();
       ctx.fillStyle = "#bcd6d6"; ctx.fillText(txt, W / 2, cv.height - 59); ctx.restore();
     }
   }

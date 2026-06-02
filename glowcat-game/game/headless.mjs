@@ -40,14 +40,16 @@ const ev = (key, code) => ({ key, code, preventDefault() {} });
 
 // ── 입력 회귀 검증: '키로 시작'(타이틀→플레이) + 물리코드(KeyD)로 이동(한글 IME 무관) ──
 const s0 = window.__ziro ? window.__ziro() : null;
-fire("keydown", ev("ㅇ", "KeyD"));   // e.key는 한글, e.code=KeyD → 우측 이동되어야 함
+fire("keydown", ev("ㅇ", "KeyD"));            // 타이틀→인트로, d키 누름 유지(e.key=한글, e.code=KeyD)
 let errors = 0, frames = 0;
-for (let i = 0; i < 30; i++) { clock += 16; if (theFrame) theFrame(clock); }
+for (let i = 0; i < 40; i++) { clock += 16; if (theFrame) theFrame(clock); }   // introT>0.5
+fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space"));            // 인트로 건너뛰기 → play
+for (let i = 0; i < 30; i++) { clock += 16; if (theFrame) theFrame(clock); }   // d 유지 → 우측 이동
 const s1 = window.__ziro ? window.__ziro() : null;
 if (s1) {
-  if (s1.phase !== "play") { console.log("FAIL: 키로 시작 안 됨 (phase=" + s1.phase + ")"); process.exit(1); }
+  if (s1.phase !== "play") { console.log("FAIL: 인트로 후 플레이 진입 안 됨 (phase=" + s1.phase + ")"); process.exit(1); }
   if (!(s1.px > s0.px + 1)) { console.log("FAIL: KeyD 물리코드 이동 안 됨 (px " + s0.px + "→" + s1.px + ")"); process.exit(1); }
-  console.log("INPUT OK — 키로 시작 + KeyD 이동(IME 무관) px " + s0.px.toFixed(0) + "→" + s1.px.toFixed(0));
+  console.log("INPUT OK — 키로 시작/인트로 스킵 + KeyD 이동(IME 무관) px " + s0.px.toFixed(0) + "→" + s1.px.toFixed(0));
 }
 fire("keyup", ev("ㅇ", "KeyD"));
 const walk = ["d", "d", "s", "s", "a", "w", "d", "s"];

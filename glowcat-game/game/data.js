@@ -27,6 +27,10 @@ DATA.chapter1 = {
   rows: 14,
   scale: 4,
   bgKey: 'room1',
+  music: 'room',                 // BGM 테마 (audio.js Audio2.music)
+  controls: [                    // 이 스테이지에서 쓰는 단축키만 표시
+    ['이동', 'WASD/←↑↓→'], ['조사', 'E'], ['발자국 추적', 'L'], ['기억 비추기', 'Q'], ['기억 일지', 'Tab']
+  ],
 
   // 스폰: 러그 위(floor). [10,9] 는 러그 영역(cols8~11,rows7~9) 안 + 충돌 밖. (검산: FREE)
   spawn: [10, 9],
