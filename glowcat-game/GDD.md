@@ -7,8 +7,8 @@
 > 1회차 플레이 타임: 약 **1.5~3시간** (v1.0 = 챕터 3개)
 >
 > **⚙ v2.0 개정:** 6개 직군 교차 리뷰를 반영한 개정판. 상위 결정은 **[00 · 의사결정 로그](./00_design_review.md)(SSOT)**를 따릅니다.
-> **상세 문서:** [00 리뷰·결정](./00_design_review.md) · [① 스토리 대본](./01_story_script.md) · [② 레벨 디자인](./02_level_design.md) · [③ 시스템·적](./03_systems_enemies.md) · [④ 테크니컬 설계](./04_technical_design.md) · [⑤ 프로덕션 플랜](./05_production_plan.md)
-> **UI / 컨셉 목업:** [mockups/](./mockups/) ([컨셉 보드](./mockups/png/board.png))
+> **상세 문서:** [00 리뷰·결정](./00_design_review.md) · [① 스토리 대본](./01_story_script.md) · [② 레벨 디자인](./02_level_design.md) · [③ 시스템·적](./03_systems_enemies.md) · [④ 테크니컬 설계](./04_technical_design.md) · [⑤ 프로덕션 플랜](./05_production_plan.md) · [⑨ 아트 디렉션(픽셀)](./09_art_direction_pixel.md)
+> **UI 목업:** [mockups/](./mockups/) ([컨셉 보드](./mockups/png/board.png)) · **인게임 픽셀아트:** [art/](./art/) ([방 씬](./art/png/room_scene.png) · [BEFORE/AFTER](./art/png/comparison.png))
 
 ---
 
@@ -181,6 +181,9 @@
 ---
 
 ## 8. 아트 & 사운드 디렉션
+
+> **인게임 비주얼 = 일본식 픽셀아트(ドット絵) + HD-2D 네온 블룸.** 상세·실제 에셋은 **[09 아트 디렉션](./09_art_direction_pixel.md)** 및 [`art/`](./art/) 참고. (SVG 목업은 UI 스펙용, 픽셀아트가 인게임 정본 — `art/png/comparison.png`의 BEFORE/AFTER.)
+> 계보: Chrono Trigger·Sea of Stars(탑다운 JRPG 타일+스프라이트) + Octopath HD-2D(블룸/조명) + Tails Noir(네온 느와르). 16px 타일 · 32px 캐릭터.
 
 - **시점(D4):** 인게임 **3/4 쿼터뷰** + 다이제틱 시그니처(발자국 트레일·떠다니는 발바닥·시안 림라이트). 정면 치비는 초상 전용.
 - **비주얼:** **검정 + 시안 글로우 + 형광 연두** 팔레트. 단 **색 역할 고정**(시안=중립UI, 연두=긍정/해금) + **색+형태 이중 인코딩**으로 색약 대응(D9).
