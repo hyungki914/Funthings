@@ -413,7 +413,7 @@ DATA.chapter1 = {
     {
       id: 'false_hana_waves',
       type: 'false',
-      tile: [13, 11],          // 방 중앙 하단 floor (검산: FREE)
+      tile: [16, 11],          // 우중앙 하단 floor (옷장17~19 옆, col16 FREE). 스폰[10,9]서 ~101px — 코어보다 멀게(첫 행동이 함정이 되지 않도록)
       radius: 1.3,
       identitySlot: null,
       recall: '하루가 웃으며 손을 흔든다 — 그런데 배경의 꽃은 이미 시들어 있다. 이건… 진짜가 아니야.',
@@ -1629,10 +1629,13 @@ if (typeof module !== 'undefined') module.exports = Journal;
   const murks = (D.murks||[]).map(m => ({
     id:m.id, wp:0, x:px(m.patrol[0][0]), y:px(m.patrol[0][1]),
     patrol:m.patrol.map(p=>({x:px(p[0]),y:px(p[1])})),
-    speed:m.speed||38, sightPx:(m.sightTiles||3.3)*TILE, fov:(m.fovDeg||90)*Math.PI/180,
+    speed:m.speed||38, sightPx:(m.sightTiles||3.3)*TILE, fov:(m.fovDeg||90),  // 도(°) — core.js가 내부에서 rad 변환
     faceAngle:0, chasing:false, lost:0 }));
   let recall = null, hintTimer = 0, hintTarget = null, setbackT = 0, flash = 0, muted = false, shake = 0;
   let trail = [], trailCD = 0, projecting = false; const illuminated = new Set();
+  // 온보딩/피드백 상태
+  let elapsed = 0, lTutDone = false, corePulse = 0; let toasts = [];   // toasts: {text,color,t}
+  let sawMurk = false;
 
   // ── 입력 ──────────────────────────────────────────────────
   const keys = {}; const edge = {};
@@ -1664,6 +1667,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
     if (phase === "setback") { setbackT -= dt; if (setbackT <= 0) phase = "play"; clearEdges(); return; }
     if (phase === "journal") { if (edge["tab"] || edge["escape"]) phase = "play"; clearEdges(); return; }
     if (edge["tab"]) { phase = "journal"; clearEdges(); return; }   // 기억 일지 열기
+    elapsed += dt;
 
     // 이동 입력
     const stealth = keys["shift"];
@@ -1700,6 +1704,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
     }
 
     // 발자국 추적(L) — 가장 가까운 미발견 코어로 시안 발자국 흔적(무료, 쿨다운)
+    if (edge["l"]) lTutDone = true;
     if (trailCD > 0) trailCD -= dt;
     if (edge["l"] && trailCD <= 0) {
       let best = null, bd = 1e9;
@@ -1717,7 +1722,8 @@ if (typeof module !== 'undefined') module.exports = Journal;
       }
       const sees = Core.murkSees({ x: m.x, y: m.y, faceAngle: m.faceAngle, sight: m.sightPx, fov: m.fov }, player.x, player.y)
                    && !stealth || (Core.murkSees({ x:m.x,y:m.y,faceAngle:m.faceAngle,sight:m.sightPx*0.6,fov:m.fov }, player.x, player.y) && stealth);
-      if (sees) { m.chasing = true; m.lost = 0; }
+      if (sees) { m.chasing = true; m.lost = 0;
+        if (!sawMurk) { sawMurk = true; toasts.push({ text: "들켰다! [Shift] 은신으로 피하라", color: "#ff7a7a", t: 2.8 }); } }
       else if (m.chasing) { m.lost += dt; if (m.lost > 2.5) m.chasing = false; }
       let ax, ay, spd;
       if (m.chasing) { ax = player.x; ay = player.y; spd = m.speed * 1.35; danger = true; }
@@ -1773,6 +1779,8 @@ if (typeof module !== 'undefined') module.exports = Journal;
     if (Core.chapterClear(st) && door && dist(player.x, player.y, door.x, door.y) < 14) phase = "cleared";
 
     if (flash > 0) flash -= dt; if (shake > 0) shake -= dt * 24;
+    if (corePulse > 0) corePulse -= dt;
+    for (const t of toasts) t.t -= dt; toasts = toasts.filter(t => t.t > 0);
     clearEdges();
   }
 
@@ -1789,6 +1797,12 @@ if (typeof module !== 'undefined') module.exports = Journal;
     if (res.ok === false) return;
     recall = { text: res.recallText || s.recall || "", type: res.type || s.type };
     phase = "recall";
+    if (s.type === "core") {
+      toasts.push({ text: "코어 기억 " + st.coreOrder.length + " / " + st.coresNeeded + " 회복!", color: "#8ef548", t: 2.4 });
+      corePulse = 0.7;
+      if (Core.chapterClear(st)) toasts.push({ text: "문이 열렸다 — 위쪽 ↑ 으로", color: "#34e2e2", t: 3.4 });
+    } else if (s.type === "echo") toasts.push({ text: "에코 기억 — 옛 흔적을 떠올렸다", color: "#9fc5c5", t: 2.0 });
+    else if (s.type === "false") toasts.push({ text: "⚠ 거짓된 기억 — 기억이 깎였다", color: "#ff7a7a", t: 2.6 });
     if (window.Audio2) { if (s.type === "false") Audio2.sfx("contact"); else Audio2.chime(); }
   }
   function closeRecall() { recall = null; phase = "play"; }
@@ -1830,6 +1844,19 @@ if (typeof module !== 'undefined') module.exports = Journal;
       ctx.beginPath(); ctx.moveTo(player.x, player.y - 4);
       ctx.arc(player.x, player.y - 4, C.PROJECT_LEN, player.dir - h, player.dir + h); ctx.closePath(); ctx.fill(); ctx.restore(); }
 
+    // 환경 단서: 미발견 조각을 거리 비례로 흐릿하게(글로우 OFF 보완 — '여기 뭔가 있다').
+    //   숨은 조각은 제외(Q로만). 거짓은 차갑게 깜빡여 미묘한 '어긋남' 신호.
+    for (const s of D.shards) {
+      if (isDone(s) || s.hidden) continue;
+      const c = shardCenter(s), d = dist(player.x, player.y, c.x, c.y);
+      if (d > 120) continue;
+      const fal = s.type === "false";
+      const a = Math.max(0.1, Math.min(0.55, 1 - d / 120)) * (0.6 + 0.4 * Math.sin(performance.now() / (fal ? 170 : 320)));
+      ctx.save(); ctx.globalAlpha = a; ctx.shadowColor = fal ? "#caa15a" : "#34e2e2"; ctx.shadowBlur = 5;
+      ctx.fillStyle = fal ? "#caa15a" : "#34e2e2";
+      ctx.beginPath(); ctx.arc(c.x, c.y - 1, fal ? 2.0 : 2.6, 0, 7); ctx.fill(); ctx.restore();
+    }
+
     // 근처 조각만 표시(글로우 OFF·3단 발견)
     if (nearShard && IMG.shard) {
       const c = shardCenter(nearShard);
@@ -1851,6 +1878,11 @@ if (typeof module !== 'undefined') module.exports = Journal;
         }
       } else {
         const m = e.m;
+        // 시야콘 (감지 범위 시각화 — 평시 보라, 추격 빨강)
+        const hf = (m.fov * Math.PI / 180) / 2;
+        ctx.save(); ctx.globalAlpha = m.chasing ? 0.18 : 0.08; ctx.fillStyle = m.chasing ? "#ff5a5a" : "#7a5cff";
+        ctx.beginPath(); ctx.moveTo(m.x, m.y);
+        ctx.arc(m.x, m.y, m.sightPx, m.faceAngle - hf, m.faceAngle + hf); ctx.closePath(); ctx.fill(); ctx.restore();
         if (IMG.murk) glow(() => ctx.drawImage(IMG.murk, Math.round(m.x - IMG.murk.width/2), Math.round(m.y - IMG.murk.height/2)), m.chasing ? "#ff5a5a" : "#7a5cff", m.chasing ? 5 : 2);
       }
     }
@@ -1867,9 +1899,10 @@ if (typeof module !== 'undefined') module.exports = Journal;
 
     ctx.restore();
     drawHUD();
+    if (phase === "play") drawGuide();
     if (phase === "title") overlayTitle();
     if (phase === "recall" && recall) overlayRecall();
-    if (phase === "setback") overlayCenter("…어둡다. 여기는…", "#9ab", "기억이 흩어졌다 — 마지막 안전한 곳으로");
+    if (phase === "setback") overlayCenter("…어둡다. 여기는…", "#9ab", "방금 떠올린 기억이 다시 어둠에 잠겼다 · 같은 자리에서 되찾을 수 있다");
     if (phase === "cleared") overlayCenter("챕터 1 클리어 · 「지로의 방」", "#8ef548", "지로가 첫 기억들을 되찾았다.");
     if (phase === "journal" && window.Journal) { try { Journal.draw(ctx, cv, st, DATA, IMG); } catch (e) { console.error(e); } }
   }
@@ -1896,9 +1929,8 @@ if (typeof module !== 'undefined') module.exports = Journal;
       if (fillAmt >= 1) paw(cx, cy, st.mem <= 2 ? "#ff5a5a" : "#34e2e2");
       else if (fillAmt > 0) { ctx.save(); ctx.beginPath(); ctx.rect(cx - 6, cy - 7, 6, 14); ctx.clip(); paw(cx, cy, "#34e2e2"); ctx.restore(); }
     }
-    // 빛 자원
-    const lx = x0 + 40 + C.MEM_MAX * pipW + 8;
-    ctx.fillStyle = "#6b8a8c"; ctx.fillText("빛", x0 + 40 + C.MEM_MAX*pipW + 8, y0 - 16);
+    ctx.font = "11px 'Noto Sans KR',sans-serif"; ctx.fillStyle = "#9fc5c5";
+    ctx.fillText("생명 — 0이 되면 후퇴", x0, y0 - 16);
     // 정체성 + 코어 카운터(우상단)
     ctx.fillStyle = "rgba(10,16,20,.85)"; rrect(W - 230, 14, 216, 56, 8); ctx.fill();
     const idn = (st.identity || 0);
@@ -1910,18 +1942,19 @@ if (typeof module !== 'undefined') module.exports = Journal;
     ctx.fillText(idn > 0 && D.identityLabels[idn-1] ? D.identityLabels[idn-1] : "정체 미상", W - 170, 38);
     ctx.fillStyle = "#6b8a8c"; ctx.font = "12px 'Noto Sans KR',sans-serif";
     ctx.fillText("정체성 " + idn + " / 5", W - 170, 58);
-    // 코어 카운터(좌상단)
-    ctx.fillStyle = "rgba(10,16,20,.85)"; rrect(14, 14, 150, 30, 8); ctx.fill();
-    ctx.fillStyle = "#8ef548"; ctx.font = "bold 14px 'Noto Sans KR',sans-serif";
-    ctx.fillText("코어 기억 " + (st.coreOrder ? st.coreOrder.length : 0) + " / " + st.coresNeeded, 26, 34);
+    // 코어 카운터(좌상단) — 주 목표 지표. 획득 시 펄스.
+    ctx.fillStyle = "rgba(10,16,20,.85)"; rrect(14, 14, 160, 30, 8); ctx.fill();
+    const cp = corePulse > 0 ? corePulse : 0;
+    ctx.fillStyle = cp > 0 ? "#d6ff9a" : "#8ef548"; ctx.font = "bold " + (15 + Math.round(cp * 8)) + "px 'Noto Sans KR',sans-serif";
+    ctx.fillText("코어 기억 " + (st.coreOrder ? st.coreOrder.length : 0) + " / " + st.coresNeeded, 26, 35);
     // 빛 게이지 바(코어 카운터 아래)
     ctx.fillStyle = "#16262a"; ctx.fillRect(26, 50, 100, 6);
     ctx.fillStyle = "#34e2e2"; ctx.fillRect(26, 50, 100 * (st.light / C.LIGHT_MAX), 6);
-    ctx.fillStyle = "#6b8a8c"; ctx.font = "11px 'Noto Sans KR',sans-serif";
-    ctx.fillText("빛 " + (st.light||0).toFixed(1) + "   [Q] 비추기 · [H] 힌트", 132, 56);
-    ctx.fillStyle = trailCD > 0 ? "#5a7375" : "#8ef548";
-    ctx.fillText(trailCD > 0 ? "[L] 발자국 추적  " + trailCD.toFixed(0) + "s" : "[L] 발자국 추적  준비", 26, 70);
-    ctx.fillStyle = "#5a7375"; ctx.fillText("[Tab] 기억 일지", 26, 86);
+    ctx.fillStyle = "#9fc5c5"; ctx.font = "11px 'Noto Sans KR',sans-serif";
+    ctx.fillText("빛 " + (st.light||0).toFixed(1) + "   [Q]비추기·[H]힌트", 132, 56);
+    ctx.fillStyle = trailCD > 0 ? "#8aa7a9" : "#8ef548";
+    ctx.fillText(trailCD > 0 ? "[L] 발자국 추적  " + trailCD.toFixed(0) + "s" : "[L] 발자국 추적 (사용가능)", 26, 70);
+    ctx.fillStyle = "#9fc5c5"; ctx.fillText("[Tab] 기억 일지", 26, 86);
     ctx.restore();
   }
   function paw(cx, cy, col) { ctx.fillStyle = col; ctx.beginPath();
@@ -1931,6 +1964,53 @@ if (typeof module !== 'undefined') module.exports = Journal;
 
   function hudText(t, x, y, col, size, center) { ctx.save(); ctx.font = `bold ${size}px 'Noto Sans KR',sans-serif`;
     ctx.fillStyle = col; ctx.textAlign = center ? "center" : "left"; ctx.fillText(t, x, y); ctx.restore(); }
+
+  // ── 인게임 가이드(온보딩/피드백) ─────────────────────────
+  function drawGuide() {
+    if (!ready) return;
+    const W = cv.width, cores = (st.coreOrder ? st.coreOrder.length : 0), need = st.coresNeeded;
+    const done = cores >= need;
+    // 목표 배너(상단 중앙)
+    ctx.save();
+    const bw = 380, bx = (W - bw) / 2, by = 12;
+    ctx.fillStyle = "rgba(8,14,18,.82)"; rrect(bx, by, bw, 34, 10); ctx.fill();
+    ctx.textAlign = "left"; ctx.font = "bold 14px 'Noto Sans KR',sans-serif";
+    if (done) { ctx.fillStyle = "#34e2e2"; ctx.textAlign = "center"; ctx.fillText("문이 열렸다 — 위쪽 ↑ 문으로 가라", W / 2, by + 22); }
+    else {
+      ctx.fillStyle = "#eafaff"; ctx.fillText("목표 · 코어 기억 모으기", bx + 14, by + 22);
+      const dotx = bx + 158;
+      for (let i = 0; i < need; i++) { ctx.beginPath(); ctx.arc(dotx + i * 20, by + 16, 6, 0, 7); ctx.fillStyle = i < cores ? "#8ef548" : "#27343a"; ctx.fill(); }
+      ctx.fillStyle = "#9fc5c5"; ctx.font = "12px 'Noto Sans KR',sans-serif"; ctx.fillText("빛나는 기억에 다가가 [E]", dotx + need * 20 + 6, by + 22);
+    }
+    ctx.restore();
+    // 클리어 시 문 방향 화살표(상단)
+    if (done && door) { ctx.save(); ctx.textAlign = "center"; ctx.font = "bold 26px sans-serif"; ctx.fillStyle = "#34e2e2";
+      ctx.globalAlpha = 0.55 + 0.45 * Math.sin(performance.now() / 200); ctx.fillText("↑", door.x * S, 72); ctx.restore(); }
+    // 진행 토스트(좌상단 코어 카운터 아래)
+    let ty = 92; ctx.save(); ctx.textAlign = "left"; ctx.font = "bold 14px 'Noto Sans KR',sans-serif";
+    for (const t of toasts) { const a = Math.min(1, t.t); ctx.globalAlpha = a;
+      const tw = ctx.measureText(t.text).width + 20;
+      ctx.fillStyle = "rgba(8,14,18,.88)"; rrect(14, ty, tw, 24, 8); ctx.fill();
+      ctx.globalAlpha = a; ctx.fillStyle = t.color; ctx.fillText(t.text, 24, ty + 16); ty += 28; }
+    ctx.restore();
+    // L 코치마크(첫 코어 전, 무입력 후) — 빈 방 문제 직격
+    if (cores === 0 && elapsed > 3 && !lTutDone && trail.length === 0) {
+      const spx = player.x * S, spy = player.y * S;
+      ctx.save(); ctx.textAlign = "center"; ctx.font = "bold 13px 'Noto Sans KR',sans-serif";
+      const txt = "[L] 발자국 추적 — 기억의 흔적을 따라가자";
+      const tw = ctx.measureText(txt).width + 20;
+      ctx.fillStyle = "rgba(8,14,18,.92)"; rrect(spx - tw / 2, spy - 74, tw, 26, 8); ctx.fill();
+      ctx.fillStyle = "#8ef548"; ctx.fillText(txt, spx, spy - 56); ctx.restore();
+    }
+    // 조작 힌트(하단, 초반/첫 코어 전)
+    if (cores === 0 || elapsed < 14) {
+      ctx.save(); ctx.textAlign = "center"; ctx.font = "12px 'Noto Sans KR',sans-serif";
+      const txt = "[WASD] 이동 · [E] 조사 · [L] 추적 · [Q] 비추기 · [Tab] 일지";
+      const tw = ctx.measureText(txt).width + 24;
+      ctx.fillStyle = "rgba(8,14,18,.72)"; rrect((W - tw) / 2, cv.height - 74, tw, 22, 8); ctx.fill();
+      ctx.fillStyle = "#bcd6d6"; ctx.fillText(txt, W / 2, cv.height - 59); ctx.restore();
+    }
+  }
 
   function overlayTitle() {
     ctx.save(); ctx.fillStyle = "rgba(4,6,10,.72)"; ctx.fillRect(0, 0, cv.width, cv.height);

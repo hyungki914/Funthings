@@ -50,12 +50,16 @@ assert.ok(sealedCore, "봉인된 코어 존재");
 Core.collect(st, sealedCore);
 assert.equal(Core.chapterClear(st), true, "재획득 → 다시 클리어");
 
-// murk 시야: data의 murk 정의로 정면/등뒤 판정
+// murk 시야: data의 murk 정의로 판정. ★ fov는 '도(°)'로 전달(core.js가 내부 rad 변환).
+//   main.js가 라디안을 넘기던 '이중 변환' 버그(시야 90°→~1.6°)를 측면 케이스로 회귀 차단.
 const m = D.murks[0];
 const mx = m.patrol[0][0] * D.tile + 8, my = m.patrol[0][1] * D.tile + 8;
-const fov = (m.fovDeg || 90) * Math.PI / 180, sight = (m.sightTiles || 3.3) * D.tile;
-assert.equal(Core.murkSees({ x: mx, y: my, faceAngle: 0, sight, fov }, mx + 20, my), true, "정면 근접 감지");
-assert.equal(Core.murkSees({ x: mx, y: my, faceAngle: 0, sight, fov }, mx - 20, my), false, "등 뒤 미감지");
-assert.equal(Core.murkSees({ x: mx, y: my, faceAngle: 0, sight, fov }, mx + sight + 30, my), false, "사거리 밖 미감지");
+const fovDeg = m.fovDeg || 90, sight = (m.sightTiles || 3.3) * D.tile;
+const sees = (ox, oy) => Core.murkSees({ x: mx, y: my, faceAngle: 0, sight, fov: fovDeg }, ox, oy);
+assert.equal(sees(mx + 20, my), true, "정면 근접 감지");
+assert.equal(sees(mx + 20, my + 15), true, "정면 약 37° 이내 감지 (이중변환이면 실패)"); // atan2(15,20)=36.9° < 45
+assert.equal(sees(mx - 20, my), false, "등 뒤 미감지");
+assert.equal(sees(mx + 10, my + 40), false, "측면 약 76° 밖 미감지");                  // atan2(40,10)=76° > 45
+assert.equal(sees(mx + sight + 30, my), false, "사거리 밖 미감지");
 
 console.log("SMOKE OK — core+data 통합 정합. 조각", D.shards.length, "/ 코어", cores.length, "/ murk", D.murks.length);

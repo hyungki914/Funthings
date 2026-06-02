@@ -157,7 +157,7 @@ DATA.chapter1 = {
     {
       id: 'false_hana_waves',
       type: 'false',
-      tile: [13, 11],          // 방 중앙 하단 floor (검산: FREE)
+      tile: [16, 11],          // 우중앙 하단 floor (옷장17~19 옆, col16 FREE). 스폰[10,9]서 ~101px — 코어보다 멀게(첫 행동이 함정이 되지 않도록)
       radius: 1.3,
       identitySlot: null,
       recall: '하루가 웃으며 손을 흔든다 — 그런데 배경의 꽃은 이미 시들어 있다. 이건… 진짜가 아니야.',
