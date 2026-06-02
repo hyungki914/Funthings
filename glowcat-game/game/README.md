@@ -1,6 +1,7 @@
 # 🎮 플레이 가능한 버티컬 슬라이스 — 챕터1 「지로의 방」
 
 웹 게임 프로토타입. **무설치·오프라인** — `index.html`을 브라우저로 더블클릭하면 바로 플레이.
+> **가장 쉬운 실행:** `ziro_standalone.html`(단일 파일, 모든 JS·에셋 인라인) 하나만 받아 더블클릭. 재생성: `python3 build_standalone.py`.
 빌드 플랜: [../10_build_plan.md](../10_build_plan.md) · 아트: [../09_art_direction_pixel.md](../09_art_direction_pixel.md)
 
 ## 조작

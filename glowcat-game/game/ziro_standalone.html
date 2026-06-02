@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>잊혀진 발자국 — 지로 (Vertical Slice)</title>
+<style>
+  html,body{margin:0;height:100%;background:#04060a;color:#cfe6e6;
+    font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;}
+  #wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:100%;gap:10px;padding:12px;box-sizing:border-box;}
+  canvas{image-rendering:pixelated;image-rendering:crisp-edges;background:#06090d;
+    border:1px solid #1d3236;box-shadow:0 0 40px rgba(52,226,226,.08);max-width:100%;height:auto;}
+  #hint{font-size:13px;color:#5a7375;letter-spacing:.3px;}
+  #hint b{color:#8ef548;font-weight:700;}
+  a{color:#34e2e2;}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="1056" height="672"></canvas>
+  <div id="hint">이동 <b>WASD/←↑↓→</b> · 조사 <b>E</b> · 발자국 추적 <b>L</b> · 기억 비추기 <b>Q</b>(빛) · 일지 <b>Tab</b> · 힌트 <b>H</b> · 은신 <b>Shift</b> · 음소거 <b>M</b></div>
+</div>
+<!-- 로드 순서: 에셋 → 규칙 → 데이터 → 오디오 → 메인 -->
+<script>
+/* ===== assets.js ===== */
+// 자동 생성 — art/pixelart.py export_game_assets(). 수정 금지.
+const ASSETS = {
+  room1: "data:image/png;base64,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",
+  ziro_d0: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAiCAYAAAA+stv/AAAChklEQVR4nK1WPWsbQRB9Z0xiBD6MOBRDyBWuVAiXqQPWD0iVNm0wKfMzXAb9AJdGhSuRQgLVwpVwoSpFQMERixBnOFRFKeTZzK5mP06nB+J0t7Pz3s7OzC7gwUnjbOMbj4XPz1GdyXXJvQJoYpo26/Dr+S4hwQj4Jh9inldAmjaRT8ZI06Z2dtI424R+ZMfnu3Aco7wolvp75JZs+Dzud12uEv7NeLEFdGZTPLYvcf62LbKUzwuvChJAfgCgkgAX8b5CJAE7OVCVHAAapy3vON82e3ujquAQcOWOKKDK6gmhKLhEGFXgyvKn+aySOL7ntr+Xd10NYhna5J3ZVL/7qoLIbXtf6eot4KunrObkn199AbAtKR4RQvm8MMi5vd0PeGNzJiEnGbZahlN7HDDDLtnbIgjeKujMprh99wO/X9/i6s1H7ZSHGPgfsVh7jmAO+BBqQDEI9oHRn3vjeWh7LWBdrhJpn4YDZTgbDpTXYYx9USx1S/ZG4LF9iXm3r50MBwrzbl8fLHXtdwTwKPDaJafzbl9/czSYoD1fPSCchvZVrGpj8dnT4rwCXCKklQLA0ddv+Pv9ZkeEbc/vBoSHPE9EAZIICflkjF/vP+inCzb5dZahp7Z54kzCdblKKCek6rDJ88lYJLZz6jrLjKczAgT7AhFzJ5R6P4kmYgDoKRXXCdO0qc976SCS7F1iekoZW+CNAJ2Q0mUjG90Z76Ec4FEgPOR5Uuss2AcklCKz951QXX0S//tASbl4+plQLwgmYev8YgNs73w87JyUTkUeXr4lUgMiBCNAqomcsjgb3emELIqlJqfxfDLWc6mkJf9BAXyiXcOAeSeQxl3E0QI4qHToWXVcwj9ITKyjUlrcOwAAAABJRU5ErkJggg==",
+  ziro_d1: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAiCAYAAAA+stv/AAACgklEQVR4nK1Wu2obQRQ9a0xiBF6MWBSDyRSuVAiXrg3SB6RymzaYlPkMl0Ef4DKocCVSyKBaqBIuVBsUEjMYIcOiykrh3Mmd0Z3HenVgWWb3Ps7c1wwQwEHjaBP6n4qQnb06ynWdBwmQYp436/g3+j4i0QiElHehFySQ502oyRh53jTGDhpHm9hDclzfh/0U5qvVk/memJIN1+N21+Uy49+shUugM5/hvn2G45O26KV8fgyyIAJkBwAqEfA5fisRicBWDVR1DgCNw1bwP0+bm96kLtgFfLUjEqiye0IsCj4SVhf4qvz3Yl6JHM+5a+/f2nSD2Iau8858ZtahriDnrnyodU0K+O6pqrnzz+++AHhtKR4RQvn8aDnn8u484IPNW4TcyajVsoy6/wE77JK8S4IQ7ILOfIabjz/x6/0Nuh8+GaM8xMD/iKXKc0RrIITYAEpBdA7c/bm13ruWNwTW5TKT8jQaasvYaKiDBlPkV6snM5KDEbhvn2HRGxgjo6HGojcwB0td+S0CPAq8d8noojcw3zwDJirPdw8Ip6F7Fas6WELytLkgAR8JaacAsPf1G16+X2+RcOX53YAwVSoTCUgkJKjJGA/nF+btg+v8qijQ16914i3CdbnMqCak7nCdq8lYdOzW1FVRWG9vBAjuBSLlTijNfiJNjgGgr3XaJMzzpjnvpYNIkveR6WttpSAYATohpctGcffDWsdqgEeBMFUqq3UWvAVElCJTiQDfte5emrXuXibpJ88Bjtbx6YYPF54/uh3RqcjDy1MiOSZET0NeRG4LcRlyTv/UZGzakFpash8lwBVp5/QG7DuBRNDnOJkAGZkqlXHnD+cXWzNBIhjDX4YyrvW64qtgAAAAAElFTkSuQmCC",
+  ziro_d2: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAiCAYAAAA+stv/AAACh0lEQVR4nK1WPWsbQRB9Z0JiBDmMOBSDyRapVAiXqQPSD0jlNm0wKfMzXAb9AJdGRSqRQgLVQpVwoTqgkJjFCBkOVVYKZTazq9mP0+mBOE43M+/t7MzsAgGcNs62oe+pCMU5qeNclzwogBzzvFmH3/j7hEQzEHI+hl9QQJ43oaYT5HnTBDttnG1jP7Lj/j68SFG+Xj+a/xO3ZMv9eNxNucr4f9aLK6CzmOO+fYnzi7bIUj49BFWQAIoDAJUE+IgPFSIJ2KuBquQA0HjdCn7n2+Zub1IXHAO+2hEFVFk9IZYFnwirC3xV/nu5qCSO77kb79+76QaxDV3yzmJu3kNdQeSufah1zRbw1VNVc/JPLz8D2LUUzwihfHqwyLm9Ow/4YPMWIScZtVpWUPc7YKddsndFEIJd0FnMcfv2B369ukX3zUcTlKcY+J+xVHuOaA2EEBtAKYjOgfGf79bz2PZGwKZcZdI+jYbaCjYa6mDAFPv1+tGM5GAG7tuXWPYGJshoqLHsDczBUtd+TwDPAu9dCrrsDcx/ngETteerB4TT0L2KVR0sIXtaXFCAT4S0UgA4+fIVz99u9kS49vxuQJgplYkCJBES1HSCn+8/mKcPLvl1UaCvd3XiLcJNucqoJqTucMnVdCISuzV1XRTW05sBgnuBSLkTSrOfRBMxAPS1TpuEed405710EEn2PjF9ra0tCGaATkjpslGM76z3WA3wLBBmSmW1zoJDQEIpMwcL0N0rkwXdvQJgr07KSPIc4Gidv9sCuzsfTzuRAvbFhe8vDSGJmBA9DamViJyquBjf7RWk22LkTy0txY8K4I4SAb8T0Mrp6fofJIBDIgB2bUd7Tt9mSnlXzfEX9tys8/b6pTwAAAAASUVORK5CYII=",
+  ziro_s0: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAcCAYAAAAAwr0iAAACDUlEQVR4nLVWv0vDQBT+Ih1CwBBK0IKQwUEySCfp0Kng4OrfUVz9K7pK/wgnJ0Gw0MmhOEmH4tChUKgSQokQusWl77zcvcuPEj8ISV7u7n337n3vBWBgO17G2f8DR6YPJhJNk9MIkAPXbTfppzoBQjCbaru1HS9z3XajUWhxRtq967axS7ea/RBcrVaC9HsQWPTMRiCYTcWddivvui4Rcj70fY1MjgCFWAaFXLXXPQZyTneCdgRJEmMedrUFkiSu468UtuNlu3RrFeYAByKyS7eWcRCDcRRh6PsYR1HOnluEQu0cnwhb+vPNkqhLQD73VW8g1hCLcM6bJiHnEs3PJSE536wX2KwXmr0pyORbKrPNeoHRsg8AuD9/Q+csZBfZj9eUYIoKpyRAkSE5vz69BQCMlv1cJExE5Mt2vIyuwokcAcLk66nK3EJCQLVaIQhQ9ePAJWFVIhQNk7QFgVVvAAB4ff7TqfxsQlmCqo5V9WgyTJIYNw8XAICXu09jUUqSOJegRVGSq6iapBoBeUJZRVQVUkaCU4goxfuPmZxEdZwfCk0FZU2n6aaUI0AhMjkhO7f7qjmgQuuG0jlpGjaFvYpMTRWytJnYjpddLj4AAPOwi85ZCH/yKN7lfKFaMg+7kOcUNS3jT6mJ+SFFqQilBFQ0nYTsH1ERSK5NEar0QyE3lV26tdR3bpyMohz4BQCcDkinn44/AAAAAElFTkSuQmCC",
+  ziro_s1: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAcCAYAAAAAwr0iAAACFElEQVR4nLVWPUvDQBh+Kh1CwBBKUEHo4CAZSifp0Kng4OrvKK7+iq7SH+HkJAgKnRyKU8kQHDoEClVCKBFKt7j0PS937+WjxAdCwnu5e5977v04gIFluxln/w8cmQZMJJompxEgB47TadJPdQKE7nym7day3cxxOo2q0OaMtHvH6WC33Wj2Q3AVRYL0R7fbom9Wge58Jt60W3nXdYmQ87HnaWRyBEhiGSS5aq97DOSc3gTtCNI0QeD3tQXSNKnjrxSW7Wa77aZVGAMciMhuu2kZf2IwjWOMPQ/TOM7Zc4uQ1PbxibBtf75ZEnUJyOceDUZiDbEI57xpEnIs0fxcEJLz9SrEehVq9qYgk2+rzNarEJPlEABwf/GOs3OfXWT/v5YJJlW4TAKUNCTn16e3AIDJcphTwkREfizbzegpnMgRILx9PVWZW0gIqFYrBAGqfhy4IKxKhNQwpbYgEA1GAIDX5788lb9NKAtQ1bGaPVoapmmCm4dLAMDL3aexKKVpkgvQIpXkKqoGqUZAnlBWEdUMKSPBZYgoxfvBTA6iOs4PhZYFZU2n6aaUI0ASmZyQndt91RhQoXVD6Zy0HDbJXiVNTRWytJlYtpv1wgUAIPD7ORLe26Ow98IFAr8v4ofqSuD3C5sWex9gmAs1DilKRTDeik2oEqR1ArVUARWqIoZxFP0jo9KFQm4q8nlyzYbGTXNU/ALD1BX5vQlOEwAAAABJRU5ErkJggg==",
+  murk: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAPCAYAAADkmO9VAAAAiElEQVR4nGNkwAGkRDT+YxN/9uYGIy49DAwMDBiSuAwi1mAmcgzDp5aJkAJSDWXCppASQ5lw2UQuwOrCgqgdDAVRO3BqwiePYSA+g4hRi2HghGUeKDQ2gE8NIwMD5WGInCaZ0AUoBVgjBZ8FhCxnQleITmMzDFkOpwW4wlFKROM/Pjl8rqUKAACKQEBxbnMG2gAAAABJRU5ErkJggg==",
+  shard: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAANCAYAAACZ3F9/AAAAqElEQVR4nI3SrRXCMBAH8P/lIU5GRfGiGaAjIJkBwQxMxAzIjtAB0HmoqshzhyE0tPnoqeQuv3wDlYgiGkW0Vq+iUjuPQwlZZhpCUACwzJRy+TjTQgAwhKAJF2EJtbDpoRqmPSiPyXuKImrSLJP3tBdZZjLAcnM9mN8urQvneQYAvB/PX/54vWB0DvmT/D2HZabRuc1KawQUPkDa9unbf91vG9Q9T+vcH1S5fC3ziR/DAAAAAElFTkSuQmCC",
+};
+if (typeof module !== 'undefined') module.exports = ASSETS;
+
+</script>
+<script>
+/* ===== core.js ===== */
+// core.js — 『잊혀진 발자국』(지로 Ziro) 순수 규칙 로직 모듈
+// DOM/Canvas 사용 금지. 순수 함수만. (10_build_plan §2-1, 03_systems_enemies v2.0)
+// 전역 `Core` + Node export 둘 다 지원.
+'use strict';
+
+// ---- 상수 (10_build_plan §2-1) ----
+const C = {
+  MEM_MAX: 10,
+  LIGHT_MAX: 6,
+  START_MEM: 4,
+  START_LIGHT: 2,
+  CONTACT: -2,
+  CORE_GAIN: +2,
+  ECHO_GAIN: +1,
+  FALSE_HIT: -2,
+  HINT_COST: 1,
+  REST_PER_S: 1.0,
+  DECAY_PER_S: 0.2,
+  IFRAME_S: 1.2,
+  PLAYER_SPEED: 64,   // px/s (16px 타일 * 4 스케일 기준 보정)
+  STEALTH_SPEED: 38,  // px/s
+  SETBACK_MEM: 3,
+  // 코어 동사 (v2 증분)
+  PROJECT_COST: 0.8,  // 기억 비추기: 초당 빛 소모
+  PROJECT_LEN: 46,    // 투사 콘 길이(px)
+  PROJECT_HALFDEG: 32,// 투사 콘 반각(도)
+  TRAIL_CD: 6.0,      // 발자국 추적 쿨다운(s)
+  TRAIL_LIFE: 3.0,    // 발자국 잔존(s)
+};
+
+// ---- 헬퍼 ----
+function clamp(v, lo, hi) {
+  if (v < lo) return lo;
+  if (v > hi) return hi;
+  return v;
+}
+
+// 각도를 -π..π 범위로 정규화
+function normAngle(a) {
+  const TWO_PI = Math.PI * 2;
+  // ((a + π) mod 2π) - π  (음수 mod 보정 포함)
+  let r = (a + Math.PI) % TWO_PI;
+  if (r < 0) r += TWO_PI;
+  return r - Math.PI;
+}
+
+// ---- 상태 생성 (§2-1 / §2-2 스키마 입력) ----
+function newState(data) {
+  data = data || {};
+  return {
+    mem: C.START_MEM,
+    light: C.START_LIGHT,
+    iframe: 0,
+    coresNeeded: data.coresNeeded,
+    collected: new Set(),   // 수집한 조각 id
+    coreOrder: [],          // 코어 획득 순서 (후퇴 봉인용)
+    sealed: new Set(),      // 임시 봉인된 코어 id
+    identity: 0,            // 0..5 정체성 해금 단계
+    _coreSlots: {},         // (내부) 코어 id -> identitySlot, 정체성 재계산용
+  };
+}
+
+// ---- 조각 수집 ----
+function collect(state, shard) {
+  if (state.collected.has(shard.id)) {
+    return { ok: false };
+  }
+  let gainMem = 0;
+  let gainLight = 0;
+  const type = shard.type;
+
+  if (type === 'core') {
+    gainMem = C.CORE_GAIN;
+    gainLight = 1;
+    state.identity = Math.max(state.identity, shard.identitySlot + 1);
+    state.coreOrder.push(shard.id);
+    if (state._coreSlots) state._coreSlots[shard.id] = shard.identitySlot;
+  } else if (type === 'echo') {
+    gainMem = C.ECHO_GAIN;
+    gainLight = 1;
+  } else if (type === 'false') {
+    gainMem = C.FALSE_HIT;
+    gainLight = 0;
+  }
+
+  state.mem = clamp(state.mem + gainMem, 0, C.MEM_MAX);
+  state.light = clamp(state.light + gainLight, 0, C.LIGHT_MAX);
+  state.collected.add(shard.id);
+
+  return {
+    ok: true,
+    type,
+    recallText: shard.recall,
+    gainMem,
+    gainLight,
+    identitySlot: shard.identitySlot,
+  };
+}
+
+// ---- 적 접촉 ----
+function contact(state) {
+  if (state.iframe > 0) return false; // 무적 프레임 중 = 무피해
+  state.mem = clamp(state.mem + C.CONTACT, 0, C.MEM_MAX);
+  state.iframe = C.IFRAME_S;
+  return true;
+}
+
+// ---- 시간 진행: 회복/감소/iframe 감소 ----
+function tick(state, dt, ctx) {
+  ctx = ctx || {};
+  state.iframe = Math.max(0, state.iframe - dt);
+  if (ctx.inSafe) {
+    state.mem = Math.min(C.MEM_MAX, state.mem + C.REST_PER_S * dt);
+  } else if (ctx.inDanger) {
+    state.mem = Math.max(0, state.mem - C.DECAY_PER_S * dt);
+  }
+}
+
+// ---- 힌트(직감) 사용: 빛 자원 소모 ----
+function useHint(state) {
+  if (state.light >= C.HINT_COST) {
+    state.light -= C.HINT_COST;
+    return { ok: true };
+  }
+  return { ok: false };
+}
+
+// ---- 후퇴(Setback): mem<=0 → 최근 코어 1개 임시봉인 + 안전지대 복귀 신호 ----
+function setbackIfDead(state) {
+  if (state.mem > 0) return false;
+
+  // 가장 최근 획득한 코어를 봉인
+  const lastCoreId = state.coreOrder.pop();
+  if (lastCoreId !== undefined) {
+    state.sealed.add(lastCoreId);
+    state.collected.delete(lastCoreId);
+  }
+
+  // 남은 코어 기준으로 정체성 재계산
+  state.identity = recomputeIdentity(state);
+
+  state.mem = C.SETBACK_MEM;
+  return true;
+}
+
+// 봉인 처리 후 남은 코어 슬롯으로 정체성 재계산 (없으면 0)
+function recomputeIdentity(state) {
+  let maxSlot = -1;
+  const coreSlots = state._coreSlots || {};
+  for (const id of state.coreOrder) {
+    const slot = coreSlots[id];
+    if (typeof slot === 'number' && slot > maxSlot) maxSlot = slot;
+  }
+  return maxSlot < 0 ? 0 : maxSlot + 1;
+}
+
+// ---- Murk 시야 감지 (거리 + 각도. LoS는 호출측 보강) ----
+function murkSees(murk, px, py) {
+  const dx = px - murk.x;
+  const dy = py - murk.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist > murk.sight) return false;
+  if (dist === 0) return true; // 동일 위치는 항상 감지
+  const toPlayer = Math.atan2(dy, dx);
+  const diff = Math.abs(normAngle(toPlayer - murk.faceAngle));
+  const halfFov = (murk.fov * Math.PI / 180) / 2;
+  return diff <= halfFov;
+}
+
+// ---- 정체성 상태 ----
+function identityState(state) {
+  const portraits = ['q', 'silhouette', 'eyes', 'face', 'name'];
+  const unlocked = state.identity;
+  const portrait = portraits[Math.min(unlocked, 4)];
+  return { unlocked, portrait, label: portrait };
+}
+
+// ---- 챕터 클리어: 보유 코어 수 >= 필요 수 (봉인된 건 제외) ----
+function chapterClear(state) {
+  return state.coreOrder.length >= state.coresNeeded;
+}
+
+// 투사 콘 판정(순수): (ox,oy)에서 faceAngle 방향 len·halfDeg 콘 안에 (px,py)가 드는가
+function inCone(ox, oy, faceAngle, len, halfDeg, px, py) {
+  const dx = px - ox, dy = py - oy;
+  const dist = Math.hypot(dx, dy);
+  if (dist > len) return false;
+  if (dist < 0.0001) return true;
+  const a = normAngle(Math.atan2(dy, dx) - faceAngle);
+  return Math.abs(a) <= halfDeg * Math.PI / 180;
+}
+
+const Core = {
+  C,
+  clamp,
+  normAngle,
+  inCone,
+  newState,
+  collect,
+  contact,
+  tick,
+  useHint,
+  setbackIfDead,
+  murkSees,
+  identityState,
+  chapterClear,
+};
+
+if (typeof window !== 'undefined') window.Core = Core;
+if (typeof module !== 'undefined') module.exports = Core;
+
+</script>
+<script>
+/* ===== data.js ===== */
+// =============================================================================
+// data.js — 『잊혀진 발자국』 챕터1 「지로의 방」 콘텐츠 데이터 모듈
+// -----------------------------------------------------------------------------
+// 규약: 10_build_plan.md §2-2 (DATA 스키마)
+// 서사: 01_story_script.md §2 (챕터1 코어 회상) — 단, 최종 이름은 '지로(Ziro)'.
+//   주인공: 지로(Ziro) / 주인: 하루
+//
+// 좌표계 (배경 'room1'과 정렬):
+//   방 22(cols)×14(rows) 타일, 타일 16px, scale 4.
+//   collision/safeZone/door/shard/murk 좌표는 모두 [col, row] (타일 단위, 0-base).
+//   사각형 표기 [c, r, w, h] 는 cols [c..c+w-1], rows [r..r+h-1] 를 점유.
+//
+// 고정 가구 배치 (collision과 1:1):
+//   벽 테두리:  상단 rows0~1 / 하단 row13 / 좌 col0 / 우 col21
+//   침대:        (2,8,4,4)   = cols 2~5,  rows 8~11
+//   책상+모니터: (15,3,5,2)  = cols 15~19, rows 3~4
+//   게임기:      (9,3,2,2)   = cols 9~10,  rows 3~4
+//   옷장:        (17,9,3,3)  = cols 17~19, rows 9~11
+//   러그(장식,비충돌): cols 8~11, rows 7~9
+// =============================================================================
+
+const DATA = {};
+
+DATA.chapter1 = {
+  tile: 16,
+  cols: 22,
+  rows: 14,
+  scale: 4,
+  bgKey: 'room1',
+
+  // 스폰: 러그 위(floor). [10,9] 는 러그 영역(cols8~11,rows7~9) 안 + 충돌 밖. (검산: FREE)
+  spawn: [10, 9],
+
+  coresNeeded: 3,
+
+  // 막힌 사각형 [c,r,w,h] — 벽 테두리 4개 + 가구 4개.
+  collision: [
+    [0, 0, 22, 2],   // 상단 벽 (rows 0~1 전체)
+    [0, 13, 22, 1],  // 하단 벽 (row 13 전체)
+    [0, 0, 1, 14],   // 좌측 벽 (col 0 전체)
+    [21, 0, 1, 14],  // 우측 벽 (col 21 전체)
+    [2, 8, 4, 4],    // 침대        cols 2~5,  rows 8~11
+    [15, 3, 5, 2],   // 책상+모니터 cols 15~19, rows 3~4
+    [9, 3, 2, 2],    // 게임기      cols 9~10,  rows 3~4
+    [17, 9, 3, 3]    // 옷장        cols 17~19, rows 9~11
+  ],
+
+  // 안전지대(회복) — 침대 앞 floor. [2,12,4,1] = cols 2~5, row 12. (검산: 4칸 모두 FREE)
+  safeZones: [
+    [2, 12, 4, 1]
+  ],
+
+  // 문: 상단 벽에 박힌 출구. [10,1] 은 의도적으로 상단 벽(collision) 안에 위치 —
+  // floor 타일이 아니라 '벽의 문'이며, coresNeeded 충족 시 개방되는 챕터 출구다.
+  door: { tile: [10, 1], requires: 'cores' },
+
+  // ---------------------------------------------------------------------------
+  // shards — 8개 (core×3 + echo×4 + false×1). 모두 floor 위, 충돌/가구와 비겹침.
+  //   ※ echo 중 hidden:true 2개는 '기억 비추기(빛)'로 비출 때만 보이는 조각(main.js 처리).
+  //
+  //   좌표 검산 (collision/가구 사각형 안에 들어가지 않음을 직접 확인):
+  //   가구 사각형(cols[c..c+w-1], rows[r..r+h-1]):
+  //     상단벽 rows0~1 / 하단벽 row13 / 좌벽 col0 / 우벽 col21
+  //     침대 cols2~5,rows8~11 · 책상 cols15~19,rows3~4 · 게임기 cols9~10,rows3~4 · 옷장 cols17~19,rows9~11
+  //   ┌──────────────────────────┬─────────┬──────────────────────────────────────────────┐
+  //   │ shard                     │ tile    │ 판정                                           │
+  //   ├──────────────────────────┼─────────┼──────────────────────────────────────────────┤
+  //   │ core 이름표 목걸이        │ [9,5]   │ FREE — 게임기(9~10,3~4) 바로 아래 (row5∉3~4)   │
+  //   │ core 빛바랜 사진          │ [16,5]  │ FREE — 책상(15~19,3~4) 바로 아래 (row5∉3~4)    │
+  //   │ core 일기장 한 페이지     │ [4,6]   │ FREE — 침대(2~5,8~11) 위쪽 (row6∉8~11)         │
+  //   │ echo 창틀 발톱 자국       │ [20,12] │ FREE — 옷장(17~19,9~11) 피해 우하단 (col20∉우벽)│
+  //   │ echo 창틀 발톱(hidden)    │ [20,2]  │ FREE — col20(∉우벽21,∉책상≤19) · row2(∉상단벽0~1)│
+  //   │ echo 게임기 발자국 스티커 │ [10,5]  │ FREE — 게임기(9~10,3~4) 아래 (row5∉3~4)        │
+  //   │ echo 장난감 쥐(hidden)    │ [6,12]  │ FREE — 침대(2~5,…) 옆(col6∉2~5)·row12(∉하단벽13)│
+  //   │ false 하루가 손 흔든다    │ [13,11] │ FREE — 방 중앙 하단, 충돌밖                     │
+  //   └──────────────────────────┴─────────┴──────────────────────────────────────────────┘
+  //   (전 좌표 어느 collision 사각형에도 포함되지 않음을 직접 검산 — 모두 FREE.)
+  //
+  //   gainMem/gainLight 는 core.js 의 상수(CORE_GAIN/ECHO_GAIN/FALSE_HIT 등)를 따른다.
+  //   main 통합 시 값이 없으면 core.js 상수를 사용하므로 여기서는 type 정확성이 핵심.
+  //   (echo 는 작은 회복을 의도하나 상수 우선 — gainMem:0 명시. false 는 줍는 순간
+  //    메모리 감소를 core.js 가 처리하므로 아래 gain 값은 형식상 둔다.)
+  // ---------------------------------------------------------------------------
+  shards: [
+    {
+      id: 'core_nametag',
+      type: 'core',
+      tile: [9, 5],            // 게임기 앞 floor (검산: FREE)
+      radius: 1.3,
+      identitySlot: 0,         // '종: 고양이'
+      recall: '따뜻한 손이 내 목에 무언가를 채워준다. 찰칵 — 작은 금속음. 글자는 흐려서 읽히지 않는다… 그래도, 이건 내 것이었다.',
+      gainMem: 2,
+      gainLight: 1
+    },
+    {
+      id: 'core_photo',
+      type: 'core',
+      tile: [16, 5],           // 책상 앞 floor (검산: FREE)
+      radius: 1.3,
+      identitySlot: 1,         // '사는 곳: 하루의 집'
+      recall: '창가에 앉은 나, 그리고 흐릿한 사람의 뒷모습. 쏟아지는 햇살. 여기는… 낯설지 않다. 내가 살던 곳이야.',
+      gainMem: 2,
+      gainLight: 1
+    },
+    {
+      id: 'core_diary',
+      type: 'core',
+      tile: [4, 6],            // 침대 위쪽 floor (검산: FREE)
+      radius: 1.3,
+      identitySlot: 3,         // '이름: ? (지로)'
+      recall: "사람의 손글씨: '오늘도 너는 창가에서 나를 기다렸지.' 이름이 적혀 있던 자리는 — 누군가 찢어낸 듯 비어 있다.",
+      gainMem: 2,
+      gainLight: 1
+    },
+    {
+      id: 'echo_clawmarks',
+      type: 'echo',
+      tile: [20, 12],          // 옷장 피한 우하단 floor (검산: FREE)
+      radius: 1.3,
+      identitySlot: null,
+      recall: '창틀에 깊게 팬 발톱 자국. 여기서 오래… 무언가를 기다렸던 것 같다.',
+      gainMem: 0,              // echo: 회복 작게 (실제 적용은 core.js 상수 우선)
+      gainLight: 1
+    },
+    {
+      id: 'echo_window',
+      type: 'echo',
+      tile: [20, 2],           // 우상단 창가 floor. col20(우벽21 밖, 책상≤19 밖)·row2(상단벽0~1 밖) (검산: FREE)
+      radius: 1.3,
+      hidden: true,            // 기억 비추기(빛)로 비출 때만 보이는 조각 (main.js 처리)
+      identitySlot: null,
+      recall: '창틀에 긁힌 발톱 자국. 여기서 오래… 밖을 봤던 것 같다. 누군가를 기다리며.',
+      gainMem: 0,              // echo: 회복 작게 (실제 적용은 core.js 상수 우선)
+      gainLight: 1
+    },
+    {
+      id: 'echo_console',
+      type: 'echo',
+      tile: [10, 5],           // 게임기(9~10,3~4) 아래 floor. row5∉3~4 (검산: FREE)
+      radius: 1.2,
+      identitySlot: null,
+      recall: '게임기 옆 작은 발자국 스티커. 하루가 붙여준 거였나.',
+      gainMem: 0,              // echo: 회복 작게 (실제 적용은 core.js 상수 우선)
+      gainLight: 1
+    },
+    {
+      id: 'echo_bed',
+      type: 'echo',
+      tile: [6, 12],           // 침대 앞 floor. 침대(2~5,8~11) 옆 col6∉2~5 · row12∉하단벽13 (검산: FREE)
+      radius: 1.2,
+      hidden: true,            // 기억 비추기(빛)로 비출 때만 보이는 조각 (main.js 처리)
+      identitySlot: null,
+      recall: '침대 밑, 빛바랜 장난감 쥐. 한참을 같이 굴렸던 감각만 남아 있다.',
+      gainMem: 0,              // echo: 회복 작게 (실제 적용은 core.js 상수 우선)
+      gainLight: 1
+    },
+    {
+      id: 'false_hana_waves',
+      type: 'false',
+      tile: [13, 11],          // 방 중앙 하단 floor (검산: FREE)
+      radius: 1.3,
+      identitySlot: null,
+      recall: '하루가 웃으며 손을 흔든다 — 그런데 배경의 꽃은 이미 시들어 있다. 이건… 진짜가 아니야.',
+      gainMem: -2,            // false: 줍는 순간 메모리 감소(core.js FALSE_HIT 처리, 형식상 표기)
+      gainLight: 0
+    }
+  ],
+
+  // ---------------------------------------------------------------------------
+  // murks — 1체. 우측 영역을 순환.
+  //   단위: speed = px/s, sightTiles = 타일, fovDeg = 도(°).
+  //
+  //   patrol 검산: 사각 순환 [13,6]→[19,6]→[19,8]→[13,8] (cols 13~19, rows 6~8).
+  //     - 모든 waypoint FREE.
+  //     - 모든 직선 leg 가 collision 비겹침 (침대 2~5/8~11, 옷장 17~19/9~11 모두 회피).
+  //   ※ 주의: 하단 변을 row 8 로 유지(옷장 rows 9~11 위)하여 옷장 관통을 차단.
+  //     row 10 까지 내리면 [17~19,10] 구간이 옷장과 겹치므로 사용하지 않는다.
+  // ---------------------------------------------------------------------------
+  murks: [
+    {
+      id: 'murk_a',
+      patrol: [[13, 6], [19, 6], [19, 8], [13, 8]],
+      speed: 38,               // px/s
+      sightTiles: 3.3,         // 타일
+      fovDeg: 90
+    }
+  ],
+
+  // 정체성 카드 라벨 (slot 0..4) — '?'에서 또렷해지는 진행. 이름은 최종 보상으로 예고.
+  identityLabels: [
+    '종: 고양이',
+    '사는 곳: 하루의 집',
+    '주인: 하루',
+    '이름: ? (지로)',
+    '왜 잊었나'
+  ]
+};
+
+if (typeof window !== 'undefined') window.DATA = DATA;
+if (typeof module !== 'undefined') module.exports = DATA;
+
+</script>
+<script>
+/* ===== audio.js ===== */
+// audio.js — 『잊혀진 발자국』(지로 Ziro) WebAudio 합성 사운드 모듈
+// 외부 음원 파일 0 — 전부 오실레이터/노이즈 합성. (10_build_plan §2-4)
+// 미스터리·서스펜스, 잔잔한 톤. 브라우저 자동재생 정책 대응(첫 제스처 후 resume).
+//
+// 안전 규약:
+//  - window/AudioContext 참조는 함수 내부에서만. 모듈 로드 시 즉시 실행 금지.
+//  - AudioContext 미지원/예외 시 무음으로 안전 폴백(throw 금지).
+//  - ambient/drone/heartbeat는 토글 시 이전 노드/타이머를 반드시 정리(중복 생성 방지·누수 방지).
+'use strict';
+
+// ---- 볼륨 상수 (과하지 않게) ----
+const MASTER_VOL = 0.3;    // 마스터 기본 게인
+const AMBIENT_VOL = 0.05;  // 앰비언트 패드(아주 작게)
+
+// ---- 모듈 내부 상태 (싱글톤) ----
+// 모든 라이브 노드/타이머 핸들을 여기 모아 정리 누수를 방지한다.
+const S = {
+  ctx: null,          // AudioContext
+  master: null,       // 마스터 GainNode
+  muted: false,
+  ambientNodes: null, // { oscs:[], gain, filter, lfo? }
+  droneNodes: null,   // { osc, sub, noise, gain, filter }
+  droneLevel: 0,
+  heart: { timer: null, bpm: 0 }, // setTimeout 핸들 + 현재 bpm
+};
+
+// ---------------------------------------------------------------------------
+// 내부 헬퍼 — 전부 폴백 안전(throw 금지)
+// ---------------------------------------------------------------------------
+
+// AudioContext 생성자 조회 (브라우저에서만 존재). 없으면 null.
+function getCtor() {
+  if (typeof window === 'undefined') return null;
+  return window.AudioContext || window.webkitAudioContext || null;
+}
+
+// 컨텍스트가 살아있고 사용 가능한지.
+function ready() {
+  return !!(S.ctx && S.master && S.ctx.state !== 'closed');
+}
+
+// 현재 시각(초). 컨텍스트 없으면 0.
+function now() {
+  return S.ctx ? S.ctx.currentTime : 0;
+}
+
+// 음소거 반영한 마스터 목표 게인.
+function masterTarget() {
+  return S.muted ? 0 : MASTER_VOL;
+}
+
+// 화이트노이즈 1초 버퍼 생성(짧은 SFX/드론 거칠기용). 실패 시 null.
+function makeNoiseBuffer() {
+  if (!S.ctx) return null;
+  try {
+    const len = Math.floor(S.ctx.sampleRate); // 1초
+    const buf = S.ctx.createBuffer(1, len, S.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    return buf;
+  } catch (e) {
+    return null;
+  }
+}
+
+// 게인 노드를 t0~t1에 걸쳐 부드럽게 변경(클릭 방지). 안전 가드 포함.
+function ramp(param, value, t0, dur) {
+  try {
+    param.cancelScheduledValues(t0);
+    param.setValueAtTime(param.value, t0);
+    param.linearRampToValueAtTime(value, t0 + dur);
+  } catch (e) { /* no-op */ }
+}
+
+// 노드 배열/단일 노드를 안전하게 정지·해제.
+function stopNode(node, at) {
+  if (!node) return;
+  try {
+    if (typeof node.stop === 'function') node.stop(at);
+  } catch (e) { /* 이미 정지됨 등 */ }
+  try {
+    node.disconnect();
+  } catch (e) { /* no-op */ }
+}
+
+// 여러 노드를 한 번에 정지.
+function stopAll(nodes, at) {
+  if (!nodes) return;
+  for (let i = 0; i < nodes.length; i++) stopNode(nodes[i], at);
+}
+
+// ---------------------------------------------------------------------------
+// 공개 API
+// ---------------------------------------------------------------------------
+
+// AudioContext 생성(있으면 재사용). 사용자 제스처 핸들러에서 호출 → resume().
+function init() {
+  try {
+    if (!S.ctx) {
+      const Ctor = getCtor();
+      if (!Ctor) return; // 미지원 → 무음 폴백
+      S.ctx = new Ctor();
+      S.master = S.ctx.createGain();
+      S.master.gain.value = masterTarget();
+      S.master.connect(S.ctx.destination);
+    }
+    // 자동재생 정책: 제스처 컨텍스트에서 resume.
+    if (S.ctx.state === 'suspended' && typeof S.ctx.resume === 'function') {
+      S.ctx.resume().catch(function () { /* 무시 */ });
+    }
+  } catch (e) {
+    // 생성 실패 → 전체 무음 폴백
+    S.ctx = null;
+    S.master = null;
+  }
+}
+
+// 마스터 게인 0/기본 토글.
+function setMuted(flag) {
+  S.muted = !!flag;
+  if (!ready()) return;
+  ramp(S.master.gain, masterTarget(), now(), 0.05);
+}
+
+function toggleMute() {
+  setMuted(!S.muted);
+  return S.muted;
+}
+
+// 잔잔한 패드: 저음 사인/삼각 디튠 2~3개 + 로우패스. 루프 대신 지속 오실레이터.
+function ambient(on) {
+  if (!ready()) return;
+
+  // 항상 이전 것 먼저 정지(중복 생성 방지).
+  if (S.ambientNodes) {
+    const a = S.ambientNodes;
+    const t = now();
+    ramp(a.gain.gain, 0, t, 0.6);            // 부드럽게 페이드아웃
+    stopAll(a.oscs, t + 0.7);
+    stopNode(a.lfo, t + 0.7);
+    stopNode(a.filter, t + 0.7);
+    stopNode(a.gain, t + 0.7);
+    S.ambientNodes = null;
+  }
+  if (!on) return;
+
+  try {
+    const t = now();
+    const gain = S.ctx.createGain();
+    gain.gain.value = 0;
+    const filter = S.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 520;            // 따뜻하고 어두운 패드
+    filter.Q.value = 0.6;
+
+    // 저음역 디튠 보이싱(루트/5도/옥타브 살짝 어긋나게).
+    const voices = [
+      { f: 110.0, type: 'sine',     det: -4 }, // A2
+      { f: 164.8, type: 'triangle', det: +5 }, // E3 (5도)
+      { f: 220.0, type: 'sine',     det: -2 }, // A3 (옥타브)
+    ];
+    const oscs = [];
+    for (let i = 0; i < voices.length; i++) {
+      const v = voices[i];
+      const o = S.ctx.createOscillator();
+      o.type = v.type;
+      o.frequency.value = v.f;
+      try { o.detune.value = v.det; } catch (e) { /* 일부 환경 */ }
+      o.connect(filter);
+      o.start(t);
+      oscs.push(o);
+    }
+
+    // 아주 느린 LFO로 필터 컷오프를 미세하게 흔들어 '숨쉬는' 느낌(서스펜스).
+    let lfo = null;
+    try {
+      lfo = S.ctx.createOscillator();
+      lfo.type = 'sine';
+      lfo.frequency.value = 0.07;            // ~14초 주기
+      const lfoGain = S.ctx.createGain();
+      lfoGain.gain.value = 90;               // ±90Hz 흔들림
+      lfo.connect(lfoGain);
+      lfoGain.connect(filter.frequency);
+      lfo.start(t);
+      // lfoGain은 lfo와 운명을 같이하므로 별도 추적 불필요(disconnect는 filter 해제 시 정리됨).
+    } catch (e) {
+      lfo = null;
+    }
+
+    filter.connect(gain);
+    gain.connect(S.master);
+    ramp(gain.gain, AMBIENT_VOL, t, 2.0);    // 천천히 페이드인
+
+    S.ambientNodes = { oscs: oscs, gain: gain, filter: filter, lfo: lfo };
+  } catch (e) {
+    S.ambientNodes = null;
+  }
+}
+
+// 기억 조각 획득: 맑은 종소리(사인 아르페지오 + 짧은 감쇠 엔벨로프).
+function chime() {
+  if (!ready()) return;
+  try {
+    const t = now();
+    // A장조 계열 맑은 3음 아르페지오 (A5, C#6, E6).
+    const notes = [880.0, 1108.7, 1318.5];
+    const step = 0.10;     // 음 간격
+    for (let i = 0; i < notes.length; i++) {
+      const start = t + i * step;
+      const o = S.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = notes[i];
+      const g = S.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(0.16, start + 0.01); // 빠른 어택
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.9); // 종처럼 길게 감쇠
+      o.connect(g);
+      g.connect(S.master);
+      o.start(start);
+      o.stop(start + 1.0); // 끝나면 자동 해제(누수 방지)
+    }
+  } catch (e) { /* 무음 폴백 */ }
+}
+
+// 적 근접/위험: level(0~1) 비례 저음 드론 볼륨/거칠기. 0이면 페이드아웃.
+function drone(level) {
+  if (!ready()) return;
+  let lv = (typeof level === 'number' && isFinite(level)) ? level : 0;
+  if (lv < 0) lv = 0;
+  if (lv > 1) lv = 1;
+  S.droneLevel = lv;
+
+  try {
+    const t = now();
+
+    // level<=0 → 페이드아웃 후 정지.
+    if (lv <= 0.0001) {
+      if (S.droneNodes) {
+        const d = S.droneNodes;
+        ramp(d.gain.gain, 0, t, 0.8);
+        stopNode(d.osc, t + 1.0);
+        stopNode(d.sub, t + 1.0);
+        stopNode(d.noise, t + 1.0);
+        stopNode(d.filter, t + 1.0);
+        stopNode(d.gain, t + 1.0);
+        S.droneNodes = null;
+      }
+      return;
+    }
+
+    // 아직 없으면 한 번만 생성(중복 생성 방지). 이후엔 파라미터만 갱신.
+    if (!S.droneNodes) {
+      const gain = S.ctx.createGain();
+      gain.gain.value = 0;
+
+      const filter = S.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 240;
+      filter.Q.value = 1.0;
+
+      const osc = S.ctx.createOscillator();
+      osc.type = 'sawtooth';        // 거친 배음
+      osc.frequency.value = 55;     // A1
+      const sub = S.ctx.createOscillator();
+      sub.type = 'sine';            // 묵직한 서브
+      sub.frequency.value = 27.5;   // A0
+      osc.connect(filter);
+      sub.connect(filter);
+
+      // 노이즈 한 줌으로 '거칠기' 부여(level로 양 조절).
+      let noise = null;
+      const noiseGain = S.ctx.createGain();
+      noiseGain.gain.value = 0;
+      const buf = makeNoiseBuffer();
+      if (buf) {
+        noise = S.ctx.createBufferSource();
+        noise.buffer = buf;
+        noise.loop = true;
+        const nf = S.ctx.createBiquadFilter();
+        nf.type = 'lowpass';
+        nf.frequency.value = 400;
+        noise.connect(nf);
+        nf.connect(noiseGain);
+        noiseGain.connect(gain);
+        noise.start(t);
+      }
+
+      filter.connect(gain);
+      gain.connect(S.master);
+      osc.start(t);
+      sub.start(t);
+
+      S.droneNodes = {
+        osc: osc, sub: sub, noise: noise,
+        filter: filter, gain: gain, noiseGain: noiseGain,
+      };
+    }
+
+    // level에 비례해 볼륨/거칠기/밝기 갱신(부드럽게).
+    const d = S.droneNodes;
+    ramp(d.gain.gain, 0.04 + 0.16 * lv, t, 0.4);     // 볼륨
+    if (d.noiseGain) ramp(d.noiseGain.gain, 0.06 * lv, t, 0.4); // 거칠기
+    ramp(d.filter.frequency, 180 + 260 * lv, t, 0.4); // 밝기(긴장↑)
+  } catch (e) {
+    S.droneNodes = null;
+  }
+}
+
+// 한 번의 'lub-dub' 펄스 2타를 즉시 스케줄(저음 사인 + 빠른 감쇠).
+function heartbeatPulse() {
+  if (!ready()) return;
+  try {
+    const t = now();
+    // lub(강) → dub(약), 약 0.16초 간격.
+    const beats = [
+      { at: 0.0,  freq: 55, peak: 0.22 },
+      { at: 0.16, freq: 48, peak: 0.15 },
+    ];
+    for (let i = 0; i < beats.length; i++) {
+      const b = beats[i];
+      const start = t + b.at;
+      const o = S.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(b.freq * 1.6, start);
+      o.frequency.exponentialRampToValueAtTime(b.freq, start + 0.06); // 살짝 떨어지는 '쿵'
+      const g = S.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(b.peak, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
+      o.connect(g);
+      g.connect(S.master);
+      o.start(start);
+      o.stop(start + 0.3); // 자동 해제
+    }
+  } catch (e) { /* 무음 폴백 */ }
+}
+
+// 저(低)기억 심장박동: bpm으로 'lub-dub'를 반복 스케줄. bpm=0이면 정지.
+function heartbeat(bpm) {
+  // 항상 이전 타이머 정리(중복/누수 방지).
+  if (S.heart.timer !== null) {
+    clearTimeout(S.heart.timer);
+    S.heart.timer = null;
+  }
+  const rate = (typeof bpm === 'number' && isFinite(bpm)) ? bpm : 0;
+  S.heart.bpm = rate;
+
+  if (rate <= 0) return;      // 정지
+  if (!ready()) return;       // 컨텍스트 없으면 무음(상태만 보관)
+
+  const periodMs = Math.max(250, 60000 / rate); // 과도한 빈도 방지(상한 240bpm)
+
+  const loop = function () {
+    // 정지/뮤트 후 잔여 콜백 안전 처리.
+    if (S.heart.bpm <= 0) { S.heart.timer = null; return; }
+    heartbeatPulse();
+    // bpm이 도중에 바뀌면 다음 주기에 반영.
+    const p = Math.max(250, 60000 / S.heart.bpm);
+    S.heart.timer = setTimeout(loop, p);
+  };
+
+  heartbeatPulse();                          // 즉시 첫 박동
+  S.heart.timer = setTimeout(loop, periodMs);
+}
+
+// 단발 효과음. name: 'contact' | 'setback' | 'step'.
+function sfx(name) {
+  if (!ready()) return;
+  try {
+    const t = now();
+
+    if (name === 'contact') {
+      // 피격: 짧은 노이즈 버스트 + 다운피치 톤.
+      const buf = makeNoiseBuffer();
+      if (buf) {
+        const n = S.ctx.createBufferSource();
+        n.buffer = buf;
+        const nf = S.ctx.createBiquadFilter();
+        nf.type = 'bandpass';
+        nf.frequency.setValueAtTime(900, t);
+        nf.frequency.exponentialRampToValueAtTime(200, t + 0.18); // 다운피치
+        const ng = S.ctx.createGain();
+        ng.gain.setValueAtTime(0.25, t);
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+        n.connect(nf); nf.connect(ng); ng.connect(S.master);
+        n.start(t);
+        n.stop(t + 0.22);
+      }
+      // 살짝 깔리는 톤으로 충격감 보강.
+      const o = S.ctx.createOscillator();
+      o.type = 'square';
+      o.frequency.setValueAtTime(220, t);
+      o.frequency.exponentialRampToValueAtTime(70, t + 0.18);
+      const g = S.ctx.createGain();
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+      o.connect(g); g.connect(S.master);
+      o.start(t); o.stop(t + 0.22);
+
+    } else if (name === 'setback') {
+      // 후퇴: 저음 역(reverse)스윕 느낌 — 낮은 데서 차오르다 뚝.
+      const o = S.ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(40, t);
+      o.frequency.exponentialRampToValueAtTime(180, t + 0.7); // 상승 스윕
+      const filter = S.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(160, t);
+      filter.frequency.exponentialRampToValueAtTime(900, t + 0.7);
+      const g = S.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.2, t + 0.6);  // 차오름(reverse swell)
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.78); // 급정지
+      o.connect(filter); filter.connect(g); g.connect(S.master);
+      o.start(t); o.stop(t + 0.85);
+
+    } else if (name === 'step') {
+      // 발소리: 아주 약한 클릭(짧은 노이즈 핑).
+      const buf = makeNoiseBuffer();
+      if (buf) {
+        const n = S.ctx.createBufferSource();
+        n.buffer = buf;
+        const nf = S.ctx.createBiquadFilter();
+        nf.type = 'lowpass';
+        nf.frequency.value = 1200;
+        const ng = S.ctx.createGain();
+        ng.gain.setValueAtTime(0.05, t);  // 아주 약하게
+        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+        n.connect(nf); nf.connect(ng); ng.connect(S.master);
+        n.start(t);
+        n.stop(t + 0.06);
+      }
+    }
+    // 알 수 없는 name → 무음(throw 금지).
+  } catch (e) { /* 무음 폴백 */ }
+}
+
+const Audio2 = {
+  init: init,
+  setMuted: setMuted,
+  toggleMute: toggleMute,
+  ambient: ambient,
+  chime: chime,
+  drone: drone,
+  heartbeat: heartbeat,
+  sfx: sfx,
+};
+
+if (typeof window !== 'undefined') window.Audio2 = Audio2;
+
+</script>
+<script>
+/* ===== journal.js ===== */
+// =============================================================================
+// journal.js — 『잊혀진 발자국』(지로 Ziro) 기억 일지 · 정체성 카드 오버레이 모듈
+// -----------------------------------------------------------------------------
+// 순수 그리기(렌더) 전용. 상태(st)·인자 절대 변경 금지(읽기 전용).
+// main.js 가 phase==='journal' 일 때 매 프레임 Journal.draw(...) 호출.
+// 호출 시점에 ctx.setTransform(1,0,0,1,0,0) 로 초기화돼 있음 →
+//   캔버스 픽셀 좌표(cv.width × cv.height, 예 1056×672) 기준으로 그린다.
+//
+// API: Journal.draw(ctx, cv, st, DATA, IMG)
+//   ctx  : CanvasRenderingContext2D (transform 초기화 상태)
+//   cv   : canvas (cv.width / cv.height 사용)
+//   st   : { mem, light, identity(0..5), coresNeeded, collected(Set),
+//            coreOrder(Array), sealed(Set) }   ← 읽기 전용
+//   DATA : DATA.chapter1 또는 챕터 형태 객체 ({ shards, identityLabels })
+//   IMG  : 로드된 이미지 맵 (IMG.ziro_d0 등)
+//
+// 디자인 시스템 색 토큰(00_design_review / mockups 준수):
+//   배경 dim rgba(4,7,11,.92) · 패널 #0a1014 · 라인 #1d3236
+//   시안 #34e2e2(중립) · 연두 #8ef548(해금/긍정) · 위험 #ff5a5a
+//   텍스트 #eafaff(주) / #8aa7a9(보조) / #5a7375(잠금)
+//   거짓(false) 단서 강조 #caa15a
+//   폰트 'Noto Sans KR',sans-serif
+// =============================================================================
+
+const Journal = (function () {
+  "use strict";
+
+  // ---- 색 토큰 ----------------------------------------------------------------
+  var COL = {
+    dim:      "rgba(4,7,11,.92)",
+    panel:    "#0a1014",
+    panelDk:  "#080c0f",   // 잠긴 칸(더 어두운 패널)
+    panelHi:  "#10262a",   // 해금 칸 배경(시안 톤)
+    line:     "#1d3236",
+    lineDk:   "#243036",   // 잠긴 칸 테두리
+    cyan:     "#34e2e2",   // 중립
+    cyanDk:   "#2a6e72",   // 해금 칸 테두리(시안 톤 다운)
+    lime:     "#8ef548",   // 해금/긍정
+    danger:   "#ff5a5a",
+    text:     "#eafaff",
+    textSub:  "#8aa7a9",
+    lock:     "#5a7375",   // 잠금 텍스트
+    lockIcon: "#3a5557",   // 자물쇠 형태
+    falseGold:"#caa15a",   // false 단서
+    falseTxt: "#e8c884",   // false 텍스트(밝게)
+    falsePnl: "#1a1408",   // false 패널
+    falseLn:  "#3a2a14",   // false 테두리
+    echo:     "#8aa7a9",   // echo 타입(보조 회색)
+    portBg:   "#0e0f13",   // 초상 셀 배경
+    portDk:   "#0a0d0f",   // 잠긴 초상 셀 배경
+  };
+  var FONT = "'Noto Sans KR',sans-serif";
+
+  // ---- 그리기 헬퍼 ------------------------------------------------------------
+  function rrect(ctx, x, y, w, h, r) {
+    if (r > w / 2) r = w / 2;
+    if (r > h / 2) r = h / 2;
+    if (r < 0) r = 0;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // 한 줄 말줄임(…) — maxw(px) 초과 시 잘라 '…' 부착. ctx.font 은 호출 전에 설정.
+  function ellipsize(ctx, text, maxw) {
+    text = (text == null ? "" : String(text));
+    if (ctx.measureText(text).width <= maxw) return text;
+    var ell = "…";
+    var ellW = ctx.measureText(ell).width;
+    if (maxw <= ellW) return ell;
+    var lo = 0, hi = text.length, best = "";
+    // 이진 탐색으로 들어가는 최대 글자 수 찾기
+    while (lo <= hi) {
+      var mid = (lo + hi) >> 1;
+      var cand = text.slice(0, mid);
+      if (ctx.measureText(cand).width + ellW <= maxw) { best = cand; lo = mid + 1; }
+      else hi = mid - 1;
+    }
+    return best.replace(/\s+$/, "") + ell;
+  }
+
+  // 자물쇠 아이콘(걸쇠 + 몸통). cx,cy = 자물쇠 몸통 중앙 근처, s = 크기 배수.
+  function lockIcon(ctx, cx, cy, s, color) {
+    s = s || 1;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 3 * s;
+    // 걸쇠(U자)
+    var shW = 10 * s;     // 걸쇠 폭
+    var shTop = cy - 9 * s;
+    ctx.beginPath();
+    ctx.moveTo(cx - shW / 2, cy - 1 * s);
+    ctx.lineTo(cx - shW / 2, shTop + shW / 2);
+    ctx.arc(cx, shTop + shW / 2, shW / 2, Math.PI, 0);
+    ctx.lineTo(cx + shW / 2, cy - 1 * s);
+    ctx.stroke();
+    // 몸통
+    var bw = 18 * s, bh = 14 * s;
+    rrect(ctx, cx - bw / 2, cy - 1 * s, bw, bh, 3 * s);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 체크(✓) 마크
+  function checkMark(ctx, x, y, size, color) {
+    ctx.save();
+    ctx.font = "bold " + size + "px " + FONT;
+    ctx.fillStyle = color;
+    ctx.textAlign = "right";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("✓", x, y);
+    ctx.restore();
+  }
+
+  // ---- 초상 진화 셀(원형) -----------------------------------------------------
+  // stage: 0=? 1=실루엣 2=눈 3=얼굴 4=이름.  active: 또렷 여부.
+  // nameReveal: 이름(stage 4)을 공개할지(정체성===5일 때만 true). 이름은 최종 보상.
+  function portraitCell(ctx, cx, cy, r, stage, active, IMG, nameReveal) {
+    ctx.save();
+
+    // 배경 원
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = active ? COL.portBg : COL.portDk;
+    ctx.fill();
+
+    // 테두리: 활성도에 따라 시안 → 라인
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = active ? (stage >= 3 ? COL.cyan : "#2a4a4e") : COL.line;
+    if (stage === 4) { ctx.setLineDash([4, 5]); }   // 이름 단계는 점선(미완)
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 비활성 셀은 클립 안에서 흐리게 그림
+    var fg = active ? 1 : 0.28;
+
+    // 셀 내부를 원으로 클립(그림이 원 밖으로 새지 않게)
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r - 2, 0, Math.PI * 2);
+    ctx.clip();
+
+    var silCol = active ? "#1a2228" : "#12181c";
+    var eyeCol = active ? COL.lime : "#3a4a30";
+
+    if (stage === 0) {
+      // ? 물음표
+      ctx.globalAlpha = fg;
+      ctx.fillStyle = active ? COL.cyan : COL.lock;
+      ctx.font = "bold " + Math.round(r * 0.95) + "px " + FONT;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("?", cx, cy + 1);
+    } else if (stage === 1) {
+      // 실루엣: 귀 두 개 + 머리 타원
+      ctx.globalAlpha = fg;
+      ctx.fillStyle = silCol;
+      // 귀
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 0.62, cy - r * 0.10);
+      ctx.lineTo(cx - r * 0.34, cy - r * 0.82);
+      ctx.lineTo(cx - r * 0.08, cy - r * 0.16);
+      ctx.closePath();
+      ctx.moveTo(cx + r * 0.62, cy - r * 0.10);
+      ctx.lineTo(cx + r * 0.34, cy - r * 0.82);
+      ctx.lineTo(cx + r * 0.08, cy - r * 0.16);
+      ctx.closePath();
+      ctx.fill();
+      // 머리
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + r * 0.12, r * 0.72, r * 0.64, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (stage === 2) {
+      // 눈 두 개(빛남)
+      ctx.globalAlpha = fg;
+      ctx.fillStyle = eyeCol;
+      ctx.beginPath();
+      ctx.ellipse(cx - r * 0.32, cy, r * 0.26, r * 0.33, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx + r * 0.32, cy, r * 0.26, r * 0.33, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (stage === 3) {
+      // 얼굴: 가능하면 IMG.ziro_d0 사용, 없으면 절차적 얼굴
+      var im = IMG && IMG.ziro_d0;
+      if (im && im.width) {
+        ctx.globalAlpha = fg;
+        var prevSmooth = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;   // 픽셀아트 또렷하게
+        // 원 안에 맞춰 비율 유지 스케일
+        var box = r * 1.7;
+        var scale = Math.min(box / im.width, box / im.height);
+        var dw = im.width * scale, dh = im.height * scale;
+        ctx.drawImage(im, Math.round(cx - dw / 2), Math.round(cy - dh / 2), Math.round(dw), Math.round(dh));
+        ctx.imageSmoothingEnabled = prevSmooth;
+      } else {
+        // 절차적 얼굴(귀 + 눈 + 입)
+        ctx.globalAlpha = fg;
+        ctx.fillStyle = "#0d0d10";
+        ctx.beginPath();
+        ctx.moveTo(cx - r * 0.72, cy - r * 0.18);
+        ctx.lineTo(cx - r * 0.38, cy - r * 0.92);
+        ctx.lineTo(cx - r * 0.08, cy - r * 0.22);
+        ctx.closePath();
+        ctx.moveTo(cx + r * 0.72, cy - r * 0.18);
+        ctx.lineTo(cx + r * 0.38, cy - r * 0.92);
+        ctx.lineTo(cx + r * 0.08, cy - r * 0.22);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = active ? COL.cyan : "#2a4a4e";
+        ctx.beginPath();
+        ctx.moveTo(cx - r * 0.62, cy - r * 0.30);
+        ctx.lineTo(cx - r * 0.40, cy - r * 0.78);
+        ctx.lineTo(cx - r * 0.20, cy - r * 0.30);
+        ctx.closePath();
+        ctx.moveTo(cx + r * 0.62, cy - r * 0.30);
+        ctx.lineTo(cx + r * 0.40, cy - r * 0.78);
+        ctx.lineTo(cx + r * 0.20, cy - r * 0.30);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = eyeCol;
+        ctx.beginPath();
+        ctx.ellipse(cx - r * 0.34, cy + r * 0.04, r * 0.30, r * 0.36, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx + r * 0.34, cy + r * 0.04, r * 0.30, r * 0.36, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = active ? COL.cyan : "#2a4a4e";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(cx - r * 0.17, cy + r * 0.5);
+        ctx.quadraticCurveTo(cx, cy + r * 0.66, cx + r * 0.17, cy + r * 0.5);
+        ctx.stroke();
+      }
+    } else if (stage === 4) {
+      // 이름 단계: 이름은 최종 보상 → 정체성===5(nameReveal)일 때만 'ZIRO' 공개.
+      // 그 전(active여도)에는 '?'로 가린다.
+      ctx.globalAlpha = fg;
+      ctx.fillStyle = nameReveal ? COL.lime : (active ? COL.cyan : COL.lock);
+      ctx.font = "bold " + Math.round(nameReveal ? r * 0.5 : r * 0.95) + "px " + FONT;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(nameReveal ? "ZIRO" : "?", cx, cy);
+    }
+
+    ctx.restore(); // 클립 해제
+    ctx.restore();
+  }
+
+  // ---- 메인 그리기 ------------------------------------------------------------
+  function draw(ctx, cv, st, DATA, IMG) {
+    if (!ctx || !cv) return;
+
+    // --- 인자 정규화(읽기 전용 복사 없이 안전 참조) -------------------------
+    st = st || {};
+    var W = cv.width, H = cv.height;
+
+    // DATA 가 루트인지 챕터 형태인지 유연 처리
+    var chap = (DATA && DATA.chapter1) ? DATA.chapter1 : (DATA || {});
+    var shards = (chap && chap.shards) || [];
+    var labels = (chap && chap.identityLabels) || [];
+
+    var identity   = (typeof st.identity === "number") ? st.identity : 0;
+    var coresNeed  = (typeof st.coresNeeded === "number") ? st.coresNeeded : (chap.coresNeeded || 0);
+    // coreOrder 길이(획득 코어 수). 없으면 collected 내 core 개수로 폴백.
+    var coreCount;
+    if (st.coreOrder && typeof st.coreOrder.length === "number") {
+      coreCount = st.coreOrder.length;
+    } else {
+      coreCount = 0;
+      for (var ci = 0; ci < shards.length; ci++) {
+        if (shards[ci].type === "core" && collectedHas(st, shards[ci].id)) coreCount++;
+      }
+    }
+
+    // collected 멤버십(Set 우선, 배열 폴백)
+    function collectedHas(state, id) {
+      var c = state.collected;
+      if (!c) return false;
+      if (typeof c.has === "function") return c.has(id);
+      if (typeof c.indexOf === "function") return c.indexOf(id) >= 0;
+      return false;
+    }
+
+    ctx.save();
+    ctx.textBaseline = "alphabetic";
+
+    // === 0. 전체 dim 배경 =====================================================
+    ctx.fillStyle = COL.dim;
+    ctx.fillRect(0, 0, W, H);
+
+    // 바깥 여백 / 레이아웃 기준
+    var PAD = Math.round(W * 0.038);          // 좌우 바깥 여백
+    if (PAD < 28) PAD = 28;
+    var contentX = PAD;
+    var contentW = W - PAD * 2;
+
+    // === 1. 제목 ==============================================================
+    var titleY = Math.round(H * 0.082);
+    ctx.textAlign = "left";
+    ctx.fillStyle = COL.text;
+    ctx.font = "800 32px " + FONT;
+    ctx.fillText("기억 일지 · 정체성", contentX, titleY);
+    ctx.fillStyle = COL.cyan;
+    ctx.font = "14px " + FONT;
+    ctx.fillText("MEMORY JOURNAL · IDENTITY", contentX + 2, titleY + 22);
+    // 우상단 진행 표기(정체성 n/5)
+    ctx.textAlign = "right";
+    ctx.fillStyle = COL.lime;
+    ctx.font = "700 20px " + FONT;
+    ctx.fillText(identity + " / 5 복원", W - PAD, titleY);
+
+    // === 2. 초상 진화 행 ======================================================
+    // 5개 원형 셀(? → 실루엣 → 눈 → 얼굴 → 이름). identity 단계까지 또렷.
+    var rowY = titleY + 58;
+    ctx.textAlign = "left";
+    ctx.fillStyle = COL.textSub;
+    ctx.font = "14px " + FONT;
+    ctx.fillText("기억이 차오를수록 또렷해진다", contentX, rowY);
+
+    var cellR = 34;
+    var cyCell = rowY + 18 + cellR;
+    var nCells = 5;
+    // 셀 사이 간격을 contentW 안에 균등 분배
+    var span = contentW - cellR * 2;
+    var gap = (nCells > 1) ? span / (nCells - 1) : 0;
+    var firstCx = contentX + cellR;
+
+    for (var s = 0; s < nCells; s++) {
+      var cx = Math.round(firstCx + gap * s);
+      // 현재 identity 단계까지 또렷. identity=0 이면 첫 셀(?)만 약하게 활성.
+      // 매핑: 셀 s 는 "정체성이 s단계 이상이면 또렷".
+      //   identity=0 → 아무 단계도 완성 안 됨이지만, ?(stage0)는 항상 보이는 시작점.
+      var active = (s === 0) ? true : (identity >= s);
+      // identity 가 그 단계'에 도달'했을 때만 또렷: s번째 셀은 identity>=s.
+      // 이름 셀(s===4)은 정체성===5 일 때만 공개(nameReveal).
+      var nameReveal = (s === 4) && (identity >= 5);
+      portraitCell(ctx, cx, cyCell, cellR, s, active, IMG, nameReveal);
+
+      // 셀 사이 화살표(›)
+      if (s < nCells - 1) {
+        var ax = Math.round(cx + gap / 2);
+        ctx.fillStyle = "#2a4a4e";
+        ctx.font = "22px " + FONT;
+        ctx.textAlign = "center";
+        ctx.fillText("›", ax, cyCell + 7);
+        ctx.textAlign = "left";
+      }
+    }
+    // 단계 캡션
+    var capNames = ["?", "실루엣", "눈", "얼굴", "이름"];
+    ctx.fillStyle = COL.lock;
+    ctx.font = "12px " + FONT;
+    ctx.textAlign = "center";
+    for (var cap = 0; cap < nCells; cap++) {
+      var capx = Math.round(firstCx + gap * cap);
+      ctx.fillStyle = ((cap === 0) || identity >= cap) ? COL.textSub : COL.lock;
+      ctx.fillText(capNames[cap], capx, cyCell + cellR + 18);
+    }
+
+    // === 2열 패널 영역(좌: 정체성 / 우: 기억 목록) ============================
+    var colsTop = cyCell + cellR + 34;
+    var bottomReserve = 96;                    // 하단 미스터리 바 + 푸터 공간
+    var colsH = H - colsTop - bottomReserve;
+    if (colsH < 120) colsH = 120;
+    var colGap = Math.round(W * 0.024);
+    if (colGap < 18) colGap = 18;
+    var leftW = Math.round((contentW - colGap) * 0.5);
+    var rightW = contentW - colGap - leftW;
+    var leftX = contentX;
+    var rightX = contentX + leftW + colGap;
+
+    // --- 좌 패널 배경 ---
+    ctx.fillStyle = COL.panel;
+    rrect(ctx, leftX, colsTop, leftW, colsH, 14); ctx.fill();
+    ctx.strokeStyle = COL.line; ctx.lineWidth = 1.5;
+    rrect(ctx, leftX, colsTop, leftW, colsH, 14); ctx.stroke();
+    // --- 우 패널 배경 ---
+    ctx.fillStyle = COL.panel;
+    rrect(ctx, rightX, colsTop, rightW, colsH, 14); ctx.fill();
+    ctx.strokeStyle = COL.line; ctx.lineWidth = 1.5;
+    rrect(ctx, rightX, colsTop, rightW, colsH, 14); ctx.stroke();
+
+    // === 3. 정체성 5슬롯 (좌 패널) ===========================================
+    var lInX = leftX + 20;
+    var lInW = leftW - 40;
+    ctx.textAlign = "left";
+    ctx.fillStyle = COL.lime;
+    ctx.font = "700 17px " + FONT;
+    ctx.fillText("정체성 카드", lInX, colsTop + 30);
+
+    var slotTop = colsTop + 48;
+    var slotN = 5;
+    var slotGap = 12;
+    var slotH = Math.floor((colsH - 48 - 20 - slotGap * (slotN - 1)) / slotN);
+    if (slotH > 70) slotH = 70;
+    if (slotH < 44) slotH = 44;
+
+    // 정체성 슬롯의 "해금" 규칙: i < identity 이면 해금(연두 ✓), 아니면 잠금.
+    // 이름 슬롯(index 3)은 identity<5 이면 'ZIRO'를 '?????'로 가림.
+    var NAME_SLOT = 3;
+    for (var i = 0; i < slotN; i++) {
+      var sy = slotTop + i * (slotH + slotGap);
+      var unlocked = (i < identity);
+      var label = labels[i] != null ? String(labels[i]) : ("슬롯 " + (i + 1));
+
+      // 패널
+      if (unlocked) {
+        ctx.fillStyle = COL.panelHi;
+        rrect(ctx, lInX, sy, lInW, slotH, 12); ctx.fill();
+        ctx.strokeStyle = COL.cyanDk; ctx.lineWidth = 1.5; ctx.setLineDash([]);
+        rrect(ctx, lInX, sy, lInW, slotH, 12); ctx.stroke();
+      } else {
+        ctx.fillStyle = COL.panelDk;
+        rrect(ctx, lInX, sy, lInW, slotH, 12); ctx.fill();
+        ctx.strokeStyle = COL.lineDk; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+        rrect(ctx, lInX, sy, lInW, slotH, 12); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // 좌측 아이콘 원
+      var icR = Math.min(20, slotH / 2 - 6);
+      var icCx = lInX + 16 + icR;
+      var icCy = sy + slotH / 2;
+      ctx.beginPath();
+      ctx.arc(icCx, icCy, icR, 0, Math.PI * 2);
+      ctx.fillStyle = unlocked ? "#10262a" : "#11181d";
+      ctx.fill();
+      if (unlocked) {
+        // 해금: 슬롯 번호(또는 점) 표시
+        ctx.fillStyle = COL.cyan;
+        ctx.font = "700 16px " + FONT;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(i + 1), icCx, icCy + 1);
+        ctx.textBaseline = "alphabetic";
+      } else {
+        // 잠금: 자물쇠
+        lockIcon(ctx, icCx, icCy - 4, Math.min(1, icR / 18), COL.lockIcon);
+      }
+
+      // 텍스트 영역
+      var txX = icCx + icR + 14;
+      var txMaxW = lInX + lInW - txX - 30;     // 우측 상태 마크 공간 확보
+
+      // 라벨(상단 보조) / 값(하단 강조)을 라벨 문자열에서 분리 시도.
+      // identityLabels 예: "종: 고양이" / "이름: ? (지로)" / "왜 잊었나"
+      var caption, value;
+      var colonIdx = label.indexOf(":");
+      if (colonIdx >= 0) {
+        caption = label.slice(0, colonIdx).trim();
+        value = label.slice(colonIdx + 1).trim();
+      } else {
+        caption = "";
+        value = label;
+      }
+
+      // 이름 슬롯 마스킹: identity<5 이면 값은 '?????'(ZIRO 가림)
+      var isName = (i === NAME_SLOT);
+      if (isName) {
+        if (caption === "") caption = "이름";
+        if (identity >= 5) value = "ZIRO";       // 최종 보상 공개
+        else value = "?????";                    // 가림
+      }
+
+      // 마지막 슬롯(진실)은 잠금 시 캡션을 '??? · 잠김' 으로
+      var twoLine = (slotH >= 50);
+
+      if (unlocked) {
+        if (twoLine && caption) {
+          ctx.fillStyle = COL.textSub;
+          ctx.font = "13px " + FONT;
+          ctx.textAlign = "left";
+          ctx.fillText(ellipsize(ctx, caption, txMaxW), txX, sy + slotH / 2 - 6);
+          ctx.fillStyle = COL.text;
+          ctx.font = "700 19px " + FONT;
+          ctx.fillText(ellipsize(ctx, value, txMaxW), txX, sy + slotH / 2 + 18);
+        } else {
+          ctx.fillStyle = COL.text;
+          ctx.font = "700 18px " + FONT;
+          ctx.textAlign = "left";
+          ctx.fillText(ellipsize(ctx, (caption ? caption + " · " : "") + value, txMaxW), txX, sy + slotH / 2 + 6);
+        }
+        // 해금 ✓ (연두)
+        checkMark(ctx, lInX + lInW - 14, sy + slotH / 2 + 8, 22, COL.lime);
+      } else {
+        // 잠금: 회색
+        var lockCap = caption ? caption : "???";
+        if (twoLine) {
+          ctx.fillStyle = COL.lock;
+          ctx.font = "13px " + FONT;
+          ctx.textAlign = "left";
+          ctx.fillText(ellipsize(ctx, lockCap + " · 잠김", txMaxW), txX, sy + slotH / 2 - 6);
+          ctx.fillStyle = COL.lock;
+          ctx.font = "700 19px " + FONT;
+          ctx.fillText(ellipsize(ctx, value, txMaxW), txX, sy + slotH / 2 + 18);
+        } else {
+          ctx.fillStyle = COL.lock;
+          ctx.font = "700 17px " + FONT;
+          ctx.textAlign = "left";
+          ctx.fillText(ellipsize(ctx, value + " · 잠김", txMaxW), txX, sy + slotH / 2 + 6);
+        }
+      }
+    }
+
+    // === 4. 수집한 기억 목록 (우 패널) =======================================
+    var rInX = rightX + 20;
+    var rInW = rightW - 40;
+    ctx.textAlign = "left";
+    ctx.fillStyle = COL.lime;
+    ctx.font = "700 17px " + FONT;
+    ctx.fillText("수집한 기억", rInX, colsTop + 30);
+    // 타입 범례(우측)
+    ctx.textAlign = "right";
+    ctx.font = "12px " + FONT;
+    ctx.fillStyle = COL.cyan;     ctx.fillText("● 코어", rightX + rightW - 150, colsTop + 30);
+    ctx.fillStyle = COL.echo;     ctx.fillText("● 에코", rightX + rightW - 90,  colsTop + 30);
+    ctx.fillStyle = COL.falseGold;ctx.fillText("● 거짓", rightX + rightW - 28,  colsTop + 30);
+    ctx.textAlign = "left";
+
+    var listTop = colsTop + 46;
+    var listBottom = colsTop + colsH - 16;
+    var nShards = shards.length || 1;
+    var itemGap = 10;
+    var itemH = Math.floor((listBottom - listTop - itemGap * (nShards - 1)) / Math.max(1, nShards));
+    if (itemH > 64) itemH = 64;
+    if (itemH < 38) itemH = 38;
+
+    for (var k = 0; k < shards.length; k++) {
+      var shd = shards[k];
+      var iy = listTop + k * (itemH + itemGap);
+      if (iy + itemH > listBottom + 2) break;   // 패널 넘침 방지(안전)
+
+      var got = collectedHas(st, shd.id);
+      var type = shd.type;
+      var isCoreMissing = (!got && type === "core");
+
+      // 타입색
+      var tColor = (type === "core") ? COL.cyan
+                 : (type === "echo") ? COL.echo
+                 : (type === "false") ? COL.falseGold
+                 : COL.textSub;
+
+      // 좌측 노드 점(타임라인 느낌)
+      var dotX = rInX + 8;
+      var dotCy = iy + itemH / 2;
+      ctx.beginPath();
+      ctx.arc(dotX, dotCy, 6, 0, Math.PI * 2);
+      if (got) {
+        ctx.fillStyle = tColor;
+        ctx.fill();
+      } else {
+        ctx.fillStyle = COL.panel;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = isCoreMissing ? COL.lock : tColor;
+        ctx.setLineDash(isCoreMissing ? [3, 3] : []);
+        ctx.beginPath();
+        ctx.arc(dotX, dotCy, 6, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // 카드
+      var cardX = dotX + 16;
+      var cardW = rInX + rInW - cardX;
+      if (got) {
+        ctx.fillStyle = (type === "false") ? COL.falsePnl : COL.panelHi;
+        rrect(ctx, cardX, iy, cardW, itemH, 10); ctx.fill();
+        ctx.strokeStyle = (type === "false") ? COL.falseLn : COL.cyanDk;
+        ctx.lineWidth = 1.5; ctx.setLineDash([]);
+        rrect(ctx, cardX, iy, cardW, itemH, 10); ctx.stroke();
+      } else {
+        ctx.fillStyle = COL.panelDk;
+        rrect(ctx, cardX, iy, cardW, itemH, 10); ctx.fill();
+        ctx.strokeStyle = COL.lineDk;
+        ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+        rrect(ctx, cardX, iy, cardW, itemH, 10); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      var txX2 = cardX + 14;
+      var txMaxW2 = cardX + cardW - txX2 - 14;
+      var twoLine2 = (itemH >= 46);
+
+      if (got) {
+        // 제목(타입 라벨) + 회상 앞부분
+        var typeLabel = (type === "core") ? "코어 기억"
+                      : (type === "echo") ? "에코"
+                      : (type === "false") ? "거짓된 기억 ⚠" : "기억";
+        var recallTxt = shd.recall != null ? String(shd.recall) : "";
+        if (twoLine2) {
+          ctx.fillStyle = (type === "false") ? COL.falseTxt : tColor;
+          ctx.font = "700 14px " + FONT;
+          ctx.fillText(ellipsize(ctx, typeLabel, txMaxW2), txX2, iy + itemH / 2 - 5);
+          ctx.fillStyle = (type === "false") ? "#8a7a4a" : COL.textSub;
+          ctx.font = "13px " + FONT;
+          ctx.fillText(ellipsize(ctx, recallTxt, txMaxW2), txX2, iy + itemH / 2 + 16);
+        } else {
+          ctx.fillStyle = (type === "false") ? COL.falseTxt : tColor;
+          ctx.font = "700 14px " + FONT;
+          ctx.fillText(ellipsize(ctx, typeLabel + " — " + recallTxt, txMaxW2), txX2, iy + itemH / 2 + 5);
+        }
+      } else {
+        // 미수집: 코어는 '??? (빠진 기억)' 빈칸, 그 외 미수집도 동일 처리
+        var blankMain = isCoreMissing ? "???  (빠진 기억)" : "???";
+        var blankSub = isCoreMissing ? "아직 되찾지 못한 코어 기억" : "미발견";
+        if (twoLine2) {
+          ctx.fillStyle = COL.lock;
+          ctx.font = "700 14px " + FONT;
+          ctx.fillText(ellipsize(ctx, blankMain, txMaxW2), txX2, iy + itemH / 2 - 5);
+          ctx.fillStyle = COL.lock;
+          ctx.font = "13px " + FONT;
+          ctx.fillText(ellipsize(ctx, blankSub, txMaxW2), txX2, iy + itemH / 2 + 16);
+        } else {
+          ctx.fillStyle = COL.lock;
+          ctx.font = "700 14px " + FONT;
+          ctx.fillText(ellipsize(ctx, blankMain, txMaxW2), txX2, iy + itemH / 2 + 5);
+        }
+      }
+    }
+
+    // === 5. 하단 중심 미스터리 바 + 진행 =====================================
+    var barH = 52;
+    var barY = H - bottomReserve + 8;
+    var barW = contentW;
+    var barX = contentX;
+    ctx.fillStyle = COL.panelDk;
+    rrect(ctx, barX, barY, barW, barH, 12); ctx.fill();
+    ctx.strokeStyle = COL.lineDk; ctx.lineWidth = 1.5; ctx.setLineDash([]);
+    rrect(ctx, barX, barY, barW, barH, 12); ctx.stroke();
+
+    // 자물쇠(거짓 골드 톤 — 진실은 잠겨 있다)
+    lockIcon(ctx, barX + 30, barY + barH / 2 - 4, 1, COL.falseGold);
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = COL.falseTxt;
+    ctx.font = "700 15px " + FONT;
+    ctx.fillText("중심 미스터리 · 왜 나는 잊었는가", barX + 56, barY + 22);
+    ctx.fillStyle = COL.textSub;
+    ctx.font = "12px " + FONT;
+    ctx.fillText("코어 기억을 모아 진실의 문을 연다", barX + 56, barY + 41);
+
+    // 진행 바: coreOrder.length / coresNeeded
+    var pbW = 180;
+    var pbX = barX + barW - pbW - 24;
+    var pbY = barY + barH / 2 - 5;
+    var frac = (coresNeed > 0) ? Math.max(0, Math.min(1, coreCount / coresNeed)) : 0;
+    ctx.fillStyle = "#16262a";
+    rrect(ctx, pbX, pbY, pbW, 10, 5); ctx.fill();
+    if (frac > 0) {
+      ctx.fillStyle = (frac >= 1) ? COL.lime : COL.cyan;
+      rrect(ctx, pbX, pbY, Math.max(10, pbW * frac), 10, 5); ctx.fill();
+    }
+    // 진행 수치
+    ctx.textAlign = "right";
+    ctx.fillStyle = (frac >= 1) ? COL.lime : COL.text;
+    ctx.font = "700 14px " + FONT;
+    ctx.fillText(coreCount + " / " + coresNeed, pbX + pbW, pbY - 8);
+
+    // === 6. 푸터 =============================================================
+    ctx.textAlign = "center";
+    ctx.fillStyle = COL.lock;
+    ctx.font = "14px " + FONT;
+    ctx.fillText("[Tab] 닫기", W / 2, H - 16);
+
+    ctx.restore();
+  }
+
+  return { draw: draw };
+})();
+
+if (typeof window !== 'undefined') window.Journal = Journal;
+if (typeof module !== 'undefined') module.exports = Journal;
+
+</script>
+<script>
+/* ===== main.js ===== */
+/* main.js — 통합부(렌더·입력·루프·HUD). 전역 ASSETS / Core / DATA / Audio2 사용. */
+(function () {
+  "use strict";
+  const cv = document.getElementById("game");
+  const ctx = cv.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  const D = DATA.chapter1;
+  const TILE = D.tile, NW = D.cols * TILE, NH = D.rows * TILE;   // 네이티브 352x224
+  const S = Math.max(1, Math.floor(cv.width / NW));               // 정수 스케일(=3)
+  const C = Core.C;
+
+  // ── 에셋 로드 ──────────────────────────────────────────────
+  const IMG = {}; let toLoad = 0, loaded = 0, ready = false;
+  for (const k in ASSETS) {
+    toLoad++; const im = new Image();
+    im.onload = () => { if (++loaded >= toLoad) ready = true; };
+    im.onerror = () => { if (++loaded >= toLoad) ready = true; };
+    im.src = ASSETS[k]; IMG[k] = im;
+  }
+
+  // ── 상태 ──────────────────────────────────────────────────
+  let phase = "title";                  // title | play | recall | setback | cleared
+  const st = Core.newState(D);
+  const px = (t) => t * TILE + TILE / 2;
+  const player = { x: px(D.spawn[0]), y: px(D.spawn[1]), vx: 0, vy: 0, dir: Math.PI/2,
+                   facing: "down", flip: false, animT: 0, frame: 0, step: 0, w: 10, h: 8 };
+  const colls = D.collision.map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
+  const safes = (D.safeZones||[]).map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
+  const door = D.door ? { x: px(D.door.tile[0]), y: px(D.door.tile[1]) } : null;
+  const murks = (D.murks||[]).map(m => ({
+    id:m.id, wp:0, x:px(m.patrol[0][0]), y:px(m.patrol[0][1]),
+    patrol:m.patrol.map(p=>({x:px(p[0]),y:px(p[1])})),
+    speed:m.speed||38, sightPx:(m.sightTiles||3.3)*TILE, fov:(m.fovDeg||90)*Math.PI/180,
+    faceAngle:0, chasing:false, lost:0 }));
+  let recall = null, hintTimer = 0, hintTarget = null, setbackT = 0, flash = 0, muted = false, shake = 0;
+  let trail = [], trailCD = 0, projecting = false; const illuminated = new Set();
+
+  // ── 입력 ──────────────────────────────────────────────────
+  const keys = {}; const edge = {};
+  function setKey(e, v) {
+    const k = (e.key || "").toLowerCase();   // 모든 키 소문자 정규화(shift/arrow/tab 포함)
+    if (v && !keys[k]) edge[k] = true;
+    keys[k] = v;
+    if (["arrowup","arrowdown","arrowleft","arrowright"," ","tab"].includes(k) && e.preventDefault) e.preventDefault();
+  }
+  addEventListener("keydown", e => setKey(e, true));
+  addEventListener("keyup", e => setKey(e, false));
+  cv.addEventListener("mousedown", () => { firstGesture(); if (phase === "title") phase = "play"; else if (phase === "recall") closeRecall(); });
+  function firstGesture() { try { if (window.Audio2) { Audio2.init(); Audio2.ambient(true); } } catch (e) {} }
+  addEventListener("keydown", firstGesture, { once: true });
+  function clearEdges() { for (const k in edge) edge[k] = false; }
+
+  // ── 헬퍼 ──────────────────────────────────────────────────
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  function aabb(x, y, w, h, r) { return x - w/2 < r.x + r.w && x + w/2 > r.x && y - h/2 < r.y + r.h && y + h/2 > r.y; }
+  function inAny(x, y, w, h, list) { for (const r of list) if (aabb(x, y, w, h, r)) return r; return null; }
+  function dist(ax, ay, bx, by) { return Math.hypot(ax - bx, ay - by); }
+  function shardCenter(s) { return { x: px(s.tile[0]), y: px(s.tile[1]) }; }
+  function isDone(s) { return st.collected.has ? st.collected.has(s.id) : (st.collected.indexOf?.(s.id) >= 0); }
+
+  // ── 업데이트 ──────────────────────────────────────────────
+  function update(dt) {
+    if (phase === "title" || phase === "cleared") return;
+    if (phase === "recall") { if (edge[" "] || edge["enter"]) closeRecall(); return; }
+    if (phase === "setback") { setbackT -= dt; if (setbackT <= 0) phase = "play"; clearEdges(); return; }
+    if (phase === "journal") { if (edge["tab"] || edge["escape"]) phase = "play"; clearEdges(); return; }
+    if (edge["tab"]) { phase = "journal"; clearEdges(); return; }   // 기억 일지 열기
+
+    // 이동 입력
+    const stealth = keys["shift"];
+    const sp = stealth ? C.STEALTH_SPEED : C.PLAYER_SPEED;
+    let ix = (keys["d"]||keys["arrowright"]?1:0) - (keys["a"]||keys["arrowleft"]?1:0);
+    let iy = (keys["s"]||keys["arrowdown"]?1:0) - (keys["w"]||keys["arrowup"]?1:0);
+    if (ix && iy) { const inv = 1/Math.sqrt(2); ix *= inv; iy *= inv; }
+    player.vx = ix * sp; player.vy = iy * sp;
+    const moving = (ix || iy) ? true : false;
+
+    // 충돌 분리 이동
+    moveAxis("x", player.vx * dt);
+    moveAxis("y", player.vy * dt);
+    player.x = clamp(player.x, TILE + player.w/2, NW - TILE - player.w/2);
+    player.y = clamp(player.y, TILE + player.h/2, NH - TILE - player.h/2);
+
+    // 방향/애니
+    if (moving) {
+      if (Math.abs(ix) >= Math.abs(iy) && ix !== 0) { player.facing = "side"; player.flip = ix > 0; }
+      else player.facing = "down";
+      player.dir = Math.atan2(player.vy, player.vx);
+      player.animT += dt; if (player.animT > 0.16) { player.animT = 0; player.frame ^= 1; player.step = (player.step||0) + 1; }
+    } else player.frame = 0;
+
+    // 기억 비추기(Q) — 빛 자원 소모 콘. 숨은 조각 드러냄 + Murk 밀어냄
+    illuminated.clear(); projecting = false;
+    if (keys["q"] && st.light > 0) {
+      projecting = true;
+      st.light = Math.max(0, st.light - C.PROJECT_COST * dt);
+      for (const s of D.shards) {
+        if (s.hidden && !isDone(s)) { const c = shardCenter(s);
+          if (Core.inCone(player.x, player.y, player.dir, C.PROJECT_LEN, C.PROJECT_HALFDEG, c.x, c.y)) illuminated.add(s.id); }
+      }
+    }
+
+    // 발자국 추적(L) — 가장 가까운 미발견 코어로 시안 발자국 흔적(무료, 쿨다운)
+    if (trailCD > 0) trailCD -= dt;
+    if (edge["l"] && trailCD <= 0) {
+      let best = null, bd = 1e9;
+      for (const s of D.shards) if (s.type === "core" && !isDone(s)) { const c = shardCenter(s), dd = dist(player.x, player.y, c.x, c.y); if (dd < bd) { bd = dd; best = c; } }
+      if (best) { trail = []; const n = 7; for (let i = 1; i <= n; i++) trail.push({ x: player.x + (best.x - player.x) * i / n, y: player.y + (best.y - player.y) * i / n, age: 0 }); trailCD = C.TRAIL_CD; }
+    }
+    for (const p of trail) p.age += dt; trail = trail.filter(p => p.age < C.TRAIL_LIFE);
+
+    // Murk
+    let danger = false;
+    for (const m of murks) {
+      if (projecting && Core.inCone(player.x, player.y, player.dir, C.PROJECT_LEN, C.PROJECT_HALFDEG, m.x, m.y)) {
+        const dd = dist(player.x, player.y, m.x, m.y) || 1;
+        m.x += (m.x - player.x) / dd * 46 * dt; m.y += (m.y - player.y) / dd * 46 * dt; m.chasing = false;
+      }
+      const sees = Core.murkSees({ x: m.x, y: m.y, faceAngle: m.faceAngle, sight: m.sightPx, fov: m.fov }, player.x, player.y)
+                   && !stealth || (Core.murkSees({ x:m.x,y:m.y,faceAngle:m.faceAngle,sight:m.sightPx*0.6,fov:m.fov }, player.x, player.y) && stealth);
+      if (sees) { m.chasing = true; m.lost = 0; }
+      else if (m.chasing) { m.lost += dt; if (m.lost > 2.5) m.chasing = false; }
+      let ax, ay, spd;
+      if (m.chasing) { ax = player.x; ay = player.y; spd = m.speed * 1.35; danger = true; }
+      else { const w = m.patrol[m.wp]; ax = w.x; ay = w.y; spd = m.speed;
+             if (dist(m.x, m.y, w.x, w.y) < 3) m.wp = (m.wp + 1) % m.patrol.length; }
+      const d = dist(m.x, m.y, ax, ay) || 1;
+      const nx = (ax - m.x) / d, ny = (ay - m.y) / d;
+      m.x += nx * spd * dt; m.y += ny * spd * dt;
+      if (Math.abs(nx) + Math.abs(ny) > 0.01) m.faceAngle = Math.atan2(ny, nx);
+      if (dist(m.x, m.y, player.x, player.y) < 11) {
+        if (Core.contact(st)) { flash = 0.18; shake = 4; if (window.Audio2) Audio2.sfx("contact"); }
+      }
+      if (dist(m.x, m.y, player.x, player.y) < m.sightPx * 0.6) danger = true;
+    }
+
+    // 게이지 tick
+    const inSafe = !!inAny(player.x, player.y, player.w, player.h, safes);
+    Core.tick(st, dt, { inSafe, inDanger: danger, moving });
+
+    // 후퇴
+    if (st.mem <= 0 && Core.setbackIfDead(st)) {
+      const z = safes[0]; if (z) { player.x = z.x + z.w/2; player.y = z.y + z.h/2; }
+      phase = "setback"; setbackT = 1.6; flash = 0.4; if (window.Audio2) Audio2.sfx("setback");
+    }
+
+    // 근처 조각 & 상호작용
+    nearShard = null;
+    for (const s of D.shards) {
+      if (isDone(s)) continue;
+      if (s.hidden && !illuminated.has(s.id)) continue;   // 숨은 조각은 비출 때만
+      if (dist(player.x, player.y, shardCenter(s).x, shardCenter(s).y) < (s.radius||1.3) * TILE) { nearShard = s; break; }
+    }
+    if (edge["e"] && nearShard) doCollect(nearShard);
+
+    // 힌트
+    if (edge["h"] && Core.useHint(st).ok) {
+      let best = null, bd = 1e9;
+      for (const s of D.shards) if (!isDone(s) && s.type === "core") {
+        const c = shardCenter(s), dd = dist(player.x, player.y, c.x, c.y);
+        if (dd < bd) { bd = dd; best = c; }
+      }
+      hintTarget = best; hintTimer = 2.2;
+    }
+    if (hintTimer > 0) hintTimer -= dt;
+
+    // 음소거
+    if (edge["m"] && window.Audio2) { muted = !muted; Audio2.setMuted(muted); }
+
+    // 위험 오디오
+    if (window.Audio2) { Audio2.drone(danger ? 0.8 : 0); Audio2.heartbeat(st.mem <= 2 ? 96 : 0); }
+
+    // 클리어
+    if (Core.chapterClear(st) && door && dist(player.x, player.y, door.x, door.y) < 14) phase = "cleared";
+
+    if (flash > 0) flash -= dt; if (shake > 0) shake -= dt * 24;
+    clearEdges();
+  }
+
+  let nearShard = null;
+
+  function moveAxis(axis, d) {
+    if (!d) return;
+    if (axis === "x") { player.x += d; const r = inAny(player.x, player.y, player.w, player.h, colls); if (r) player.x = d > 0 ? r.x - player.w/2 : r.x + r.w + player.w/2; }
+    else { player.y += d; const r = inAny(player.x, player.y, player.w, player.h, colls); if (r) player.y = d > 0 ? r.y - player.h/2 : r.y + r.h + player.h/2; }
+  }
+
+  function doCollect(s) {
+    const res = Core.collect(st, s) || {};
+    if (res.ok === false) return;
+    recall = { text: res.recallText || s.recall || "", type: res.type || s.type };
+    phase = "recall";
+    if (window.Audio2) { if (s.type === "false") Audio2.sfx("contact"); else Audio2.chime(); }
+  }
+  function closeRecall() { recall = null; phase = "play"; }
+
+  // ── 렌더 ──────────────────────────────────────────────────
+  function spriteFor() {
+    if (player.facing === "side") return player.frame ? IMG.ziro_s1 : IMG.ziro_s0;
+    if (!player.frame) return IMG.ziro_d0;                  // idle
+    return ((player.step||0) & 1) ? IMG.ziro_d2 : IMG.ziro_d1;  // 보행 두 프레임 교차
+  }
+
+  function draw() {
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.imageSmoothingEnabled = false;
+    const sx = (Math.random() - 0.5) * 2 * Math.max(0, shake), sy = (Math.random() - 0.5) * 2 * Math.max(0, shake);
+    ctx.scale(S, S); ctx.translate(sx, sy);
+
+    if (!ready) { ctx.restore(); hudText("로딩…", NW*S/2, NH*S/2, "#34e2e2", 20, true); return; }
+
+    // 배경
+    if (IMG.room1 && IMG.room1.width) ctx.drawImage(IMG.room1, 0, 0, NW, NH);
+    else { ctx.fillStyle = "#10140d"; ctx.fillRect(0, 0, NW, NH); }
+
+    // 문(클리어 가능 시 빛남)
+    if (door && Core.chapterClear(st)) {
+      ctx.save(); ctx.globalAlpha = 0.6 + 0.3*Math.sin(performance.now()/200);
+      ctx.fillStyle = "#34e2e2"; ctx.fillRect(door.x-7, door.y-7, 14, 14); ctx.restore();
+    }
+
+    // 발자국 추적 흔적
+    for (const p of trail) { const a = 1 - p.age / C.TRAIL_LIFE; ctx.save(); ctx.globalAlpha = 0.55 * a; ctx.fillStyle = "#34e2e2";
+      ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 2.2, 1.6, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x - 1.6, p.y - 1.6, 0.8, 0, 7); ctx.arc(p.x + 1.6, p.y - 1.6, 0.8, 0, 7); ctx.fill(); ctx.restore(); }
+    // 기억 비추기 콘
+    if (projecting) { const h = C.PROJECT_HALFDEG * Math.PI / 180; ctx.save(); ctx.globalAlpha = 0.2;
+      ctx.shadowColor = "#34e2e2"; ctx.shadowBlur = 6; ctx.fillStyle = "#9af6f6";
+      ctx.beginPath(); ctx.moveTo(player.x, player.y - 4);
+      ctx.arc(player.x, player.y - 4, C.PROJECT_LEN, player.dir - h, player.dir + h); ctx.closePath(); ctx.fill(); ctx.restore(); }
+
+    // 근처 조각만 표시(글로우 OFF·3단 발견)
+    if (nearShard && IMG.shard) {
+      const c = shardCenter(nearShard);
+      glow(() => ctx.drawImage(IMG.shard, c.x - IMG.shard.width/2, c.y - IMG.shard.height/2), "#34e2e2", 8);
+      tag("조사 [E]", c.x, c.y - 14);
+    }
+
+    // y정렬: murk/player
+    const ents = [...murks.map(m => ({ y: m.y, m })), { y: player.y, p: true }];
+    ents.sort((a, b) => a.y - b.y);
+    for (const e of ents) {
+      if (e.p) {
+        const sp = spriteFor();
+        if (sp && sp.width) {
+          ctx.save();
+          if (player.facing === "side" && player.flip) { ctx.translate(player.x, 0); ctx.scale(-1, 1); ctx.translate(-player.x, 0); }
+          glow(() => ctx.drawImage(sp, Math.round(player.x - sp.width/2), Math.round(player.y - sp.height + 6)), "#8ef548", 3);
+          ctx.restore();
+        }
+      } else {
+        const m = e.m;
+        if (IMG.murk) glow(() => ctx.drawImage(IMG.murk, Math.round(m.x - IMG.murk.width/2), Math.round(m.y - IMG.murk.height/2)), m.chasing ? "#ff5a5a" : "#7a5cff", m.chasing ? 5 : 2);
+      }
+    }
+
+    // 힌트 화살표
+    if (hintTimer > 0 && hintTarget) {
+      const a = Math.atan2(hintTarget.y - player.y, hintTarget.x - player.x);
+      ctx.save(); ctx.translate(player.x + Math.cos(a)*16, player.y + Math.sin(a)*16); ctx.rotate(a);
+      ctx.fillStyle = "#8ef548"; ctx.beginPath(); ctx.moveTo(6,0); ctx.lineTo(-3,-4); ctx.lineTo(-3,4); ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+
+    // 피격 플래시
+    if (flash > 0) { ctx.fillStyle = `rgba(255,90,90,${Math.min(0.5, flash)})`; ctx.fillRect(0, 0, NW, NH); }
+
+    ctx.restore();
+    drawHUD();
+    if (phase === "title") overlayTitle();
+    if (phase === "recall" && recall) overlayRecall();
+    if (phase === "setback") overlayCenter("…어둡다. 여기는…", "#9ab", "기억이 흩어졌다 — 마지막 안전한 곳으로");
+    if (phase === "cleared") overlayCenter("챕터 1 클리어 · 「지로의 방」", "#8ef548", "지로가 첫 기억들을 되찾았다.");
+    if (phase === "journal" && window.Journal) { try { Journal.draw(ctx, cv, st, DATA, IMG); } catch (e) { console.error(e); } }
+  }
+
+  function glow(fn, color, blur) { ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = blur; fn(); ctx.restore(); }
+  function tag(t, x, y) { ctx.save(); ctx.font = "6px sans-serif"; ctx.textAlign = "center";
+    const w = ctx.measureText(t).width + 6; ctx.fillStyle = "rgba(6,14,18,.85)"; ctx.fillRect(x - w/2, y - 7, w, 9);
+    ctx.fillStyle = "#bfffff"; ctx.fillText(t, x, y); ctx.restore(); }
+
+  // ── HUD (스케일 1:1, 픽셀 위 오버레이) ─────────────────────
+  function drawHUD() {
+    if (!ready) return;
+    const W = cv.width;
+    // 메모리 미터(발바닥 10칸)
+    const pipW = 16, x0 = 16, y0 = cv.height - 28;
+    ctx.save();
+    ctx.fillStyle = "rgba(10,16,20,.85)"; rrect(x0 - 10, y0 - 12, pipW*10 + 64, 30, 8); ctx.fill();
+    ctx.font = "13px 'Noto Sans KR',sans-serif"; ctx.fillStyle = st.mem <= 2 ? "#ff7a7a" : "#bfffff";
+    ctx.textAlign = "left"; ctx.fillText("기억", x0, y0 + 8);
+    for (let i = 0; i < C.MEM_MAX; i++) {
+      const fillAmt = clamp(st.mem - i, 0, 1);
+      const cx = x0 + 40 + i * pipW + 7, cy = y0 + 3;
+      paw(cx, cy, "#16262a");                       // 빈칸
+      if (fillAmt >= 1) paw(cx, cy, st.mem <= 2 ? "#ff5a5a" : "#34e2e2");
+      else if (fillAmt > 0) { ctx.save(); ctx.beginPath(); ctx.rect(cx - 6, cy - 7, 6, 14); ctx.clip(); paw(cx, cy, "#34e2e2"); ctx.restore(); }
+    }
+    // 빛 자원
+    const lx = x0 + 40 + C.MEM_MAX * pipW + 8;
+    ctx.fillStyle = "#6b8a8c"; ctx.fillText("빛", x0 + 40 + C.MEM_MAX*pipW + 8, y0 - 16);
+    // 정체성 + 코어 카운터(우상단)
+    ctx.fillStyle = "rgba(10,16,20,.85)"; rrect(W - 230, 14, 216, 56, 8); ctx.fill();
+    const idn = (st.identity || 0);
+    ctx.fillStyle = "#0e0f13"; ctx.beginPath(); ctx.arc(W - 200, 42, 20, 0, 7); ctx.fill();
+    ctx.strokeStyle = "#34e2e2"; ctx.lineWidth = 2; ctx.stroke();
+    if (idn <= 0 || !IMG.ziro_d0) { ctx.fillStyle = "#34e2e2"; ctx.font = "bold 22px sans-serif"; ctx.textAlign = "center"; ctx.fillText("?", W - 200, 50); }
+    else ctx.drawImage(IMG.ziro_d0, W - 218, 24, 36, 38);
+    ctx.textAlign = "left"; ctx.fillStyle = "#eafaff"; ctx.font = "bold 15px 'Noto Sans KR',sans-serif";
+    ctx.fillText(idn > 0 && D.identityLabels[idn-1] ? D.identityLabels[idn-1] : "정체 미상", W - 170, 38);
+    ctx.fillStyle = "#6b8a8c"; ctx.font = "12px 'Noto Sans KR',sans-serif";
+    ctx.fillText("정체성 " + idn + " / 5", W - 170, 58);
+    // 코어 카운터(좌상단)
+    ctx.fillStyle = "rgba(10,16,20,.85)"; rrect(14, 14, 150, 30, 8); ctx.fill();
+    ctx.fillStyle = "#8ef548"; ctx.font = "bold 14px 'Noto Sans KR',sans-serif";
+    ctx.fillText("코어 기억 " + (st.coreOrder ? st.coreOrder.length : 0) + " / " + st.coresNeeded, 26, 34);
+    // 빛 게이지 바(코어 카운터 아래)
+    ctx.fillStyle = "#16262a"; ctx.fillRect(26, 50, 100, 6);
+    ctx.fillStyle = "#34e2e2"; ctx.fillRect(26, 50, 100 * (st.light / C.LIGHT_MAX), 6);
+    ctx.fillStyle = "#6b8a8c"; ctx.font = "11px 'Noto Sans KR',sans-serif";
+    ctx.fillText("빛 " + (st.light||0).toFixed(1) + "   [Q] 비추기 · [H] 힌트", 132, 56);
+    ctx.fillStyle = trailCD > 0 ? "#5a7375" : "#8ef548";
+    ctx.fillText(trailCD > 0 ? "[L] 발자국 추적  " + trailCD.toFixed(0) + "s" : "[L] 발자국 추적  준비", 26, 70);
+    ctx.fillStyle = "#5a7375"; ctx.fillText("[Tab] 기억 일지", 26, 86);
+    ctx.restore();
+  }
+  function paw(cx, cy, col) { ctx.fillStyle = col; ctx.beginPath();
+    ctx.ellipse(cx, cy + 3, 5, 4, 0, 0, 7); ctx.fill();
+    for (const [dx, dy, r] of [[-4,-3,2],[0,-5,2.2],[4,-3,2]]) { ctx.beginPath(); ctx.arc(cx+dx, cy+dy, r, 0, 7); ctx.fill(); } }
+  function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+  function hudText(t, x, y, col, size, center) { ctx.save(); ctx.font = `bold ${size}px 'Noto Sans KR',sans-serif`;
+    ctx.fillStyle = col; ctx.textAlign = center ? "center" : "left"; ctx.fillText(t, x, y); ctx.restore(); }
+
+  function overlayTitle() {
+    ctx.save(); ctx.fillStyle = "rgba(4,6,10,.72)"; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.textAlign = "center"; ctx.fillStyle = "#eafaff"; ctx.font = "bold 44px 'Noto Sans KR',sans-serif";
+    ctx.fillText("잊혀진 발자국", cv.width/2, cv.height/2 - 40);
+    ctx.fillStyle = "#34e2e2"; ctx.font = "18px 'Noto Sans KR',sans-serif";
+    ctx.fillText("LOST PAWPRINT — 지로 · 챕터 1 「지로의 방」", cv.width/2, cv.height/2 - 6);
+    ctx.fillStyle = "#cfe6e6"; ctx.font = "16px 'Noto Sans KR',sans-serif";
+    ctx.fillText("코어 기억 3개를 찾아 문을 열어라.  닿으면 기억이 흐려진다.", cv.width/2, cv.height/2 + 30);
+    ctx.fillStyle = "#8ef548"; ctx.font = "bold 18px 'Noto Sans KR',sans-serif";
+    ctx.fillText("▶ 클릭 / 아무 키로 시작", cv.width/2, cv.height/2 + 66); ctx.restore();
+  }
+  function overlayRecall() {
+    ctx.save(); ctx.fillStyle = "rgba(3,6,10,.78)"; ctx.fillRect(0, 0, cv.width, cv.height);
+    const w = Math.min(760, cv.width - 80), x = (cv.width - w)/2, y = cv.height/2 - 70;
+    ctx.fillStyle = "#070d11"; ctx.strokeStyle = recall.type === "false" ? "#caa15a" : "#34e2e2"; ctx.lineWidth = 2;
+    rrect(x, y, w, 140, 12); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = recall.type === "false" ? "#e8c884" : "#34e2e2"; ctx.textAlign = "left";
+    ctx.font = "bold 16px 'Noto Sans KR',sans-serif";
+    ctx.fillText(recall.type === "false" ? "[회상 — 무언가 어긋난다]" : "[회상]", x + 24, y + 34);
+    ctx.fillStyle = "#eef7f7"; ctx.font = "18px 'Noto Sans KR',sans-serif";
+    wrap(recall.text, x + 24, y + 66, w - 48, 26);
+    ctx.fillStyle = "#6b8a8c"; ctx.font = "14px 'Noto Sans KR',sans-serif"; ctx.textAlign = "right";
+    ctx.fillText("[Space] 계속", x + w - 20, y + 124); ctx.restore();
+  }
+  function overlayCenter(title, col, sub) {
+    ctx.save(); ctx.fillStyle = "rgba(3,5,9,.8)"; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.textAlign = "center"; ctx.fillStyle = col; ctx.font = "bold 34px 'Noto Sans KR',sans-serif";
+    ctx.fillText(title, cv.width/2, cv.height/2 - 6);
+    if (sub) { ctx.fillStyle = "#9fb6b6"; ctx.font = "16px 'Noto Sans KR',sans-serif"; ctx.fillText(sub, cv.width/2, cv.height/2 + 28); }
+    ctx.restore();
+  }
+  function wrap(t, x, y, maxw, lh) { const words = (t||"").split(/\s+/); let line = "", yy = y;
+    for (const w of words) { const test = line ? line + " " + w : w;
+      if (ctx.measureText(test).width > maxw && line) { ctx.fillText(line, x, yy); line = w; yy += lh; } else line = test; }
+    if (line) ctx.fillText(line, x, yy); }
+
+  // ── 루프 ──────────────────────────────────────────────────
+  let last = performance.now();
+  function frame(now) { let dt = (now - last) / 1000; last = now; if (dt > 0.05) dt = 0.05;
+    try { update(dt); } catch (e) { console.error(e); }
+    draw(); requestAnimationFrame(frame); }
+  requestAnimationFrame(frame);
+})();
+
+</script>
+</body>
+</html>
