@@ -818,6 +818,7 @@ const Audio2 = {
   chime: chime,
   drone: drone,
   heartbeat: heartbeat,
+  heartbeatPulse: heartbeatPulse,
   sfx: sfx,
   music: music,
 };

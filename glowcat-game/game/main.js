@@ -6,10 +6,12 @@
   ctx.imageSmoothingEnabled = false;
   try { cv.setAttribute("tabindex", "0"); cv.style.outline = "none"; cv.focus(); } catch (e) {}  // 키 포커스 확보
 
-  const D = DATA.chapter1;
-  const TILE = D.tile, NW = D.cols * TILE, NH = D.rows * TILE;   // 네이티브 352x224
-  const S = Math.max(1, Math.floor(cv.width / NW));               // 정수 스케일(=3)
   const C = Core.C;
+  // 존재하는 챕터만 순서대로 — data.js에 chapter2/3 추가 시 자동 체이닝
+  const CHAPTERS = ["chapter1", "chapter2", "chapter3"].filter(k => DATA[k]);
+  let chapterIdx = 0;
+  let D, TILE, NW, NH, S, st, colls, safes, door, murks;   // loadStage()에서 채움
+  const px = (t) => t * TILE + TILE / 2;
 
   // ── 에셋 로드 ──────────────────────────────────────────────
   const IMG = {}; let toLoad = 0, loaded = 0, ready = false;
@@ -21,37 +23,53 @@
   }
 
   // ── 상태 ──────────────────────────────────────────────────
-  let phase = "title";                  // title | play | recall | setback | cleared
-  const st = Core.newState(D);
-  const px = (t) => t * TILE + TILE / 2;
-  const player = { x: px(D.spawn[0]), y: px(D.spawn[1]), vx: 0, vy: 0, dir: Math.PI/2,
+  let phase = "title";   // title | intro | play | recall | setback | journal | transition
+  const player = { x: 0, y: 0, vx: 0, vy: 0, dir: Math.PI/2,
                    facing: "down", flip: false, animT: 0, frame: 0, step: 0, w: 10, h: 8 };
-  const colls = D.collision.map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
-  const safes = (D.safeZones||[]).map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
-  const door = D.door ? { x: px(D.door.tile[0]), y: px(D.door.tile[1]) } : null;
-  const murks = (D.murks||[]).map(m => ({
-    id:m.id, wp:0, x:px(m.patrol[0][0]), y:px(m.patrol[0][1]),
-    patrol:m.patrol.map(p=>({x:px(p[0]),y:px(p[1])})),
-    speed:m.speed||38, sightPx:(m.sightTiles||3.3)*TILE, fov:(m.fovDeg||90),  // 도(°) — core.js가 내부에서 rad 변환
-    faceAngle:0, chasing:false, lost:0 }));
   let recall = null, hintTimer = 0, hintTarget = null, setbackT = 0, flash = 0, muted = false, shake = 0;
   let trail = [], trailCD = 0, projecting = false; const illuminated = new Set();
   // 온보딩/피드백 상태
   let elapsed = 0, lTutDone = false, corePulse = 0; let toasts = [];   // toasts: {text,color,t}
   let sawMurk = false;
   // 인트로(콜드 오픈) / 스테이지 전환
-  let introT = 0, transT = 0;
+  let introT = 0, transT = 0, veil = 0, hasNext = false;
   const INTRO = [
     { at: 0.0, line: "…어둡다." },
     { at: 2.2, line: "여기는… 어디지." },
     { at: 4.6, line: "나는… 나는 누… ?" },
-    { at: 7.1, line: "무언가 빠져나가고 있어 — 흩어지기 전에, 붙잡아야 해." },
+    { at: 6.6, line: "무언가 빠져나가고 있어 — 흩어지기 전에, 붙잡아야 해." },
   ];
-  const INTRO_END = 9.8;
-  function startIntro() { phase = "intro"; introT = 0; firstGesture(); if (window.Audio2 && Audio2.music) try { Audio2.music("intro"); } catch (e) {} }
+  const INTRO_END = 9.0;
+  function startIntro() {
+    phase = "intro"; introT = 0; firstGesture();
+    if (window.Audio2) try { if (Audio2.music) Audio2.music("intro"); if (Audio2.heartbeatPulse) Audio2.heartbeatPulse(); } catch (e) {}  // 콜드오픈: 심장박동 1회
+  }
   function skipIntro() { if (introT < 0.5) return; endIntro(); }
-  function endIntro() { phase = "play"; if (window.Audio2 && Audio2.music) try { Audio2.music(D.music || "room"); } catch (e) {} }
-  function beginTransition() { phase = "transition"; transT = 0; if (window.Audio2 && Audio2.music) try { Audio2.music(null); } catch (e) {} }
+  function endIntro() {                       // 검정→방 페이드인(veil) + 스킵키 누수 방지(clearEdges)
+    phase = "play"; veil = 0.8; clearEdges();
+    if (window.Audio2 && Audio2.music) try { Audio2.music(D.music || "room"); } catch (e) {}
+  }
+  function beginTransition() {
+    phase = "transition"; transT = 0; hasNext = (chapterIdx + 1) < CHAPTERS.length;
+    if (window.Audio2) try { if (Audio2.music) Audio2.music(null); Audio2.drone(0); Audio2.heartbeat(0); if (Audio2.chime) Audio2.chime(); } catch (e) {}  // 위험 오디오 정지 + 클리어 스팅어
+  }
+  // 챕터 매니저 — 맵/엔티티를 idx 챕터로 (재)초기화 (data에 chapter2/3 추가 시 체이닝)
+  function loadStage(idx) {
+    chapterIdx = idx; D = DATA[CHAPTERS[idx]];
+    TILE = D.tile; NW = D.cols * TILE; NH = D.rows * TILE; S = Math.max(1, Math.floor(cv.width / NW));
+    st = Core.newState(D);
+    colls = D.collision.map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
+    safes = (D.safeZones || []).map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
+    door = D.door ? { x: px(D.door.tile[0]), y: px(D.door.tile[1]) } : null;
+    murks = (D.murks || []).map(m => ({ id:m.id, wp:0, x:px(m.patrol[0][0]), y:px(m.patrol[0][1]),
+      patrol:m.patrol.map(p => ({ x:px(p[0]), y:px(p[1]) })), speed:m.speed||38, sightPx:(m.sightTiles||3.3)*TILE,
+      fov:(m.fovDeg||90), faceAngle:0, chasing:false, lost:0 }));
+    player.x = px(D.spawn[0]); player.y = px(D.spawn[1]); player.vx = player.vy = 0;
+    player.facing = "down"; player.flip = false; player.frame = 0; player.step = 0; player.dir = Math.PI/2;
+    trail = []; illuminated.clear(); nearShard = null; hintTimer = 0; toasts = [];
+    elapsed = 0; lTutDone = false; sawMurk = false; corePulse = 0; flash = 0; shake = 0;
+  }
+  function gotoTitle() { loadStage(0); phase = "title"; if (window.Audio2 && Audio2.music) try { Audio2.music(null); } catch (e) {} }
 
   // ── 입력 ──────────────────────────────────────────────────
   const keys = {}; const edge = {};
@@ -91,8 +109,15 @@
   function update(dt) {
     if (phase === "title" || phase === "cleared") return;
     if (phase === "intro") { introT += dt; if (introT >= INTRO_END) endIntro(); clearEdges(); return; }
-    if (phase === "transition") { transT += dt; clearEdges(); return; }
-    if (phase === "recall") { if (edge[" "] || edge["enter"]) closeRecall(); return; }
+    if (phase === "transition") {
+      transT += dt;
+      if (hasNext && transT > 2.6) {                          // 다음 챕터 자동 로드(체이닝)
+        loadStage(chapterIdx + 1); phase = "play"; veil = 0.8;
+        if (window.Audio2 && Audio2.music) try { Audio2.music(D.music || "room"); } catch (e) {}
+      } else if (!hasNext && transT > 1.2 && (edge[" "] || edge["enter"])) { gotoTitle(); }
+      clearEdges(); return;
+    }
+    if (phase === "recall") { if (edge[" "] || edge["enter"]) closeRecall(); clearEdges(); return; }
     if (phase === "setback") { setbackT -= dt; if (setbackT <= 0) phase = "play"; clearEdges(); return; }
     if (phase === "journal") { if (edge["tab"] || edge["escape"]) phase = "play"; clearEdges(); return; }
     if (edge["tab"]) { phase = "journal"; clearEdges(); return; }   // 기억 일지 열기
@@ -208,6 +233,7 @@
     if (Core.chapterClear(st) && door && dist(player.x, player.y, door.x, door.y) < 14) beginTransition();
 
     if (flash > 0) flash -= dt; if (shake > 0) shake -= dt * 24;
+    if (veil > 0) veil = Math.max(0, veil - dt);   // 방 진입 페이드인
     if (corePulse > 0) corePulse -= dt;
     for (const t of toasts) t.t -= dt; toasts = toasts.filter(t => t.t > 0);
     clearEdges();
@@ -336,6 +362,7 @@
     if (phase === "intro") overlayIntro();
     if (phase === "transition") overlayTransition();
     if (phase === "journal" && window.Journal) { try { Journal.draw(ctx, cv, st, DATA, IMG); } catch (e) { console.error(e); } }
+    if (veil > 0) { ctx.save(); ctx.fillStyle = "rgba(3,5,9," + Math.min(1, veil / 0.8) + ")"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.restore(); }
   }
 
   // 인트로(콜드 오픈) — 어둠 속에서 눈을 뜨는 지로 + 흐릿한 독백 (01 §2-1)
@@ -371,7 +398,8 @@
       ctx.fillStyle = "#eafaff"; ctx.font = "20px 'Noto Sans KR',sans-serif";
       ctx.fillText("「지로의 방」", cv.width / 2, cv.height / 2 + 22);
       ctx.fillStyle = "#9fb6b6"; ctx.font = "14px 'Noto Sans KR',sans-serif";
-      ctx.fillText("지로가 첫 기억들을 되찾았다 — 다음 이야기는 곧…", cv.width / 2, cv.height / 2 + 54);
+      ctx.fillText(hasNext ? "지로가 첫 기억들을 되찾았다 — 다음 이야기로…" : "지로가 첫 기억들을 되찾았다.", cv.width / 2, cv.height / 2 + 54);
+      if (!hasNext) { ctx.fillStyle = "#8ef548"; ctx.font = "13px 'Noto Sans KR',sans-serif"; ctx.fillText("[Space] 처음으로", cv.width / 2, cv.height / 2 + 86); }
     }
     ctx.restore();
   }
@@ -525,6 +553,7 @@
     try { update(dt); } catch (e) { console.error(e); }
     draw(); requestAnimationFrame(frame); }
   // 디버그 스냅샷(테스트용, 무해): 상태 읽기 전용
-  if (typeof window !== 'undefined') window.__ziro = () => ({ phase, px: player.x, py: player.y, mem: st.mem });
+  if (typeof window !== 'undefined') window.__ziro = () => ({ phase, px: player.x, py: player.y, mem: st ? st.mem : 0, ch: chapterIdx });
+  loadStage(0);                 // 첫 챕터 초기화(맵·엔티티·상태)
   requestAnimationFrame(frame);
 })();
