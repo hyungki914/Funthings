@@ -8,7 +8,7 @@ nearest-neighbor 업스케일(픽셀 보존).
 요구: pip install pillow
 사용: python3 pixelart.py
 """
-import os
+import os, io, base64
 from PIL import Image, ImageDraw, ImageFilter, ImageChops, ImageFont
 
 FONT = "/usr/share/fonts/truetype/notokr/NotoSansCJKkr-Bold.otf"
@@ -107,8 +107,10 @@ def draw_cat(step=0):
     # 눈 (시안 링 + 그린 + 흰 광택)
     el((6,11,14,22), fill=K); el((7,12,13,21), fill=C); el((8,13,12,20), fill=GD); el((8,13,12,19), fill=G); el((8,14,10,17), fill=YH); d.point((9,14), fill=WT)
     el((18,11,26,22), fill=K); el((19,12,25,21), fill=C); el((20,13,24,20), fill=GD); el((20,13,24,19), fill=G); el((20,14,22,17), fill=YH); d.point((21,14), fill=WT)
-    # 코/입 (시안)
-    d.line((15,23,16,24), fill=CD); d.line((16,24,17,23), fill=CD)
+    # 코 + ":3" 고양이 입 (3자 모양, ω)
+    d.point((16,22), fill=CD)
+    for p in [(14,24),(15,23),(16,24),(17,23),(18,24)]:
+        d.point(p, fill=C)
     return im
 
 
@@ -228,7 +230,7 @@ def tile_rug():
 
 
 # ── 방 씬 ────────────────────────────────────────────────────────────────────
-def build_room():
+def build_room(with_entities=True):
     TW = 16; cols, rows = 22, 14
     W, H = cols*TW, rows*TW
     scene = Image.new("RGBA", (W, H), (*TPAL['5'], 255))
@@ -287,13 +289,42 @@ def build_room():
         sd.ellipse((x0, y0, x1, y1), fill=(0, 0, 0, 90))
     scene.alpha_composite(sh)
 
-    # 캐릭터/조각/적 배치
-    cat = draw_cat(); murk = draw_murk(); shard = draw_shard()
-    scene.alpha_composite(cat, (10*TW-4, 7*TW-2))          # 러그 위 고양이
-    scene.alpha_composite(shard, (7*TW, 6*TW))             # 조각
-    scene.alpha_composite(murk, (16*TW, 6*TW))             # 적
+    # 캐릭터/조각/적 배치 (정지 컷용; 게임 배경은 with_entities=False)
+    if with_entities:
+        cat = draw_cat(); murk = draw_murk(); shard = draw_shard()
+        scene.alpha_composite(cat, (10*TW-4, 7*TW-2))      # 러그 위 고양이
+        scene.alpha_composite(shard, (7*TW, 6*TW))         # 조각
+        scene.alpha_composite(murk, (16*TW, 6*TW))         # 적
 
     return scene.convert("RGB")
+
+
+def _b64(im):
+    buf = io.BytesIO(); im.save(buf, "PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+def export_game_assets():
+    """game/assets.js — 배경+스프라이트를 base64 dataURI로 임베드(무서버 실행)."""
+    bg = build_room(with_entities=False)
+    bg = add_glow(bg); bg = add_vignette(bg)          # 네이티브 352x224 (게임에서 정수배 스케일)
+    assets = {
+        "room1": _b64(bg),
+        "ziro_d0": _b64(draw_cat(0)), "ziro_d1": _b64(draw_cat(1)), "ziro_d2": _b64(draw_cat(2)),
+        "ziro_s0": _b64(draw_cat_side(0)), "ziro_s1": _b64(draw_cat_side(1)),
+        "murk": _b64(draw_murk()), "shard": _b64(draw_shard()),
+    }
+    game_dir = os.path.join(HERE, "..", "game"); os.makedirs(game_dir, exist_ok=True)
+    lines = ["// 자동 생성 — art/pixelart.py export_game_assets(). 수정 금지.",
+             "const ASSETS = {"]
+    for k, v in assets.items():
+        lines.append(f'  {k}: "{v}",')
+    lines += ["};",
+              "if (typeof module !== 'undefined') module.exports = ASSETS;"]
+    path = os.path.join(game_dir, "assets.js")
+    with open(path, "w") as f:
+        f.write("\n".join(lines) + "\n")
+    print("exported", path, f"({os.path.getsize(path)//1024} KB)")
 
 
 def add_glow(rgb, radius=2.6):
@@ -390,4 +421,5 @@ if __name__ == "__main__":
     room = add_glow(room); room = add_vignette(room)
     upscale(room, 4).save(f"{OUT}/room_scene.png")
     comparison().save(f"{OUT}/comparison.png")
+    export_game_assets()
     print("pixel art rendered ->", OUT)

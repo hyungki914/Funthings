@@ -1,0 +1,61 @@
+// 통합 스모크 테스트 — core.js + data.js 를 함께 구동해 인터페이스/플로우 검증 (DOM 불필요).
+import { createRequire } from "node:module";
+import assert from "node:assert";
+const require = createRequire(import.meta.url);
+const Core = require("./core.js");
+const DATA = require("./data.js");
+
+const D = DATA.chapter1;
+assert.ok(D && D.shards && D.shards.length >= 4, "data.chapter1.shards 존재");
+const st = Core.newState(D);
+assert.equal(st.coresNeeded, 3, "coresNeeded=3");
+assert.equal(st.mem, Core.C.START_MEM, "초기 mem");
+
+// 조각 스키마 점검
+for (const s of D.shards) {
+  assert.ok(s.id && s.type && Array.isArray(s.tile), "조각 필드(id/type/tile): " + JSON.stringify(s.tile));
+  assert.ok(["core", "echo", "false"].includes(s.type), "type 유효: " + s.type);
+  assert.ok(typeof s.recall === "string" && s.recall.length > 0, "recall 텍스트: " + s.id);
+}
+const cores = D.shards.filter(s => s.type === "core");
+assert.ok(cores.length >= 3, "코어 ≥3 (" + cores.length + ")");
+
+// 코어 3개 수집 → 정체성 상승 + 클리어
+let id0 = st.identity;
+cores.slice(0, 3).forEach((s, i) => {
+  const r = Core.collect(st, s);
+  assert.equal(r.ok, true, "collect ok: " + s.id);
+  assert.ok(st.identity >= id0, "identity 비감소");
+});
+assert.equal(Core.chapterClear(st), true, "코어 3 → 클리어");
+const idAfter = Core.identityState(st);
+assert.ok(idAfter.unlocked >= 1, "정체성 unlocked");
+
+// false 조각은 메모리 감소
+const f = D.shards.find(s => s.type === "false");
+if (f) { const before = st.mem; Core.collect(st, f); assert.ok(st.mem <= before, "false 조각 mem 감소"); }
+
+// 접촉으로 0 → 후퇴: 마지막 코어 봉인, 클리어 해제
+st.mem = 1;
+for (let i = 0; i < 5; i++) { st.iframe = 0; Core.contact(st); }
+const wasClear = Core.chapterClear(st);
+const setback = Core.setbackIfDead(st);
+assert.equal(setback, true, "mem<=0 → setback");
+assert.equal(st.mem, Core.C.SETBACK_MEM, "후퇴 후 mem=SETBACK_MEM");
+assert.equal(Core.chapterClear(st), false, "후퇴로 코어 1개 봉인 → 클리어 해제");
+
+// 봉인 코어 재획득 → 다시 클리어
+const sealedCore = cores.slice(0, 3).find(s => !st.collected.has(s.id));
+assert.ok(sealedCore, "봉인된 코어 존재");
+Core.collect(st, sealedCore);
+assert.equal(Core.chapterClear(st), true, "재획득 → 다시 클리어");
+
+// murk 시야: data의 murk 정의로 정면/등뒤 판정
+const m = D.murks[0];
+const mx = m.patrol[0][0] * D.tile + 8, my = m.patrol[0][1] * D.tile + 8;
+const fov = (m.fovDeg || 90) * Math.PI / 180, sight = (m.sightTiles || 3.3) * D.tile;
+assert.equal(Core.murkSees({ x: mx, y: my, faceAngle: 0, sight, fov }, mx + 20, my), true, "정면 근접 감지");
+assert.equal(Core.murkSees({ x: mx, y: my, faceAngle: 0, sight, fov }, mx - 20, my), false, "등 뒤 미감지");
+assert.equal(Core.murkSees({ x: mx, y: my, faceAngle: 0, sight, fov }, mx + sight + 30, my), false, "사거리 밖 미감지");
+
+console.log("SMOKE OK — core+data 통합 정합. 조각", D.shards.length, "/ 코어", cores.length, "/ murk", D.murks.length);

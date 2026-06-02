@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>잊혀진 발자국 — 지로 (Vertical Slice)</title>
+<style>
+  html,body{margin:0;height:100%;background:#04060a;color:#cfe6e6;
+    font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;}
+  #wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:100%;gap:10px;padding:12px;box-sizing:border-box;}
+  canvas{image-rendering:pixelated;image-rendering:crisp-edges;background:#06090d;
+    border:1px solid #1d3236;box-shadow:0 0 40px rgba(52,226,226,.08);max-width:100%;height:auto;}
+  #hint{font-size:13px;color:#5a7375;letter-spacing:.3px;}
+  #hint b{color:#8ef548;font-weight:700;}
+  a{color:#34e2e2;}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="1056" height="672"></canvas>
+  <div id="hint">이동 <b>WASD/←↑↓→</b> · 조사 <b>E</b> · 직감 힌트 <b>H</b> · 은신 <b>Shift</b> · 음소거 <b>M</b> · 계속 <b>Space</b></div>
+</div>
+<!-- 로드 순서: 에셋 → 규칙 → 데이터 → 오디오 → 메인 -->
+<script src="assets.js"></script>
+<script src="core.js"></script>
+<script src="data.js"></script>
+<script src="audio.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
