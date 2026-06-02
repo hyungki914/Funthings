@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="'Noto Sans CJK KR',sans-serif">
+  <defs>
+    <radialGradient id="bgj" cx="50%" cy="36%" r="80%"><stop offset="0%" stop-color="#0e1a22"/><stop offset="100%" stop-color="#05080c"/></radialGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bgj)"/>
+
+  <!-- header -->
+  <text x="40" y="58" font-size="34" font-weight="800" fill="#eafaff">기억 일지 · 추리 보드</text>
+  <text x="44" y="84" font-size="15" fill="#34e2e2">수집한 조각을 잇고, 빠진 것을 찾는다 — 미스터리의 본체</text>
+  <!-- tabs -->
+  <g transform="translate(900,40)" font-size="15">
+    <rect x="0" y="0" width="100" height="34" rx="17" fill="#10262a" stroke="#34e2e2"/><text x="50" y="22" fill="#eafaff" text-anchor="middle">코어 7</text>
+    <rect x="112" y="0" width="100" height="34" rx="17" fill="#0a1014" stroke="#1d3236"/><text x="162" y="22" fill="#8aa7a9" text-anchor="middle">에코 4</text>
+    <rect x="224" y="0" width="116" height="34" rx="17" fill="#0a1014" stroke="#3a2a14"/><text x="282" y="22" fill="#c9a25a" text-anchor="middle">거짓 2 ?</text>
+  </g>
+
+  <!-- ===== LEFT: TIMELINE ===== -->
+  <g transform="translate(40,110)">
+    <rect width="470" height="576" rx="14" fill="#0a1014" stroke="#1d3236"/>
+    <text x="24" y="40" font-size="18" font-weight="700" fill="#8ef548">타임라인</text>
+    <line x1="48" y1="64" x2="48" y2="540" stroke="#1d3236" stroke-width="3"/>
+
+    <!-- node: collected -->
+    <g transform="translate(48,90)">
+      <circle r="9" fill="#34e2e2"/>
+      <rect x="24" y="-22" width="380" height="48" rx="10" fill="#10262a" stroke="#2a6e72"/>
+      <text x="40" y="-2" font-size="15" fill="#eafaff">이름표 목걸이</text>
+      <text x="40" y="18" font-size="12" fill="#8aa7a9">챕터1 · "따뜻한 손이 목에…"</text>
+    </g>
+    <g transform="translate(48,154)">
+      <circle r="9" fill="#34e2e2"/>
+      <rect x="24" y="-22" width="380" height="48" rx="10" fill="#10262a" stroke="#2a6e72"/>
+      <text x="40" y="-2" font-size="15" fill="#eafaff">가족 사진 · 주인 "하루"</text>
+      <text x="40" y="18" font-size="12" fill="#8aa7a9">챕터2 · 금고 안</text>
+    </g>
+    <!-- node: locked / blank -->
+    <g transform="translate(48,218)">
+      <circle r="9" fill="#0a1014" stroke="#5a7375" stroke-dasharray="3 3"/>
+      <rect x="24" y="-22" width="380" height="48" rx="10" fill="#080c0f" stroke="#243036" stroke-dasharray="5 4"/>
+      <text x="40" y="-2" font-size="15" fill="#5a7375">???  (빠진 기억)</text>
+      <text x="40" y="18" font-size="12" fill="#5a7375">캐리어 회상 — "누가 아팠나?"</text>
+    </g>
+    <g transform="translate(48,282)">
+      <circle r="9" fill="#34e2e2"/>
+      <rect x="24" y="-22" width="380" height="48" rx="10" fill="#10262a" stroke="#2a6e72"/>
+      <text x="40" y="-2" font-size="15" fill="#eafaff">병원 진단서</text>
+      <text x="40" y="18" font-size="12" fill="#8aa7a9">챕터3 · 아팠던 건 — 하루였다</text>
+    </g>
+    <!-- node: false (uncertain) -->
+    <g transform="translate(48,346)">
+      <circle r="9" fill="#0a1014" stroke="#c9a25a"/>
+      <rect x="24" y="-22" width="380" height="48" rx="10" fill="#1a1408" stroke="#3a2a14"/>
+      <text x="40" y="-2" font-size="15" fill="#e8c884">"하루가 손 흔든다" ⚠</text>
+      <text x="40" y="18" font-size="12" fill="#8a7a4a">진위 의심 — 배경에 시든 꽃이…</text>
+    </g>
+    <g transform="translate(48,410)">
+      <circle r="9" fill="#34e2e2"/>
+      <rect x="24" y="-22" width="380" height="48" rx="10" fill="#10262a" stroke="#2a6e72"/>
+      <text x="40" y="-2" font-size="15" fill="#eafaff">빈 목줄</text>
+      <text x="40" y="18" font-size="12" fill="#8aa7a9">챕터3 · 더는 잡아주지 않는 손</text>
+    </g>
+    <g transform="translate(48,474)">
+      <circle r="9" fill="#0a1014" stroke="#5a7375" stroke-dasharray="3 3"/>
+      <rect x="24" y="-22" width="380" height="48" rx="10" fill="#080c0f" stroke="#243036" stroke-dasharray="5 4"/>
+      <text x="40" y="-2" font-size="15" fill="#5a7375">??? — 나의 이름</text>
+      <text x="40" y="18" font-size="12" fill="#5a7375">최종 기억 조각</text>
+    </g>
+  </g>
+
+  <!-- ===== RIGHT: RELATION GRAPH ===== -->
+  <g transform="translate(530,110)">
+    <rect width="710" height="576" rx="14" fill="#0a1014" stroke="#1d3236"/>
+    <text x="24" y="40" font-size="18" font-weight="700" fill="#8ef548">관계도 — 단서를 이으면 새 추론이 열린다</text>
+
+    <!-- edges -->
+    <g stroke-width="2">
+      <line x1="200" y1="190" x2="430" y2="150" stroke="#34e2e2"/>           <!-- 나-하루 -->
+      <line x1="200" y1="190" x2="160" y2="360" stroke="#34e2e2"/>           <!-- 나-집 -->
+      <line x1="430" y1="150" x2="540" y2="320" stroke="#34e2e2"/>           <!-- 하루-병원 -->
+      <line x1="430" y1="150" x2="360" y2="430" stroke="#c9a25a" stroke-dasharray="6 5"/> <!-- 하루-? 공원(의심) -->
+      <line x1="200" y1="190" x2="360" y2="430" stroke="#5a7375" stroke-dasharray="4 5"/> <!-- 나-? -->
+    </g>
+
+    <!-- nodes -->
+    <!-- 나 -->
+    <g transform="translate(200,190)"><circle r="44" fill="#0e0f13" stroke="#34e2e2" stroke-width="2"/><ellipse cx="-13" cy="-2" rx="10" ry="13" fill="#9fe06a"/><ellipse cx="13" cy="-2" rx="10" ry="13" fill="#9fe06a"/><text y="36" font-size="13" fill="#cfe6e6" text-anchor="middle">나 (?)</text></g>
+    <!-- 하루 -->
+    <g transform="translate(430,150)"><circle r="40" fill="#10262a" stroke="#34e2e2" stroke-width="2"/><text y="-2" font-size="16" font-weight="700" fill="#eafaff" text-anchor="middle">하루</text><text y="18" font-size="11" fill="#8aa7a9" text-anchor="middle">주인</text></g>
+    <!-- 집 -->
+    <g transform="translate(160,360)"><circle r="36" fill="#10262a" stroke="#2a6e72"/><text y="5" font-size="14" fill="#eafaff" text-anchor="middle">집</text></g>
+    <!-- 병원 -->
+    <g transform="translate(540,320)"><circle r="38" fill="#10262a" stroke="#2a6e72"/><text y="0" font-size="14" fill="#eafaff" text-anchor="middle">병원</text><text y="18" font-size="10" fill="#8aa7a9" text-anchor="middle">하루가 아팠다</text></g>
+    <!-- ? 공원/이별 -->
+    <g transform="translate(360,430)"><circle r="40" fill="#1a1408" stroke="#c9a25a" stroke-dasharray="5 4"/><text y="-2" font-size="22" font-weight="800" fill="#c9a25a" text-anchor="middle">?</text><text y="20" font-size="11" fill="#8a7a4a" text-anchor="middle">무슨 일이…</text></g>
+
+    <!-- inference unlocked toast -->
+    <g transform="translate(440,470)">
+      <rect width="250" height="76" rx="10" fill="#0a1814" stroke="#8ef548"/>
+      <text x="16" y="28" font-size="13" fill="#8ef548">새 추론 잠금 해제</text>
+      <text x="16" y="52" font-size="15" font-weight="700" fill="#eafaff">"하루는 떠난 게 아니라…"</text>
+      <text x="16" y="68" font-size="11" fill="#8aa7a9">진단서 + 빈 목줄 + 시든 꽃 → 연결</text>
+    </g>
+  </g>
+
+  <!-- core mystery bar -->
+  <g transform="translate(530,634)">
+    <rect width="710" height="52" rx="12" fill="#080c0f" stroke="#243036"/>
+    <path d="M 28,32 v-7 a6,6 0 0 1 12,0 v7" fill="none" stroke="#c9a25a" stroke-width="3"/><rect x="22" y="32" width="24" height="16" rx="3" fill="#c9a25a"/>
+    <text x="62" y="24" font-size="15" font-weight="700" fill="#e8c884">중심 미스터리 · 왜 나는 잊었는가</text>
+    <text x="62" y="42" font-size="12" fill="#8aa7a9">단서 5 / 8 연결됨 — 공원의 진실이 마지막 열쇠</text>
+    <rect x="560" y="20" width="130" height="10" rx="5" fill="#1a1408"/><rect x="560" y="20" width="81" height="10" rx="5" fill="#c9a25a"/>
+  </g>
+</svg>

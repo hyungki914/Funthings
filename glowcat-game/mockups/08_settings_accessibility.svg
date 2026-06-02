@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="'Noto Sans CJK KR',sans-serif">
+  <defs>
+    <radialGradient id="bgs" cx="40%" cy="36%" r="80%"><stop offset="0%" stop-color="#0e1a22"/><stop offset="100%" stop-color="#05080c"/></radialGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bgs)"/>
+
+  <text x="40" y="58" font-size="34" font-weight="800" fill="#eafaff">설정 · 접근성</text>
+  <text x="44" y="84" font-size="15" fill="#34e2e2">접근성은 1급 시민 — GDD 9절의 약속이 실제로 사는 곳 (D9)</text>
+
+  <!-- left nav -->
+  <g transform="translate(40,112)" font-size="16">
+    <rect width="240" height="568" rx="14" fill="#0a1014" stroke="#1d3236"/>
+    <rect x="12" y="16" width="216" height="44" rx="10" fill="#10262a" stroke="#34e2e2"/><text x="30" y="44" fill="#eafaff" font-weight="700">접근성</text>
+    <text x="30" y="100" fill="#8aa7a9">디스플레이</text>
+    <text x="30" y="148" fill="#8aa7a9">조작</text>
+    <text x="30" y="196" fill="#8aa7a9">오디오</text>
+    <text x="30" y="244" fill="#8aa7a9">게임플레이</text>
+    <text x="30" y="292" fill="#8aa7a9">언어 · 자막</text>
+    <line x1="20" y1="500" x2="220" y2="500" stroke="#1d3236"/>
+    <text x="30" y="536" fill="#8aa7a9">타이틀로</text>
+  </g>
+
+  <!-- content: 접근성 -->
+  <g transform="translate(304,112)">
+    <rect width="936" height="568" rx="14" fill="#0a1014" stroke="#1d3236"/>
+
+    <!-- 색약 모드 -->
+    <text x="28" y="48" font-size="17" font-weight="700" fill="#8ef548">색약 모드</text>
+    <g transform="translate(28,64)" font-size="14">
+      <rect width="180" height="40" rx="20" fill="#10262a" stroke="#34e2e2"/><text x="90" y="26" fill="#eafaff" text-anchor="middle">끄기</text>
+      <rect x="192" y="0" width="180" height="40" rx="20" fill="#0a1014" stroke="#1d3236"/><text x="282" y="26" fill="#8aa7a9" text-anchor="middle">적록(Deuter)</text>
+      <rect x="384" y="0" width="180" height="40" rx="20" fill="#0a1014" stroke="#1d3236"/><text x="474" y="26" fill="#8aa7a9" text-anchor="middle">청황(Tritan)</text>
+      <text x="600" y="26" font-size="12" fill="#8aa7a9">+ 색이 아닌 형태/패턴 단서 자동 강화</text>
+    </g>
+
+    <!-- 텍스트 크기 slider -->
+    <text x="28" y="156" font-size="17" font-weight="700" fill="#eafaff">텍스트 크기</text>
+    <g transform="translate(28,170)"><rect width="560" height="8" rx="4" fill="#16262a"/><rect width="360" height="8" rx="4" fill="#34e2e2"/><circle cx="360" cy="4" r="12" fill="#eafaff"/><text x="600" y="10" font-size="14" fill="#8aa7a9">130%</text></g>
+
+    <!-- toggles -->
+    <g transform="translate(28,210)" font-size="15">
+      <!-- helper: ON pill -->
+      <g><text x="0" y="20" fill="#eafaff">화면 흔들림 감소</text><g transform="translate(360,2)"><rect width="56" height="28" rx="14" fill="#2a6e72"/><circle cx="42" cy="14" r="11" fill="#eafaff"/></g><text x="430" y="20" font-size="12" fill="#8aa7a9">광과민성 보호</text></g>
+      <g transform="translate(0,44)"><text x="0" y="20" fill="#eafaff">플래시 / 번쩍임 감소</text><g transform="translate(360,2)"><rect width="56" height="28" rx="14" fill="#2a6e72"/><circle cx="42" cy="14" r="11" fill="#eafaff"/></g><text x="430" y="20" font-size="12" fill="#8aa7a9">플리커 &lt; 3Hz · 적색 번쩍임 차단</text></g>
+      <g transform="translate(0,88)"><text x="0" y="20" fill="#eafaff">색수차(흔들림 잔상) 끄기</text><g transform="translate(360,2)"><rect width="56" height="28" rx="14" fill="#2a6e72"/><circle cx="42" cy="14" r="11" fill="#eafaff"/></g></g>
+      <g transform="translate(0,132)"><text x="0" y="20" fill="#eafaff">고대비 UI</text><g transform="translate(360,2)"><rect width="56" height="28" rx="14" fill="#16262a" stroke="#2a4a4e"/><circle cx="14" cy="14" r="11" fill="#8aa7a9"/></g><text x="430" y="20" font-size="12" fill="#8aa7a9">잠금 텍스트 대비 ≥ 4.5:1</text></g>
+    </g>
+
+    <!-- 적 속도 slider -->
+    <text x="28" y="430" font-size="17" font-weight="700" fill="#eafaff">적 속도</text>
+    <g transform="translate(28,444)"><rect width="560" height="8" rx="4" fill="#16262a"/><rect width="224" height="8" rx="4" fill="#34e2e2"/><circle cx="224" cy="4" r="12" fill="#eafaff"/><text x="600" y="10" font-size="14" fill="#8aa7a9">0.8×</text></g>
+
+    <!-- 게임플레이 toggles -->
+    <g transform="translate(28,486)" font-size="15">
+      <g><text x="0" y="20" fill="#eafaff">퍼즐 자동 스킵 (3회 실패 시)</text><g transform="translate(360,2)"><rect width="56" height="28" rx="14" fill="#2a6e72"/><circle cx="42" cy="14" r="11" fill="#eafaff"/></g></g>
+      <g transform="translate(0,40)"><text x="0" y="20" fill="#eafaff">독백 음성 낭독</text><g transform="translate(360,2)"><rect width="56" height="28" rx="14" fill="#16262a" stroke="#2a4a4e"/><circle cx="14" cy="14" r="11" fill="#8aa7a9"/></g><text x="430" y="20" font-size="12" fill="#8aa7a9">저시력/난독 지원</text></g>
+    </g>
+
+    <!-- right column: difficulty + content warning -->
+    <g transform="translate(640,210)">
+      <text x="0" y="0" font-size="17" font-weight="700" fill="#eafaff">난이도</text>
+      <rect x="0" y="14" width="260" height="40" rx="10" fill="#10262a" stroke="#34e2e2"/><text x="20" y="40" fill="#eafaff">스토리 (후퇴 없음)</text>
+      <rect x="0" y="62" width="260" height="40" rx="10" fill="#0a1014" stroke="#1d3236"/><text x="20" y="88" fill="#8aa7a9">표준 (후퇴)</text>
+      <text x="0" y="130" font-size="12" fill="#5a7375">※ 서스펜스(하드리셋)는 포스트런치</text>
+
+      <g transform="translate(0,160)">
+        <rect width="260" height="120" rx="10" fill="#1a1408" stroke="#3a2a14"/>
+        <text x="16" y="30" font-size="14" font-weight="700" fill="#e8c884">⚠ 콘텐츠 안내</text>
+        <text x="16" y="56" font-size="12" fill="#cbb98a">상실·사별을 다룹니다.</text>
+        <text x="16" y="76" font-size="12" fill="#cbb98a">언제든 쉬어가도 괜찮아요.</text>
+        <text x="16" y="102" font-size="11" fill="#8a7a4a">도움받을 곳 안내 보기 ›</text>
+      </g>
+    </g>
+  </g>
+</svg>
