@@ -165,6 +165,26 @@ if (window.__loadStage && window.__collectCores && window.__boss) {
   window.__loadStage(0);
 }
 
+// ── 스테이지 선택 메뉴 + 진행 저장 + 시퀀스 재생: 타이틀→Tab→선택→시작/시퀀스 ──
+if (window.__title && window.__sel) {
+  const step = () => { clock += 16; if (theFrame) theFrame(clock); };
+  window.__title();                                          // 타이틀로(진행 clearedMax 유지)
+  const s0 = window.__sel();
+  if (!(s0.clearedMax >= 0)) { console.log("FAIL: 진행 저장 안 됨 (clearedMax=" + s0.clearedMax + ")"); process.exit(1); }
+  fire("keydown", ev("Tab", "Tab")); fire("keyup", ev("Tab", "Tab")); step();   // 스테이지 선택 열기
+  if (window.__sel().phase !== "select") { console.log("FAIL: 스테이지 선택 진입 안 됨 (" + window.__sel().phase + ")"); process.exit(1); }
+  fire("keydown", ev("ㅁ", "KeyD")); fire("keyup", ev("ㅁ", "KeyD")); step();    // 우로 이동(포커스)
+  const selBefore = window.__sel().selIdx;
+  fire("keydown", ev("r", "KeyR")); fire("keyup", ev("r", "KeyR")); step();      // 시퀀스 다시 보기
+  if (window.__ziro().phase !== "realize") { console.log("FAIL: 시퀀스 재생 진입 안 됨 (" + window.__ziro().phase + ")"); process.exit(1); }
+  for (let i = 0; i < 80 && window.__ziro().phase === "realize"; i++) { fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); step(); }
+  if (window.__sel().phase !== "select") { console.log("FAIL: 시퀀스 후 메뉴 복귀 안 됨 (" + window.__sel().phase + ")"); process.exit(1); }
+  fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); step();    // 여기서 시작
+  if (window.__ziro().phase !== "play") { console.log("FAIL: 선택 스테이지 시작 안 됨 (" + window.__ziro().phase + ")"); process.exit(1); }
+  console.log("SELECT OK — 타이틀→[Tab] 선택→[R] 시퀀스 재생→메뉴→[Space] 시작 (selIdx=" + selBefore + ", clearedMax=" + s0.clearedMax + ")");
+  window.__title(); window.__loadStage(0);
+}
+
 const walk = ["d", "d", "s", "s", "a", "w", "d", "s"];
 try {
   for (let i = 0; i < 700; i++) {

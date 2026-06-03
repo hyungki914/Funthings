@@ -255,8 +255,12 @@ const Journal = (function () {
   }
 
   // ---- 메인 그리기 ------------------------------------------------------------
-  function draw(ctx, cv, st, DATA, IMG) {
+  function draw(ctx, cv, st, DATA, IMG, meta) {
     if (!ctx || !cv) return;
+    meta = meta || {};
+    var journeyStages = meta.stages || null;
+    var clearedCount = 0;
+    if (journeyStages) for (var jj = 0; jj < journeyStages.length; jj++) if (journeyStages[jj].cleared) clearedCount++;
 
     // --- 인자 정규화(읽기 전용 복사 없이 안전 참조) -------------------------
     st = st || {};
@@ -311,11 +315,13 @@ const Journal = (function () {
     ctx.fillStyle = COL.cyan;
     ctx.font = "14px " + FONT;
     ctx.fillText("MEMORY JOURNAL · IDENTITY", contentX + 2, titleY + 22);
-    // 우상단 진행 표기(정체성 n/5)
+    // 우상단 진행 표기(정체성 n/5 + 여정 N/총)
     ctx.textAlign = "right";
     ctx.fillStyle = COL.lime;
     ctx.font = "700 20px " + FONT;
     ctx.fillText(identity + " / 5 복원", W - PAD, titleY);
+    if (journeyStages) { ctx.fillStyle = COL.cyan; ctx.font = "13px " + FONT;
+      ctx.fillText("여정 " + clearedCount + " / " + journeyStages.length, W - PAD, titleY + 20); }
 
     // === 2. 초상 진화 행 ======================================================
     // 5개 원형 셀(? → 실루엣 → 눈 → 얼굴 → 이름). identity 단계까지 또렷.
@@ -367,7 +373,7 @@ const Journal = (function () {
 
     // === 2열 패널 영역(좌: 정체성 / 우: 기억 목록) ============================
     var colsTop = cyCell + cellR + 34;
-    var bottomReserve = 96;                    // 하단 미스터리 바 + 푸터 공간
+    var bottomReserve = journeyStages ? 132 : 96;   // 하단 여정 스트립 + 푸터 공간
     var colsH = H - colsTop - bottomReserve;
     if (colsH < 120) colsH = 120;
     var colGap = Math.round(W * 0.024);
@@ -627,7 +633,42 @@ const Journal = (function () {
       }
     }
 
-    // === 5. 하단 중심 미스터리 바 + 진행 =====================================
+    // === 5. 하단 — 여정 스트립(확장 스테이지 + 깨달음) 또는 기존 미스터리 바 ===
+    if (journeyStages && journeyStages.length) {
+      var jY = H - bottomReserve + 10;
+      ctx.textAlign = "left"; ctx.fillStyle = COL.lime; ctx.font = "700 15px " + FONT;
+      ctx.fillText("여정 — 되찾은 길", contentX, jY + 2);
+      // 현재 스테이지 제목 + 깨달음 한 줄
+      var curIdx = (typeof meta.idx === "number") ? meta.idx : 0;
+      var cur = journeyStages[curIdx] || {};
+      var epiTxt = (cur.cleared && cur.epiphany && cur.epiphany.length) ? cur.epiphany[cur.epiphany.length - 1]
+                 : (cur.current ? "이 스테이지를 클리어하면 깨달음이 기록된다" : "");
+      ctx.textAlign = "right"; ctx.fillStyle = COL.textSub; ctx.font = "13px " + FONT;
+      ctx.fillText(ellipsize(ctx, "「" + (cur.title || "") + "」  " + epiTxt, contentW * 0.74), W - PAD, jY + 2);
+      // 칩 행
+      var jn = journeyStages.length, chipGap = 8, chipW = (contentW - chipGap * (jn - 1)) / jn;
+      var chipY = jY + 16, chipH = (H - 26) - chipY;
+      ctx.textBaseline = "middle";
+      for (var ci2 = 0; ci2 < jn; ci2++) {
+        var js2 = journeyStages[ci2], cx2 = Math.round(contentX + ci2 * (chipW + chipGap));
+        var stt = js2.cleared ? "done" : (js2.current ? "cur" : "lock");
+        ctx.fillStyle = stt === "done" ? COL.panelHi : (stt === "cur" ? "#10262a" : COL.panelDk);
+        rrect(ctx, cx2, chipY, chipW, chipH, 8); ctx.fill();
+        ctx.strokeStyle = stt === "done" ? COL.cyanDk : (stt === "cur" ? COL.cyan : COL.lineDk);
+        ctx.lineWidth = 1.5; ctx.setLineDash(stt === "lock" ? [4, 3] : []); rrect(ctx, cx2, chipY, chipW, chipH, 8); ctx.stroke(); ctx.setLineDash([]);
+        ctx.textAlign = "center";
+        ctx.fillStyle = stt === "done" ? COL.lime : (stt === "cur" ? COL.cyan : COL.lock);
+        ctx.font = "700 14px " + FONT;
+        ctx.fillText(stt === "done" ? "✓" : (stt === "cur" ? "●" : String(ci2 + 1)), cx2 + chipW / 2, chipY + chipH / 2 - 7);
+        ctx.font = "11px " + FONT; ctx.fillStyle = stt === "lock" ? COL.lock : COL.textSub;
+        ctx.fillText(ellipsize(ctx, stt === "lock" ? "???" : (js2.title || ""), chipW - 8), cx2 + chipW / 2, chipY + chipH / 2 + 11);
+      }
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "center"; ctx.fillStyle = COL.lock; ctx.font = "14px " + FONT;
+      ctx.fillText("[Tab] 닫기", W / 2, H - 14);
+      ctx.restore();
+      return;
+    }
     var barH = 52;
     var barY = H - bottomReserve + 8;
     var barW = contentW;
