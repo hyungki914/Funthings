@@ -370,7 +370,7 @@ function heartbeat(bpm) {
 }
 
 // 단발 효과음. name: 'contact' | 'setback' | 'step'.
-function sfx(name) {
+function sfx(name, opt) {
   if (!ready()) return;
   try {
     const t = now();
@@ -421,20 +421,26 @@ function sfx(name) {
       o.start(t); o.stop(t + 0.85);
 
     } else if (name === 'step') {
-      // 발소리: 아주 약한 클릭(짧은 노이즈 핑).
-      const buf = makeNoiseBuffer();
+      // 사뿐사뿐 발소리: 아주 부드러운 톤 '톡'(짧은 사인) + 살짝의 소프트 노이즈. opt=음높이 배수(좌우 교차)·vol.
+      const pitch = (opt && opt.pitch) || 1, vol = (opt && opt.vol != null) ? opt.vol : 0.06;
+      const o = S.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(360 * pitch, t);
+      o.frequency.exponentialRampToValueAtTime(220 * pitch, t + 0.06);   // 살짝 떨어지는 '톡'
+      const g = S.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+      const lp = S.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400;
+      o.connect(lp); lp.connect(g); g.connect(S.master);
+      o.start(t); o.stop(t + 0.1);
+      const buf = makeNoiseBuffer();                                     // 아주 옅은 '사뿐' 표면음
       if (buf) {
-        const n = S.ctx.createBufferSource();
-        n.buffer = buf;
-        const nf = S.ctx.createBiquadFilter();
-        nf.type = 'lowpass';
-        nf.frequency.value = 1200;
+        const n = S.ctx.createBufferSource(); n.buffer = buf;
+        const nf = S.ctx.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 2200 * pitch; nf.Q.value = 0.7;
         const ng = S.ctx.createGain();
-        ng.gain.setValueAtTime(0.05, t);  // 아주 약하게
-        ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
-        n.connect(nf); nf.connect(ng); ng.connect(S.master);
-        n.start(t);
-        n.stop(t + 0.06);
+        ng.gain.setValueAtTime(vol * 0.5, t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+        n.connect(nf); nf.connect(ng); ng.connect(S.master); n.start(t); n.stop(t + 0.05);
       }
 
     } else if (name === 'hover') {

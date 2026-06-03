@@ -88,10 +88,36 @@ def cat(d, cx, by, s=1.0, eye=EYE, col=(12, 14, 20), run=False):
     for ex in (hx-int(5*s), hx+int(5*s)):                                                        # 눈(블룸)
         d.ellipse((ex-er, hy-er-1, ex+er, hy+er+1), fill=eye)
 
-def person_layer(cx, by, s=1.0, color=(46, 52, 70), alpha=210, blur=1.5):
+def person_layer(cx, by, s=1.0, color=(46, 52, 70), alpha=210, blur=1.5, arms="down"):
+    """하루(여자아이) 실루엣 — 어깨까지 오는 머리카락 + A라인 원피스 + 가는 다리 + 팔.
+    arms: 'down'(차렷) / 'open'(두 팔 벌림, 재회용). by=발 기준선."""
     L = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(L)
-    d.polygon([(cx-int(14*s), by), (cx+int(14*s), by), (cx+int(9*s), by-int(42*s)), (cx-int(9*s), by-int(42*s))], fill=color+(alpha,))
-    d.ellipse((cx-int(9*s), by-int(58*s), cx+int(9*s), by-int(40*s)), fill=color+(alpha,))
+    col = color + (alpha,); I = lambda v: int(v * s)
+    poly = lambda p: d.polygon(p, fill=col)
+    # 다리(가늘게, 둘)
+    for lx in (-5, 5):
+        d.rectangle((cx+I(lx)-I(2), by-I(16), cx+I(lx)+I(2), by), fill=col)
+        d.ellipse((cx+I(lx)-I(3), by-I(2), cx+I(lx)+I(3), by+I(2)), fill=col)        # 신발
+    # 원피스(A라인: 어깨 좁고 치맛단 넓게) + 치마 주름 헴
+    poly([(cx-I(8), by-I(52)), (cx+I(8), by-I(52)), (cx+I(6), by-I(36)),
+          (cx+I(18), by-I(15)), (cx-I(18), by-I(15)), (cx-I(6), by-I(36))])
+    for hx in range(-14, 15, 7): d.polygon([(cx+I(hx)-I(2), by-I(16)), (cx+I(hx)+I(2), by-I(16)), (cx+I(hx), by-I(11))], fill=col)  # 치맛단 물결
+    # 목
+    d.rectangle((cx-I(2), by-I(56), cx+I(2), by-I(50)), fill=col)
+    # 팔
+    if arms == "open":                                                              # 두 팔 벌려 맞이함
+        d.line([(cx-I(7), by-I(50)), (cx-I(20), by-I(40)), (cx-I(24), by-I(30))], fill=col, width=max(2, I(4)))
+        d.line([(cx+I(7), by-I(50)), (cx+I(20), by-I(40)), (cx+I(24), by-I(30))], fill=col, width=max(2, I(4)))
+        for hx in (-24, 24): d.ellipse((cx+I(hx)-I(3), by-I(33), cx+I(hx)+I(3), by-I(27)), fill=col)   # 손
+    else:                                                                            # 차렷(몸 옆)
+        d.line([(cx-I(8), by-I(50)), (cx-I(12), by-I(30))], fill=col, width=max(2, I(3)))
+        d.line([(cx+I(8), by-I(50)), (cx+I(12), by-I(30))], fill=col, width=max(2, I(3)))
+    # 머리카락(어깨까지) — 머리 뒤로 큰 덩어리 + 양옆 머리타래
+    d.ellipse((cx-I(11), by-I(70), cx+I(11), by-I(48)), fill=col)
+    poly([(cx-I(11), by-I(60)), (cx-I(13), by-I(44)), (cx-I(7), by-I(46)), (cx-I(8), by-I(60))])    # 좌 머리타래
+    poly([(cx+I(11), by-I(60)), (cx+I(13), by-I(44)), (cx+I(7), by-I(46)), (cx+I(8), by-I(60))])    # 우 머리타래
+    # 얼굴(머리카락보다 살짝 작게 — 실루엣이라 같은 색이지만 윤곽이 둥근 소녀로 읽힘)
+    d.ellipse((cx-I(8), by-I(68), cx+I(8), by-I(52)), fill=col)
     return L.filter(ImageFilter.GaussianBlur(blur))
 
 def tree(d, cx, base_y, s=1.0, col=(14, 18, 16)):
@@ -214,14 +240,12 @@ def end_reunite():  # 재회 — 달려가 안기는 재회, 따뜻한 그린 �
     im = vgrad([(0, (30, 42, 22)), (1, (10, 14, 8))]); d = ImageDraw.Draw(im)
     d.rectangle((0, 170, W, H), fill=(20, 26, 14))
     # 빛/광선을 먼저(배경) → 그 위에 하루 실루엣을 그려 또렷이 읽히게(클라이맥스 임팩트)
-    im = glow(im, 285, 116, 180, (150, 240, 120), 0.75); im = rays(im, 285, 104, (180, 255, 150), 9, 300, 2.6, 0.5)
-    pl = person_layer(290, 178, 1.25, (34, 44, 26), 255, 0.6)            # 하루 — 진한 실루엣(빛 위)
-    d2 = ImageDraw.Draw(pl)
-    d2.line([(276,150),(250,168)], fill=(34,44,26,255), width=8); d2.line([(304,150),(326,168)], fill=(34,44,26,255), width=8)  # 벌린 팔
+    im = glow(im, 290, 120, 180, (150, 240, 120), 0.75); im = rays(im, 290, 104, (180, 255, 150), 9, 300, 2.6, 0.5)
+    pl = person_layer(290, 184, 1.3, (34, 44, 26), 255, 0.5, arms="open")   # 하루 — 두 팔 벌린 소녀 실루엣(빛 위)
     im = Image.alpha_composite(im, pl)
     d = ImageDraw.Draw(im)
-    d.ellipse((273, 116, 307, 150), outline=(210, 255, 180), width=1)    # 하루 머리 림라이트(역광 가장자리)
-    cat(d, 150, 182, 1.4, run=True, eye=(180, 255, 150))                 # 달려가는 지로
+    d.ellipse((281, 106, 299, 124), outline=(210, 255, 180), width=1)    # 머리 역광 림라이트
+    cat(d, 150, 184, 1.4, run=True, eye=(180, 255, 150))                 # 달려가는 지로
     return particles(finish(im, glow_r=3.4, vig=0.42), 20, (200, 255, 180), "spark")
 
 def end_stray():    # 길고양이 — 새벽 골목, 물그릇, 다른 고양이들, 열린 하늘

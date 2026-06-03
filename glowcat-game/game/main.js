@@ -46,6 +46,7 @@
   let trail = [], trailCD = 0, projecting = false; const illuminated = new Set();
   const AURA_R = 54;              // 기억 비추기 펄스 반경
   let lowLightTip = 0, auraFx = 0, revealT = 0, projInvuln = 0, hintMsgT = 0, stealthShown = false; let hintMsg = "";
+  let footT = 0, footPar = 0;   // 발소리 타이밍/좌우 교차
   // 온보딩/피드백 상태
   let elapsed = 0, lTutDone = false, corePulse = 0; let toasts = [];   // toasts: {text,color,t}
   let sawMurk = false, sawEcho = false, playerNoise = 0;
@@ -497,7 +498,13 @@
       else player.facing = "down";
       player.dir = Math.atan2(player.vy, player.vx);
       player.animT += dt; if (player.animT > 0.16) { player.animT = 0; player.frame ^= 1; player.step = (player.step||0) + 1; }
-    } else player.frame = 0;
+      // 사뿐사뿐 발소리 — 좌우 교차 음높이, 은신 시 더 느리고 여리게
+      footT -= dt;
+      if (footT <= 0) { footPar ^= 1;
+        if (window.Audio2 && Audio2.sfx) Audio2.sfx("step", { pitch: footPar ? 1.0 : 1.14, vol: stealth ? 0.03 : 0.06 });
+        footT = stealth ? 0.36 : 0.27;
+      }
+    } else { player.frame = 0; footT = 0; }
 
     // 기억 비추기(Q) — 빛 1 소모 펄스. 그림자가 추격을 멈추고 제자리(순찰)로 복귀 + 숨은 기억 드러냄.
     illuminated.clear();
