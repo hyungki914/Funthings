@@ -920,7 +920,7 @@ DATA.chapter10 = {
   ],
   safeZones: [],
   door: { tile: [8, 1], requires: 'cores' },
-  boss: { hp: 2, tile: [8, 5] },     // 공백(The Blank) — 코어3 모은 뒤 기억 비추기(Q)로 해소(가벼운 연출형)
+  boss: { hp: 3, tile: [8, 5], waveR: 3.4 },   // 공백(The Blank) — idle에 Q로 타격(3회), charge→망각 파동(근접 피해) 회피
   shards: [
     { id: 'c_blank_name', type: 'core', tile: [4, 5], radius: 1.4, identitySlot: 4,
       recall: "비어 있던 이름표 위로, 글자가 천천히 떠오른다. '지로'. 하루가 처음 나를 안아 올리며 지어준, 세상에서 가장 따뜻한 두 음절." },
@@ -2818,6 +2818,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
   const player = { x: 0, y: 0, vx: 0, vy: 0, dir: Math.PI/2,
                    facing: "down", flip: false, animT: 0, frame: 0, step: 0, w: 10, h: 8 };
   let recall = null, hintTimer = 0, hintTarget = null, setbackT = 0, flash = 0, muted = false, shake = 0;
+  let paused = false, pauseSel = 0, reduceFlash = false;   // 일시정지 + 접근성(플래시 감소)
   let trail = [], trailCD = 0, projecting = false; const illuminated = new Set();
   const AURA_R = 54;              // 기억 비추기 펄스 반경
   let lowLightTip = 0, auraFx = 0, revealT = 0, projInvuln = 0, hintMsgT = 0, stealthShown = false; let hintMsg = "";
@@ -2838,8 +2839,9 @@ if (typeof module !== 'undefined') module.exports = Journal;
     const v = JSON.parse(localStorage.getItem(SAVE_KEY) || "{}");
     let c = Number.isFinite(v.clearedMax) ? Math.floor(v.clearedMax) : -1;
     clearedMax = Math.max(-1, Math.min(CHAPTERS.length - 1, c));
+    reduceFlash = !!v.reduceFlash; muted = !!v.muted;
   } catch (e) { clearedMax = -1; } }
-  function saveProgress() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, clearedMax })); } catch (e) {} }
+  function saveProgress() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, clearedMax, reduceFlash, muted })); } catch (e) {} }
   function markCleared(idx) { if (idx > clearedMax) { clearedMax = idx; saveProgress(); } }
   // 연출: 환경 파티클(ambient) + 조각 수집 링 FX
   let ambientKind = null, particles = [], collectFx = null;
@@ -2945,9 +2947,10 @@ if (typeof module !== 'undefined') module.exports = Journal;
     player.facing = "down"; player.flip = false; player.frame = 0; player.step = 0; player.dir = Math.PI/2;
     trail = []; illuminated.clear(); nearShard = null; hintTimer = 0; toasts = [];
     elapsed = 0; lTutDone = false; sawMurk = false; sawEcho = false; playerNoise = 0; corePulse = 0; flash = 0; shake = 0;
-    collectFx = null; initAmbient();
-    boss = D.boss ? { hp: D.boss.hp || 2, max: D.boss.hp || 2, x: px(D.boss.tile[0]), y: px(D.boss.tile[1]),
-                      t: 0, hit: 0, struck: false, dispelled: false } : null;
+    collectFx = null; paused = false; initAmbient();
+    boss = D.boss ? { hp: D.boss.hp || 3, max: D.boss.hp || 3, x: px(D.boss.tile[0]), y: px(D.boss.tile[1]),
+                      t: 0, hit: 0, dispelled: false, exitT: 0,
+                      phase: "idle", timer: 1.8, waveR: (D.boss.waveR || 3.4) * TILE, ringT: 0 } : null;
     updateCamera();   // 첫 프레임 카메라 정렬
   }
 
@@ -2981,7 +2984,22 @@ if (typeof module !== 'undefined') module.exports = Journal;
     for (const p of particles) { ctx.globalAlpha = p.a; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); }
     ctx.restore();
   }
-  function gotoTitle() { hope = 0; loadStage(0); phase = "title"; if (window.Audio2 && Audio2.music) try { Audio2.music("title"); } catch (e) {} }
+  function gotoTitle() { hope = 0; paused = false; loadStage(0); phase = "title"; if (window.Audio2 && Audio2.music) try { Audio2.music("title"); } catch (e) {} }
+  // 일시정지 메뉴(접근성 토글 포함)
+  function pauseItems() { return [
+    { k: "resume", label: "계속하기" },
+    { k: "flash",  label: "플래시·화면흔들림 감소", val: reduceFlash },
+    { k: "mute",   label: "음소거", val: muted },
+    { k: "select", label: "스테이지 선택" },
+    { k: "title",  label: "처음 화면으로" } ]; }
+  function doPauseAction(k) {
+    if (window.Audio2 && Audio2.sfx) Audio2.sfx("select");
+    if (k === "resume") paused = false;
+    else if (k === "flash") { reduceFlash = !reduceFlash; saveProgress(); }
+    else if (k === "mute") { muted = !muted; if (window.Audio2) Audio2.setMuted(muted); saveProgress(); }
+    else if (k === "select") { paused = false; openSelect(); }
+    else if (k === "title") { paused = false; gotoTitle(); }
+  }
   // 스테이지 선택 메뉴 / 선택 시작 / 시퀀스(깨달음) 재생
   function openSelect() { selIdx = Math.max(0, Math.min(CHAPTERS.length - 1, clearedMax + 1)); phase = "select"; clearEdges();
     if (window.Audio2) try { if (Audio2.music) Audio2.music("title"); if (Audio2.sfx) Audio2.sfx("select"); } catch (e) {} }
@@ -3018,7 +3036,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
   }
   addEventListener("keydown", e => setKey(e, true));
   addEventListener("keyup", e => setKey(e, false));
-  function firstGesture() { try { if (window.Audio2) { Audio2.init(); if ((phase === "title" || phase === "select") && Audio2.music) Audio2.music("title"); } } catch (e) {} }  // 첫 제스처로 오디오 활성 + 타이틀 BGM
+  function firstGesture() { try { if (window.Audio2) { Audio2.init(); if (Audio2.setMuted) Audio2.setMuted(muted); if ((phase === "title" || phase === "select") && Audio2.music) Audio2.music("title"); } } catch (e) {} }  // 첫 제스처로 오디오 활성(+저장된 음소거) + 타이틀 BGM
   addEventListener("keydown", firstGesture, { once: true });
   function clearEdges() { for (const k in edge) edge[k] = false; }
 
@@ -3050,6 +3068,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
   const selStartBtn = () => ({ x: cv.width/2 - 224, y: cv.height - 74, w: 210, h: 36 });
   const selReviewBtn = () => ({ x: cv.width/2 + 14, y: cv.height - 74, w: 210, h: 36 });
   const inRect = (p, r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+  const pauseBtnRect = () => ({ x: cv.width - 190, y: 78, w: 34, h: 26 });   // 터치용 일시정지 버튼
 
   function onPointerDown(e) {
     try { cv.focus(); } catch (er) {} firstGesture();
@@ -3057,6 +3076,11 @@ if (typeof module !== 'undefined') module.exports = Journal;
     const p = canvasXY(e);
     const tr = touchToggleRect();                                   // 터치 조작 토글 (어느 페이즈든)
     if (p.x >= tr.x && p.x <= tr.x + tr.w && p.y >= tr.y && p.y <= tr.y + tr.h) { touchUI = !touchUI; return; }
+    if (phase === "play" && paused) {                               // 일시정지 메뉴 항목 탭
+      for (let i = 0; i < pauseItems().length; i++) if (inRect(p, pauseRowRect(i))) { pauseSel = i; doPauseAction(pauseItems()[i].k); return; }
+      return;
+    }
+    if (phase === "play" && inRect(p, pauseBtnRect())) { paused = true; if (window.Audio2 && Audio2.sfx) Audio2.sfx("select"); return; }
     if (phase === "title") {
       if (clearedMax >= 0 && inRect(p, titleContinueRect())) { startStage(Math.min(clearedMax + 1, CHAPTERS.length - 1)); return; }
       if (inRect(p, titleSelectRect())) { openSelect(); return; }
@@ -3121,6 +3145,13 @@ if (typeof module !== 'undefined') module.exports = Journal;
   function aabb(x, y, w, h, r) { return x - w/2 < r.x + r.w && x + w/2 > r.x && y - h/2 < r.y + r.h && y + h/2 > r.y; }
   function inAny(x, y, w, h, list) { for (const r of list) if (aabb(x, y, w, h, r)) return r; return null; }
   function dist(ax, ay, bx, by) { return Math.hypot(ax - bx, ay - by); }
+  function tileOcc(tc, tr) { return D.collision.some(q => tc >= q[0] && tc < q[0]+q[2] && tr >= q[1] && tr < q[1]+q[3]); }
+  function losClear(ax, ay, bx, by) {              // 시야 차단: 두 점 사이에 가구/벽 타일이 있으면 false
+    const steps = Math.max(1, Math.ceil(dist(ax, ay, bx, by) / 6));
+    for (let i = 1; i < steps; i++) { const x = ax + (bx-ax)*i/steps, y = ay + (by-ay)*i/steps;
+      if (tileOcc(Math.floor(x/TILE), Math.floor(y/TILE))) return false; }
+    return true;
+  }
   function shardCenter(s) { return { x: px(s.tile[0]), y: px(s.tile[1]) }; }
   function isDone(s) { return st.collected.has ? st.collected.has(s.id) : (st.collected.indexOf?.(s.id) >= 0); }
 
@@ -3191,6 +3222,15 @@ if (typeof module !== 'undefined') module.exports = Journal;
     if (phase === "recall") { if (edge[" "] || edge["enter"]) closeRecall(); clearEdges(); return; }
     if (phase === "setback") { setbackT -= dt; if (setbackT <= 0) phase = "play"; clearEdges(); return; }
     if (phase === "journal") { if (edge["tab"] || edge["escape"]) phase = "play"; clearEdges(); return; }
+    if (edge["escape"]) { paused = !paused; if (window.Audio2 && Audio2.sfx) Audio2.sfx("select"); }   // ESC 일시정지
+    if (paused) {
+      const items = pauseItems(), pre = pauseSel;
+      if (edge["w"] || edge["arrowup"]) pauseSel = (pauseSel + items.length - 1) % items.length;
+      if (edge["s"] || edge["arrowdown"]) pauseSel = (pauseSel + 1) % items.length;
+      if (pauseSel !== pre && window.Audio2 && Audio2.sfx) Audio2.sfx("hover");
+      if (edge[" "] || edge["enter"]) doPauseAction(items[pauseSel].k);
+      clearEdges(); return;                                          // 일시정지 중 월드 정지
+    }
     if (edge["tab"]) { phase = "journal"; clearEdges(); return; }   // 기억 일지 열기
     elapsed += dt;
 
@@ -3234,10 +3274,10 @@ if (typeof module !== 'undefined') module.exports = Journal;
           m.x += (m.x - player.x) / dd * 18; m.y += (m.y - player.y) / dd * 18;   // 한 번 밀어냄
         }
         // 보스 '공백' — 모은 기억(코어 3)이 다 모였을 때, 빛으로 비추면 갈라진다(가벼운 연출형)
-        if (boss && !boss.dispelled && Core.chapterClear(st) && dist(player.x, player.y, boss.x, boss.y) <= AURA_R + 28) {
-          boss.hp -= 1; boss.hit = 0.7; flash = 0.14; shake = 3;
+        if (boss && !boss.dispelled && boss.phase === "idle" && Core.chapterClear(st) && dist(player.x, player.y, boss.x, boss.y) <= AURA_R + 28) {
+          boss.hp -= 1; boss.hit = 0.7; flash = 0.14; shake = 3; boss.timer = Math.min(boss.timer, 0.55);   // 반격(곧 파동) → 물러나야 함
           if (boss.hp <= 0) { boss.dispelled = true; boss.exitT = 1.4; toasts.push({ text: "공백이 흩어진다 — 빛만이 남는다", color: "#9af6f6", t: 2.4 }); }
-          else toasts.push({ text: "기억의 빛이 공백을 갈라낸다  (" + (boss.max - boss.hp) + "/" + boss.max + ")", color: "#9af6f6", t: 2.0 });
+          else toasts.push({ text: "기억의 빛이 공백을 갈라낸다  (" + (boss.max - boss.hp) + "/" + boss.max + ")  — 물러나라!", color: "#9af6f6", t: 2.0 });
         } else
         toasts.push({ text: "기억의 빛 — 그림자가 물러나 제자리로 돌아간다", color: "#9af6f6", t: 1.8 });
         if (window.Audio2 && Audio2.chime) try { Audio2.chime(); } catch (e) {}
@@ -3266,7 +3306,8 @@ if (typeof module !== 'undefined') module.exports = Journal;
       if (m.warded > 0) m.warded -= dt;
       const warded = m.warded > 0;                                   // 비추기로 물러난 상태 → 제자리 복귀, 감지/공격 안 함
       const sm = stealth ? (moving ? 0.45 : 0.28) : 1.0;             // 은신: 정지하면 거의 안 보임
-      const sees = !warded && Core.murkSees({ x: m.x, y: m.y, faceAngle: m.faceAngle, sight: m.sightPx * sm, fov: m.fov }, player.x, player.y);
+      const sees = !warded && Core.murkSees({ x: m.x, y: m.y, faceAngle: m.faceAngle, sight: m.sightPx * sm, fov: m.fov }, player.x, player.y)
+                   && losClear(m.x, m.y, player.x, player.y);   // 가구 뒤에 숨으면 시야 차단(스텔스 깊이)
       if (sees) { m.chasing = true; m.lost = 0;
         if (!sawMurk) { sawMurk = true; toasts.push({ text: "들켰다! [은신]으로 천천히 — 멈추면 거의 안 보인다", color: "#ff7a7a", t: 3.0 }); } }
       else if (m.chasing) { m.lost += dt * (stealth ? 2.4 : 1); if (m.lost > 2.2) m.chasing = false; }
@@ -3312,7 +3353,9 @@ if (typeof module !== 'undefined') module.exports = Journal;
 
     // 후퇴
     if (st.mem <= 0 && Core.setbackIfDead(st)) {
-      const z = safes[0]; if (z) { player.x = z.x + z.w/2; player.y = z.y + z.h/2; }
+      const z = safes[0];                                              // 안전지대 없으면(보스 등) 스폰으로 복귀(NaN 방지)
+      if (z) { player.x = z.x + z.w/2; player.y = z.y + z.h/2; } else { player.x = px(D.spawn[0]); player.y = px(D.spawn[1]); }
+      player.vx = player.vy = 0;
       phase = "setback"; setbackT = 1.6; flash = 0.4; if (window.Audio2) Audio2.sfx("setback");
     }
 
@@ -3339,9 +3382,19 @@ if (typeof module !== 'undefined') module.exports = Journal;
     // 위험 오디오
     if (window.Audio2) { Audio2.drone(danger ? 0.8 : 0); Audio2.heartbeat(st.mem <= 2 ? 96 : 0); }
 
-    // 보스(공백) 틱 — 피격 점멸·해소 후 잠시 뒤 깨달음
+    // 보스(공백) 상태기계 — idle(취약·비추기 가능) → charge(망각 파동 예고) → burst(근접 피해)
     if (boss) {
-      boss.t += dt; if (boss.hit > 0) boss.hit -= dt;
+      boss.t += dt; if (boss.hit > 0) boss.hit -= dt; if (boss.ringT > 0) boss.ringT -= dt;
+      if (!boss.dispelled) {
+        boss.timer -= dt;
+        if (boss.phase === "idle" && boss.timer <= 0) { boss.phase = "charge"; boss.timer = 0.85; }
+        else if (boss.phase === "charge" && boss.timer <= 0) {           // 파동 터짐: 근접 시 기억 피해
+          boss.phase = "idle"; boss.timer = 1.7; boss.ringT = 0.5;
+          if (dist(player.x, player.y, boss.x, boss.y) < boss.waveR && projInvuln <= 0) {
+            if (Core.contact(st)) { flash = 0.22; shake = 6; if (window.Audio2) Audio2.sfx("contact"); }
+          } else if (window.Audio2 && Audio2.chime) Audio2.chime();      // 빗나감
+        }
+      }
       if (boss.dispelled) { boss.exitT -= dt; if (boss.exitT <= 0) { beginRealize(); clearEdges(); return; } }
     }
     // 클리어 → 깨달음(회상 몽타주) → (최종) 선택/엔딩 또는 다음 챕터 전환
@@ -3395,7 +3448,8 @@ if (typeof module !== 'undefined') module.exports = Journal;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, cv.width, cv.height);
     ctx.imageSmoothingEnabled = false;
-    const sx = (Math.random() - 0.5) * 2 * Math.max(0, shake), sy = (Math.random() - 0.5) * 2 * Math.max(0, shake);
+    const shk = reduceFlash ? 0 : Math.max(0, shake);   // 접근성: 화면 흔들림 감소
+    const sx = (Math.random() - 0.5) * 2 * shk, sy = (Math.random() - 0.5) * 2 * shk;
     ctx.scale(S, S); ctx.translate(-camX + sx, -camY + sy);   // 카메라 오프셋 적용
 
     if (!ready) { ctx.restore(); hudText("로딩…", cv.width/2, cv.height/2, "#34e2e2", 20, true); return; }
@@ -3452,7 +3506,18 @@ if (typeof module !== 'undefined') module.exports = Journal;
         { ctx.beginPath(); ctx.arc(boss.x+ox, boss.y+oy + Math.sin(boss.t*3+ox)*1.5, rr, 0, 7); ctx.fill(); }
       ctx.fillStyle = ready ? "#caa1ff" : "#7a5cff";                                              // 눈
       ctx.beginPath(); ctx.ellipse(boss.x-6, boss.y-3, 2.3, 3.4, 0, 0, 7); ctx.ellipse(boss.x+6, boss.y-3, 2.3, 3.4, 0, 0, 7); ctx.fill();
-      if (ready) { ctx.globalAlpha = 0.4 + 0.45*pul; ctx.strokeStyle = "#9af6f6"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(boss.x, boss.y, r+20, 0, 7); ctx.stroke(); }
+      if (ready && boss.phase === "idle") { ctx.globalAlpha = 0.4 + 0.45*pul; ctx.strokeStyle = "#9af6f6"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(boss.x, boss.y, r+20, 0, 7); ctx.stroke(); }
+      // 망각 파동 예고(charge): 보스 둘레 위험 반경이 붉게 차오름 → 이 안에 있으면 피해
+      if (boss.phase === "charge") {
+        const k = 1 - boss.timer / 0.85;
+        ctx.globalAlpha = 0.18 + 0.22 * k; ctx.fillStyle = "#ff5a5a";
+        ctx.beginPath(); ctx.arc(boss.x, boss.y, boss.waveR, 0, 7); ctx.fill();
+        ctx.globalAlpha = 0.5 + 0.4 * Math.sin(boss.t * 30); ctx.strokeStyle = "#ff7a7a"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(boss.x, boss.y, boss.waveR, 0, 7); ctx.stroke();
+      }
+      // 파동 터짐 링(밖으로 확장)
+      if (boss.ringT > 0) { const e = 1 - boss.ringT / 0.5; ctx.globalAlpha = boss.ringT / 0.5 * 0.7;
+        ctx.strokeStyle = "#ff5a5a"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(boss.x, boss.y, boss.waveR * (0.7 + 0.8*e), 0, 7); ctx.stroke(); }
       if (boss.hit > 0) { ctx.globalAlpha = Math.min(1, boss.hit/0.7); ctx.fillStyle = "rgba(154,246,246,0.55)"; ctx.beginPath(); ctx.arc(boss.x, boss.y, r+26, 0, 7); ctx.fill(); }
       ctx.restore();
     }
@@ -3512,12 +3577,12 @@ if (typeof module !== 'undefined') module.exports = Journal;
       ctx.restore();
     }
     // 피격 플래시
-    if (flash > 0) { ctx.fillStyle = `rgba(255,90,90,${Math.min(0.5, flash)})`; ctx.fillRect(0, 0, NW, NH); }
+    if (flash > 0 && !reduceFlash) { ctx.fillStyle = `rgba(255,90,90,${Math.min(0.5, flash)})`; ctx.fillRect(0, 0, NW, NH); }
 
     ctx.restore();
     if (phase === "play" || phase === "recall") drawAmbient();
     drawHUD();
-    if (phase === "play") { drawGuide(); if (stageCardT > 0) overlayStageCard(); }
+    if (phase === "play") { drawGuide(); if (stageCardT > 0) overlayStageCard(); if (paused) overlayPause(); }
     if (phase === "title") overlayTitle();
     if (phase === "select") overlaySelect();
     if (phase === "recall" && recall) overlayRecall();
@@ -3606,6 +3671,27 @@ if (typeof module !== 'undefined') module.exports = Journal;
       ctx.fillText(hasNext ? "지로가 첫 기억들을 되찾았다 — 다음 이야기로…" : "지로가 첫 기억들을 되찾았다.", cv.width / 2, cv.height / 2 + 54);
       if (!hasNext) { ctx.fillStyle = "#8ef548"; ctx.font = "13px 'Noto Sans KR',sans-serif"; ctx.fillText("[Space] 처음으로", cv.width / 2, cv.height / 2 + 86); }
     }
+    ctx.restore();
+  }
+
+  // 일시정지 메뉴 — 항목 + 접근성 토글(체크) + 호버 하이라이트
+  const pauseRowRect = (i) => ({ x: cv.width/2 - 170, y: cv.height/2 - 80 + i*46, w: 340, h: 38 });
+  function overlayPause() {
+    ctx.save(); ctx.fillStyle = "rgba(4,7,11,.8)"; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.textAlign = "center"; ctx.fillStyle = "#eafaff"; ctx.font = "bold 28px 'Noto Sans KR',sans-serif";
+    ctx.fillText("일시정지", cv.width/2, cv.height/2 - 110);
+    const items = pauseItems();
+    for (let i = 0; i < items.length; i++) {
+      const r = pauseRowRect(i), sel = pauseSel === i, it = items[i];
+      ctx.fillStyle = sel ? "rgba(52,226,226,.18)" : "rgba(10,16,20,.7)"; rrect(r.x, r.y, r.w, r.h, 9); ctx.fill();
+      ctx.strokeStyle = sel ? "#9af6f6" : "#2a4a4e"; ctx.lineWidth = sel ? 2.5 : 1.5; rrect(r.x, r.y, r.w, r.h, 9); ctx.stroke();
+      ctx.textAlign = "left"; ctx.fillStyle = sel ? "#eafaff" : "#cfe6e6"; ctx.font = "16px 'Noto Sans KR',sans-serif";
+      ctx.fillText(it.label, r.x + 18, r.y + 25);
+      if (it.val !== undefined) { ctx.textAlign = "right"; ctx.fillStyle = it.val ? "#8ef548" : "#5a7375";
+        ctx.font = "bold 15px 'Noto Sans KR',sans-serif"; ctx.fillText(it.val ? "켜짐 ✓" : "꺼짐", r.x + r.w - 18, r.y + 25); }
+    }
+    ctx.textAlign = "center"; ctx.fillStyle = "#5a7375"; ctx.font = "12px 'Noto Sans KR',sans-serif";
+    ctx.fillText("↑↓ 이동 · [Space] 선택 · [ESC] 계속", cv.width/2, cv.height/2 + 160);
     ctx.restore();
   }
 
@@ -3812,11 +3898,13 @@ if (typeof module !== 'undefined') module.exports = Journal;
     // 빛 게이지 바(코어 카운터 아래)
     ctx.fillStyle = "#16262a"; ctx.fillRect(26, 50, 100, 6);
     ctx.fillStyle = "#34e2e2"; ctx.fillRect(26, 50, 100 * (st.light / C.LIGHT_MAX), 6);
+    // 단축키 안내는 초반에만(정보 과부하 완화). 빛 수치·추적 쿨다운은 상시.
+    const tips = elapsed < 18;
     ctx.fillStyle = "#9fc5c5"; ctx.font = "11px 'Noto Sans KR',sans-serif";
-    ctx.fillText("빛 " + Math.floor(st.light||0) + "   [Q]비추기 · [H]직감", 132, 56);
-    ctx.fillStyle = trailCD > 0 ? "#8aa7a9" : "#8ef548";
-    ctx.fillText(trailCD > 0 ? "[L] 발자국 추적  " + trailCD.toFixed(0) + "s" : "[L] 발자국 추적 (사용가능)", 26, 70);
-    ctx.fillStyle = "#9fc5c5"; ctx.fillText("[Tab] 기억 일지", 26, 86);
+    ctx.fillText("빛 " + Math.floor(st.light||0) + (tips ? "   [Q]비추기 · [H]직감" : ""), 132, 56);
+    if (trailCD > 0) { ctx.fillStyle = "#8aa7a9"; ctx.fillText("[L] 추적  " + trailCD.toFixed(0) + "s", 26, 70); }
+    else if (tips) { ctx.fillStyle = "#8ef548"; ctx.fillText("[L] 발자국 추적", 26, 70); }
+    if (tips) { ctx.fillStyle = "#9fc5c5"; ctx.fillText("[Tab] 기억 일지", 26, 86); }
     ctx.restore();
   }
   function paw(cx, cy, col) { ctx.fillStyle = col; ctx.beginPath();
@@ -3839,12 +3927,18 @@ if (typeof module !== 'undefined') module.exports = Journal;
     ctx.font = "bold 13px 'Noto Sans KR',sans-serif"; const slw = ctx.measureText(sLabel).width + 28;
     ctx.fillStyle = "rgba(8,14,18,.7)"; rrect((W - slw)/2, 8, slw, 22, 7); ctx.fill();
     ctx.fillStyle = "#9af6f6"; ctx.fillText(sLabel, W/2, 23); ctx.restore();
+    // 일시정지 버튼(터치/마우스 공용 · ESC와 동일)
+    const pb = pauseBtnRect(); ctx.save(); ctx.fillStyle = "rgba(10,16,20,.7)"; rrect(pb.x, pb.y, pb.w, pb.h, 7); ctx.fill();
+    ctx.strokeStyle = "#2a4a4e"; ctx.lineWidth = 1; rrect(pb.x, pb.y, pb.w, pb.h, 7); ctx.stroke();
+    ctx.fillStyle = "#8aa7a9"; ctx.fillRect(pb.x + 12, pb.y + 8, 3, 10); ctx.fillRect(pb.x + 19, pb.y + 8, 3, 10); ctx.restore();
     // 목표 배너(상단 중앙)
     ctx.save();
     const bw = 380, bx = (W - bw) / 2, by = 38;
     ctx.fillStyle = "rgba(8,14,18,.82)"; rrect(bx, by, bw, 34, 10); ctx.fill();
     ctx.textAlign = "left"; ctx.font = "bold 14px 'Noto Sans KR',sans-serif";
-    if (done && boss) { ctx.fillStyle = "#9af6f6"; ctx.textAlign = "center"; ctx.fillText("[Q] 모은 기억의 빛으로 공백을 비춰라", W / 2, by + 22); }
+    if (done && boss) { const charging = boss.phase === "charge";
+      ctx.fillStyle = charging ? "#ff7a7a" : "#9af6f6"; ctx.textAlign = "center";
+      ctx.fillText(charging ? "⚠ 망각 파동 — 물러나라!" : "[Q] 지금! 빛으로 공백을 비춰라  (" + (boss.max - boss.hp) + "/" + boss.max + ")", W / 2, by + 22); }
     else if (done) { ctx.fillStyle = "#34e2e2"; ctx.textAlign = "center"; ctx.fillText("문이 열렸다 — 위쪽 ↑ 문으로 가라", W / 2, by + 22); }
     else {
       ctx.fillStyle = "#eafaff"; ctx.fillText(boss ? "목표 · 기억을 모아 공백을 마주하라" : "목표 · 코어 기억 모으기", bx + 14, by + 22);
@@ -4010,7 +4104,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
   // 디버그 스냅샷(테스트용, 무해): 상태 읽기 전용
   if (typeof window !== 'undefined') {
     window.__ziro = () => ({ phase, px: player.x, py: player.y, mem: st ? st.mem : 0, ch: chapterIdx,
-                             camX, camY, nw: NW, nh: NH, realizeI, realizeLen: realizeLines.length, choiceSel, endingType });
+                             camX, camY, nw: NW, nh: NH, realizeI, realizeLen: realizeLines.length, choiceSel, endingType, paused, reduceFlash });
     window.__loadStage = (i) => { loadStage(i); phase = "play"; };
     window.__debugClear = () => { for (const s of shards) if (s.type === "core") Core.collect(st, s); if (boss) boss.dispelled = true; beginRealize(); };  // 테스트용
     window.__hope = (v) => { if (typeof v === "number") hope = v; return hope; };
@@ -4018,8 +4112,11 @@ if (typeof module !== 'undefined') module.exports = Journal;
     window.__layoutCheck = () => { const occ = (c,r) => D.collision.some(q => c>=q[0]&&c<q[0]+q[2]&&r>=q[1]&&r<q[1]+q[3]); let bad = 0;
       for (const s of shards) if (occ(s.tile[0], s.tile[1])) bad++;
       for (const m of murks.concat(echoes)) for (const p of m.patrol) if (occ(Math.round((p.x-TILE/2)/TILE), Math.round((p.y-TILE/2)/TILE))) bad++;
-      return { bad, shards: shards.length, idx: chapterIdx }; };
-    window.__boss = () => boss ? { hp: boss.hp, dispelled: boss.dispelled } : null;
+      const reach = new Set(reachableTiles(D).map(t => t[0]+","+t[1]));   // 스폰 도달 가능 집합
+      let unreachable = 0; for (const s of shards) if (!reach.has(s.tile[0]+","+s.tile[1])) unreachable++;
+      return { bad, unreachable, shards: shards.length, idx: chapterIdx }; };
+    window.__boss = () => boss ? { hp: boss.hp, dispelled: boss.dispelled, phase: boss.phase } : null;
+    window.__setRandom = (v) => { RANDOMIZE = !!v; };   // 테스트 결정성용(랜덤 끄기)
     window.__title = () => gotoTitle();
     window.__sel = () => ({ phase, selIdx, clearedMax });
   }

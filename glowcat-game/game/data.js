@@ -628,7 +628,7 @@ DATA.chapter10 = {
   ],
   safeZones: [],
   door: { tile: [8, 1], requires: 'cores' },
-  boss: { hp: 2, tile: [8, 5] },     // 공백(The Blank) — 코어3 모은 뒤 기억 비추기(Q)로 해소(가벼운 연출형)
+  boss: { hp: 3, tile: [8, 5], waveR: 3.4 },   // 공백(The Blank) — idle에 Q로 타격(3회), charge→망각 파동(근접 피해) 회피
   shards: [
     { id: 'c_blank_name', type: 'core', tile: [4, 5], radius: 1.4, identitySlot: 4,
       recall: "비어 있던 이름표 위로, 글자가 천천히 떠오른다. '지로'. 하루가 처음 나를 안아 올리며 지어준, 세상에서 가장 따뜻한 두 음절." },

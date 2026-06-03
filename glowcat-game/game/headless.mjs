@@ -88,6 +88,7 @@ if (window.__loadStage) {
 
 // ── 가로 스크롤 카메라(챕터6 길거리 40×14): 우측 이동 시 카메라가 따라가는지 ──
 if (window.__loadStage) {
+  if (window.__setRandom) window.__setRandom(false);       // 카메라 테스트는 결정적으로(랜덤 적 간섭 배제)
   window.__loadStage(5);                                   // 챕터6(길거리, cols40)
   const b = window.__ziro();
   if (!(b.nw >= 640)) { console.log("FAIL: 챕터6 가로 맵 아님 (nw=" + b.nw + ")"); process.exit(1); }
@@ -98,6 +99,7 @@ if (window.__loadStage) {
   const a = window.__ziro();
   if (!(a.camX > cam0 + 10)) { console.log("FAIL: 가로 카메라 추적 안 됨 (camX " + cam0.toFixed(0) + "→" + a.camX.toFixed(0) + ")"); process.exit(1); }
   console.log("SCROLL OK — 챕터6 가로 스크롤 카메라 추적 (camX " + cam0.toFixed(0) + "→" + a.camX.toFixed(0) + ")");
+  if (window.__setRandom) window.__setRandom(true);
   window.__loadStage(0);
 }
 
@@ -153,11 +155,14 @@ if (window.__loadStage && window.__debugClear && window.__hope) {
 if (window.__loadStage && window.__collectCores && window.__boss) {
   window.__loadStage(9); window.__collectCores();
   const b0 = window.__boss();
-  if (!b0 || b0.hp !== 2) { console.log("FAIL: 보스 미존재/HP (" + JSON.stringify(b0) + ")"); process.exit(1); }
-  for (let s = 0; s < 3 && window.__ziro().phase === "play"; s++) {       // Q 펄스 3회(스폰이 보스 사정거리 내)
-    fire("keydown", ev("q", "KeyQ")); clock += 16; if (theFrame) theFrame(clock);
-    fire("keyup", ev("q", "KeyQ")); for (let i = 0; i < 6; i++) { clock += 16; if (theFrame) theFrame(clock); }
+  if (!b0 || b0.hp !== 3) { console.log("FAIL: 보스 미존재/HP (" + JSON.stringify(b0) + ")"); process.exit(1); }
+  for (let i = 0; i < 260; i++) { clock += 16; if (theFrame) theFrame(clock); }   // 파동 charge/burst 사이클 무예외 소크(스폰=안전거리)
+  if (window.__ziro().phase !== "play" || window.__boss().dispelled) { console.log("FAIL: 보스 소크 중 비정상 종료"); process.exit(1); }
+  for (let s = 0; s < 60 && !window.__boss().dispelled; s++) {           // 취약(idle) 창에서만 Q 타격
+    if (window.__boss().phase === "idle") { fire("keydown", ev("q", "KeyQ")); clock += 16; if (theFrame) theFrame(clock); fire("keyup", ev("q", "KeyQ")); }
+    for (let i = 0; i < 4; i++) { clock += 16; if (theFrame) theFrame(clock); }
   }
+  if (!window.__boss().dispelled) { console.log("FAIL: 보스 미해소 (boss=" + JSON.stringify(window.__boss()) + ")"); process.exit(1); }
   for (let i = 0; i < 130; i++) { clock += 16; if (theFrame) theFrame(clock); }   // 해소 후 exitT → realize
   const ph = window.__ziro().phase;
   if (!(ph === "realize" || ph === "choice")) { console.log("FAIL: 보스 해소→깨달음 안 됨 (phase=" + ph + ", boss=" + JSON.stringify(window.__boss()) + ")"); process.exit(1); }
@@ -187,10 +192,27 @@ if (window.__title && window.__sel) {
 
 // ── 랜덤 레이아웃 검증: 전 스테이지 반복 로드 → 조각·적 patrol이 가구 관통 없는지 ──
 if (window.__loadStage && window.__layoutCheck) {
-  let totalBad = 0, loads = 0;
-  for (let n = 0; n < 10; n++) for (let s = 0; s < 10; s++) { window.__loadStage(s); const r = window.__layoutCheck(); totalBad += r.bad; loads++; }
+  let totalBad = 0, totalUnreach = 0, loads = 0;
+  for (let n = 0; n < 10; n++) for (let s = 0; s < 10; s++) { window.__loadStage(s); const r = window.__layoutCheck(); totalBad += r.bad; totalUnreach += r.unreachable; loads++; }
   if (totalBad > 0) { console.log("FAIL: 랜덤 배치가 벽/가구에 겹침 (" + totalBad + "건 / " + loads + "회)"); process.exit(1); }
-  console.log("RANDOM OK — 전 10스테이지 " + loads + "회 랜덤 배치, 가구 관통 0건");
+  if (totalUnreach > 0) { console.log("FAIL: 도달 불가 조각 발생 (" + totalUnreach + "건 / " + loads + "회)"); process.exit(1); }
+  console.log("RANDOM OK — 전 10스테이지 " + loads + "회 랜덤 배치, 가구 관통 0 · 도달불가 0");
+  window.__loadStage(0);
+}
+
+// ── 일시정지(ESC) + 접근성 토글: 열기→플래시감소 켜기→계속 ──
+if (window.__loadStage) {
+  if (window.__setRandom) window.__setRandom(false);
+  window.__loadStage(0);
+  fire("keydown", ev("Escape", "Escape")); fire("keyup", ev("Escape", "Escape")); clock += 16; if (theFrame) theFrame(clock);
+  if (!window.__ziro().paused) { console.log("FAIL: ESC 일시정지 안 됨"); process.exit(1); }
+  fire("keydown", ev("s", "KeyS")); fire("keyup", ev("s", "KeyS")); clock += 16; if (theFrame) theFrame(clock);  // '플래시 감소'로 이동
+  fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); clock += 16; if (theFrame) theFrame(clock);  // 토글 ON
+  if (!window.__ziro().reduceFlash) { console.log("FAIL: 접근성 토글(플래시 감소) 안 됨"); process.exit(1); }
+  fire("keydown", ev("Escape", "Escape")); fire("keyup", ev("Escape", "Escape")); clock += 16; if (theFrame) theFrame(clock);  // ESC 계속
+  if (window.__ziro().paused) { console.log("FAIL: ESC 재개 안 됨"); process.exit(1); }
+  console.log("PAUSE OK — ESC 일시정지 · 접근성 토글(플래시 감소) · 재개");
+  if (window.__setRandom) window.__setRandom(true);
   window.__loadStage(0);
 }
 
