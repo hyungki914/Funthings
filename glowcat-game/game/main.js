@@ -28,6 +28,8 @@
                    facing: "down", flip: false, animT: 0, frame: 0, step: 0, w: 10, h: 8 };
   let recall = null, hintTimer = 0, hintTarget = null, setbackT = 0, flash = 0, muted = false, shake = 0;
   let trail = [], trailCD = 0, projecting = false; const illuminated = new Set();
+  const AURA_R = 46;              // 기억 비추기 aura 반경(전방위)
+  let lowLightTip = 0;           // '빛 부족' 안내 쿨다운
   // 온보딩/피드백 상태
   let elapsed = 0, lTutDone = false, corePulse = 0; let toasts = [];   // toasts: {text,color,t}
   let sawMurk = false;
@@ -146,15 +148,18 @@
       player.animT += dt; if (player.animT > 0.16) { player.animT = 0; player.frame ^= 1; player.step = (player.step||0) + 1; }
     } else player.frame = 0;
 
-    // 기억 비추기(Q) — 빛 자원 소모 콘. 숨은 조각 드러냄 + Murk 밀어냄
+    // 기억 비추기(Q) — 빛 자원 소모 AURA(전방위). 숨은 조각 드러냄 + 주변 Murk 차단 + 피격 무효
     illuminated.clear(); projecting = false;
-    if (keys["q"] && st.light > 0) {
-      projecting = true;
-      st.light = Math.max(0, st.light - C.PROJECT_COST * dt);
-      for (const s of D.shards) {
-        if (s.hidden && !isDone(s)) { const c = shardCenter(s);
-          if (Core.inCone(player.x, player.y, player.dir, C.PROJECT_LEN, C.PROJECT_HALFDEG, c.x, c.y)) illuminated.add(s.id); }
-      }
+    if (lowLightTip > 0) lowLightTip -= dt;
+    if (keys["q"]) {
+      if (st.light > 0) {
+        projecting = true;
+        st.light = Math.max(0, st.light - C.PROJECT_COST * dt);
+        for (const s of D.shards) if (s.hidden && !isDone(s)) {
+          const c = shardCenter(s);
+          if (dist(player.x, player.y, c.x, c.y) <= AURA_R) illuminated.add(s.id);
+        }
+      } else if (lowLightTip <= 0) { toasts.push({ text: "빛이 부족하다 — 기억을 모으거나 안전지대에서 회복", color: "#9fc5c5", t: 2.0 }); lowLightTip = 2.2; }
     }
 
     // 발자국 추적(L) — 가장 가까운 미발견 코어로 시안 발자국 흔적(무료, 쿨다운)
@@ -170,9 +175,11 @@
     // Murk
     let danger = false;
     for (const m of murks) {
-      if (projecting && Core.inCone(player.x, player.y, player.dir, C.PROJECT_LEN, C.PROJECT_HALFDEG, m.x, m.y)) {
+      if (m.warded > 0) m.warded -= dt;
+      if (projecting && dist(player.x, player.y, m.x, m.y) <= AURA_R) {     // aura: 전방위로 밀어냄
         const dd = dist(player.x, player.y, m.x, m.y) || 1;
-        m.x += (m.x - player.x) / dd * 46 * dt; m.y += (m.y - player.y) / dd * 46 * dt; m.chasing = false;
+        m.x += (m.x - player.x) / dd * 72 * dt; m.y += (m.y - player.y) / dd * 72 * dt;
+        m.chasing = false; m.warded = 0.3;
       }
       const sees = Core.murkSees({ x: m.x, y: m.y, faceAngle: m.faceAngle, sight: m.sightPx, fov: m.fov }, player.x, player.y)
                    && !stealth || (Core.murkSees({ x:m.x,y:m.y,faceAngle:m.faceAngle,sight:m.sightPx*0.6,fov:m.fov }, player.x, player.y) && stealth);
@@ -187,7 +194,7 @@
       const nx = (ax - m.x) / d, ny = (ay - m.y) / d;
       m.x += nx * spd * dt; m.y += ny * spd * dt;
       if (Math.abs(nx) + Math.abs(ny) > 0.01) m.faceAngle = Math.atan2(ny, nx);
-      if (dist(m.x, m.y, player.x, player.y) < 11) {
+      if (dist(m.x, m.y, player.x, player.y) < 11 && !projecting && !(m.warded > 0)) {   // 비추는 동안/직후엔 피격 무효
         if (Core.contact(st)) { flash = 0.18; shake = 4; if (window.Audio2) Audio2.sfx("contact"); }
       }
       if (dist(m.x, m.y, player.x, player.y) < m.sightPx * 0.6) danger = true;
@@ -196,6 +203,7 @@
     // 게이지 tick
     const inSafe = !!inAny(player.x, player.y, player.w, player.h, safes);
     Core.tick(st, dt, { inSafe, inDanger: danger, moving });
+    if (inSafe) st.light = Math.min(C.LIGHT_MAX, st.light + 0.6 * dt);   // 안전지대에서 빛도 회복
 
     // 후퇴
     if (st.mem <= 0 && Core.setbackIfDead(st)) {
@@ -212,14 +220,17 @@
     }
     if (edge["e"] && nearShard) doCollect(nearShard);
 
-    // 힌트
-    if (edge["h"] && Core.useHint(st).ok) {
-      let best = null, bd = 1e9;
-      for (const s of D.shards) if (!isDone(s) && s.type === "core") {
-        const c = shardCenter(s), dd = dist(player.x, player.y, c.x, c.y);
-        if (dd < bd) { bd = dd; best = c; }
-      }
-      hintTarget = best; hintTimer = 2.2;
+    // 힌트(H) — 빛 1 소모, 가장 가까운 미발견 코어 방향. 빛 부족 시 안내.
+    if (edge["h"]) {
+      if (Core.useHint(st).ok) {
+        let best = null, bd = 1e9;
+        for (const s of D.shards) if (!isDone(s) && s.type === "core") {
+          const c = shardCenter(s), dd = dist(player.x, player.y, c.x, c.y);
+          if (dd < bd) { bd = dd; best = c; }
+        }
+        hintTarget = best; hintTimer = best ? 3.0 : 0;
+        if (!best) toasts.push({ text: "남은 코어 기억이 없다", color: "#9fc5c5", t: 1.6 });
+      } else toasts.push({ text: "빛이 부족하다 — 안전지대에서 회복", color: "#9fc5c5", t: 2.0 });
     }
     if (hintTimer > 0) hintTimer -= dt;
 
@@ -293,11 +304,17 @@
     for (const p of trail) { const a = 1 - p.age / C.TRAIL_LIFE; ctx.save(); ctx.globalAlpha = 0.55 * a; ctx.fillStyle = "#34e2e2";
       ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 2.2, 1.6, 0, 0, 7); ctx.fill();
       ctx.beginPath(); ctx.arc(p.x - 1.6, p.y - 1.6, 0.8, 0, 7); ctx.arc(p.x + 1.6, p.y - 1.6, 0.8, 0, 7); ctx.fill(); ctx.restore(); }
-    // 기억 비추기 콘
-    if (projecting) { const h = C.PROJECT_HALFDEG * Math.PI / 180; ctx.save(); ctx.globalAlpha = 0.2;
-      ctx.shadowColor = "#34e2e2"; ctx.shadowBlur = 6; ctx.fillStyle = "#9af6f6";
-      ctx.beginPath(); ctx.moveTo(player.x, player.y - 4);
-      ctx.arc(player.x, player.y - 4, C.PROJECT_LEN, player.dir - h, player.dir + h); ctx.closePath(); ctx.fill(); ctx.restore(); }
+    // 기억 비추기 aura(전방위 발광 원) — 주변 그림자를 밀어내는 보호막
+    if (projecting) {
+      const ar = AURA_R, pul = 0.5 + 0.5 * Math.sin(performance.now() / 130), cyx = player.x, cyy = player.y - 2;
+      ctx.save();
+      const g = ctx.createRadialGradient(cyx, cyy, 3, cyx, cyy, ar);
+      g.addColorStop(0, "rgba(154,246,246,0.30)"); g.addColorStop(0.65, "rgba(52,226,226,0.12)"); g.addColorStop(1, "rgba(52,226,226,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cyx, cyy, ar, 0, 7); ctx.fill();
+      ctx.globalAlpha = 0.35 + 0.35 * pul; ctx.strokeStyle = "#9af6f6"; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(cyx, cyy, ar * (0.82 + 0.12 * pul), 0, 7); ctx.stroke();
+      ctx.restore();
+    }
 
     // 환경 단서: 미발견 조각을 거리 비례로 흐릿하게(글로우 OFF 보완 — '여기 뭔가 있다').
     //   숨은 조각은 제외(Q로만). 거짓은 차갑게 깜빡여 미묘한 '어긋남' 신호.
@@ -326,9 +343,10 @@
       if (e.p) {
         const sp = spriteFor();
         if (sp && sp.width) {
-          ctx.save();
+          const sneak = !!keys["shift"];                          // 은신: 흐려지고 글로우 약화(피드백)
+          ctx.save(); if (sneak) ctx.globalAlpha = 0.6;
           if (player.facing === "side" && player.flip) { ctx.translate(player.x, 0); ctx.scale(-1, 1); ctx.translate(-player.x, 0); }
-          glow(() => ctx.drawImage(sp, Math.round(player.x - sp.width/2), Math.round(player.y - sp.height + 6)), "#8ef548", 3);
+          glow(() => ctx.drawImage(sp, Math.round(player.x - sp.width/2), Math.round(player.y - sp.height + 6)), sneak ? "#2a3d2a" : "#8ef548", sneak ? 1 : 3);
           ctx.restore();
         }
       } else {
@@ -342,11 +360,16 @@
       }
     }
 
-    // 힌트 화살표
+    // 힌트 화살표(H) — 코어 방향 점선 + 펄스 화살표(잘 보이게)
     if (hintTimer > 0 && hintTarget) {
       const a = Math.atan2(hintTarget.y - player.y, hintTarget.x - player.x);
-      ctx.save(); ctx.translate(player.x + Math.cos(a)*16, player.y + Math.sin(a)*16); ctx.rotate(a);
-      ctx.fillStyle = "#8ef548"; ctx.beginPath(); ctx.moveTo(6,0); ctx.lineTo(-3,-4); ctx.lineTo(-3,4); ctx.closePath(); ctx.fill(); ctx.restore();
+      const pul = 0.6 + 0.4 * Math.sin(performance.now() / 140);
+      ctx.save(); ctx.globalAlpha = 0.4 * pul; ctx.strokeStyle = "#8ef548"; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+      ctx.beginPath(); ctx.moveTo(player.x + Math.cos(a) * 12, player.y + Math.sin(a) * 12);
+      ctx.lineTo(player.x + Math.cos(a) * 30, player.y + Math.sin(a) * 30); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+      ctx.save(); ctx.globalAlpha = 0.7 + 0.3 * pul; ctx.translate(player.x + Math.cos(a) * 26, player.y + Math.sin(a) * 26); ctx.rotate(a);
+      ctx.fillStyle = "#8ef548"; ctx.shadowColor = "#8ef548"; ctx.shadowBlur = 4;
+      ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-4, -6); ctx.lineTo(-4, 6); ctx.closePath(); ctx.fill(); ctx.restore();
     }
 
     // 피격 플래시
@@ -361,7 +384,7 @@
     if (phase === "cleared") overlayCenter("챕터 1 클리어 · 「지로의 방」", "#8ef548", "지로가 첫 기억들을 되찾았다.");
     if (phase === "intro") overlayIntro();
     if (phase === "transition") overlayTransition();
-    if (phase === "journal" && window.Journal) { try { Journal.draw(ctx, cv, st, DATA, IMG); } catch (e) { console.error(e); } }
+    if (phase === "journal" && window.Journal) { try { Journal.draw(ctx, cv, st, D, IMG); } catch (e) { console.error(e); } }
     if (veil > 0) { ctx.save(); ctx.fillStyle = "rgba(3,5,9," + Math.min(1, veil / 0.8) + ")"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.restore(); }
   }
 
@@ -467,6 +490,7 @@
     if (!ready) return;
     const W = cv.width, cores = (st.coreOrder ? st.coreOrder.length : 0), need = st.coresNeeded;
     const done = cores >= need;
+    if (keys["shift"]) { ctx.save(); ctx.textAlign = "center"; ctx.font = "bold 12px 'Noto Sans KR',sans-serif"; ctx.fillStyle = "#7fb0b3"; ctx.fillText("은신 중", player.x * S, player.y * S - 42); ctx.restore(); }
     // 목표 배너(상단 중앙)
     ctx.save();
     const bw = 380, bx = (W - bw) / 2, by = 12;

@@ -14,7 +14,12 @@ try { require("./journal.js"); } catch (e) { /* journal.js 아직 없으면 main
 
 // 스텁
 const ctx = new Proxy({}, {
-  get(_, p) { if (p === "measureText") return () => ({ width: 12 }); if (p === "canvas") return fakeCanvas; return () => {}; },
+  get(_, p) {
+    if (p === "measureText") return () => ({ width: 12 });
+    if (p === "canvas") return fakeCanvas;
+    if (p === "createRadialGradient" || p === "createLinearGradient") return () => ({ addColorStop() {} });
+    return () => {};
+  },
   set() { return true; },
 });
 const cvHandlers = {};

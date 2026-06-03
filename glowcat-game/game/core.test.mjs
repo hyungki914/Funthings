@@ -23,7 +23,7 @@ const falseShard = (id, recall = '거짓') =>
 test('newState: 초기값 (mem=4, light=2, identity=0)', () => {
   const s = Core.newState(makeData());
   assert.equal(s.mem, 4);
-  assert.equal(s.light, 2);
+  assert.equal(s.light, Core.C.START_LIGHT);
   assert.equal(s.identity, 0);
   assert.equal(s.iframe, 0);
   assert.equal(s.coresNeeded, 3);
@@ -47,7 +47,7 @@ test('collect(core): mem+2, light+1, identity 상승, coreOrder 증가; 재수�
   assert.equal(r.recallText, '나는 고양이');
   assert.equal(r.identitySlot, 0);
   assert.equal(s.mem, 6);          // 4 + 2
-  assert.equal(s.light, 3);        // 2 + 1
+  assert.equal(s.light, Core.C.START_LIGHT + 1);        // 2 + 1
   assert.equal(s.identity, 1);     // max(0, 0+1)
   assert.deepEqual(s.coreOrder, ['c1']);
   assert.ok(s.collected.has('c1'));
@@ -68,7 +68,7 @@ test('collect(false): mem-2', () => {
   assert.equal(r.gainMem, -2);
   assert.equal(r.gainLight, 0);
   assert.equal(s.mem, 2);          // 4 - 2
-  assert.equal(s.light, 2);        // 불변
+  assert.equal(s.light, Core.C.START_LIGHT);        // 불변
   assert.equal(s.identity, 0);     // 불변
 });
 
@@ -77,7 +77,7 @@ test('collect(echo): mem+1, light+1; mem 바닥 0 clamp', () => {
   const s = Core.newState(makeData());
   Core.collect(s, echoShard('e1'));
   assert.equal(s.mem, 5);
-  assert.equal(s.light, 3);
+  assert.equal(s.light, Core.C.START_LIGHT + 1);
   // mem 바닥 clamp: false 조각으로 0 밑으로 못 내려감
   const s2 = Core.newState(makeData()); // mem 4
   Core.collect(s2, falseShard('f1')); // 2
@@ -130,7 +130,7 @@ test('tick: inSafe 회복(cap 10), inDanger 감소(floor 0), iframe 감소', () 
 
 // 6. useHint: 정상 차감 + light 부족 시 {ok:false}
 test('useHint: light 차감; 부족 시 {ok:false}', () => {
-  const s = Core.newState(makeData()); // light 2
+  const s = Core.newState(makeData()); s.light = 2; // 테스트 고정(START_LIGHT 무관)
   assert.deepEqual(Core.useHint(s), { ok: true });
   assert.equal(s.light, 1);
   assert.deepEqual(Core.useHint(s), { ok: true });

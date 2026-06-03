@@ -8,7 +8,7 @@ const C = {
   MEM_MAX: 10,
   LIGHT_MAX: 6,
   START_MEM: 4,
-  START_LIGHT: 2,
+  START_LIGHT: 3,
   CONTACT: -2,
   CORE_GAIN: +2,
   ECHO_GAIN: +1,
@@ -21,7 +21,7 @@ const C = {
   STEALTH_SPEED: 38,  // px/s
   SETBACK_MEM: 3,
   // 코어 동사 (v2 증분)
-  PROJECT_COST: 0.8,  // 기억 비추기: 초당 빛 소모
+  PROJECT_COST: 0.6,  // 기억 비추기: 초당 빛 소모
   PROJECT_LEN: 46,    // 투사 콘 길이(px)
   PROJECT_HALFDEG: 32,// 투사 콘 반각(도)
   TRAIL_CD: 6.0,      // 발자국 추적 쿨다운(s)

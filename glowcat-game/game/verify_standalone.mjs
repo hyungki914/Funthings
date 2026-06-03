@@ -8,7 +8,7 @@ const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]
 if (blocks.length < 6) { console.log("FAIL: 스크립트 블록", blocks.length, "개"); process.exit(1); }
 
 // DOM/Canvas/Image/rAF 스텁
-const ctx = new Proxy({}, { get(_, p) { if (p === "measureText") return () => ({ width: 12 }); if (p === "canvas") return fakeCanvas; return () => {}; }, set() { return true; } });
+const ctx = new Proxy({}, { get(_, p) { if (p === "measureText") return () => ({ width: 12 }); if (p === "canvas") return fakeCanvas; if (p === "createRadialGradient" || p === "createLinearGradient") return () => ({ addColorStop() {} }); return () => {}; }, set() { return true; } });
 const cvHandlers = {};
 const fakeCanvas = { width: 1056, height: 672, getContext: () => ctx, addEventListener: (t, fn) => { cvHandlers[t] = fn; }, getBoundingClientRect: () => ({ left: 0, top: 0, width: 1056, height: 672 }) };
 globalThis.window = globalThis;
