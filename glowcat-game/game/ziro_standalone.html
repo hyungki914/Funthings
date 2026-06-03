@@ -3383,19 +3383,16 @@ if (typeof module !== 'undefined') module.exports = Journal;
   }
   function makeLayout(D) {
     const orig = { shards: D.shards.map(s => ({ ...s })), murkP: (D.murks||[]).map(m => m.patrol), echoP: (D.echoes||[]).map(m => m.patrol) };
-    if (!RANDOMIZE || chapterIdx <= 1) return orig;                // 튜토리얼(1·2장)은 의도된 배치 고정
+    if (!RANDOMIZE || chapterIdx < 1) return orig;                 // 첫 각성(1장)만 의도된 배치 고정
     const reach = reachableTiles(D);
     if (reach.length < D.shards.length + 8) return orig;            // 너무 좁으면 원본
     const sp = D.spawn, d2 = (a, b) => (a[0]-b[0])**2 + (a[1]-b[1])**2;
     const shuffle = a => { for (let i = a.length-1; i > 0; i--) { const j = (Math.random()*(i+1))|0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
-    // 페어 랜덤: obj(옮길 수 있는 물건이 함께 그려짐) 또는 비숨김 echo 는 위치 셔플(물건도 같이 이동 → 서사 유지).
-    //   구조물에 얽힌 core(창·문·계단·벤치 등)·false·hidden 은 고정.
-    const fixedOf = s => !(s.obj || (s.type === "echo" && !s.hidden));
-    const placed = [], shardsOut = D.shards.map(s => fixedOf(s) ? { ...s, tile: [s.tile[0], s.tile[1]] } : null);
-    D.shards.forEach((s, i) => { if (shardsOut[i]) placed.push(s.tile); });
-    const pool = shuffle(reach.filter(t => d2(t, sp) >= 9));
+    // 매 진행마다 '모든 조각'(코어·에코·거짓·숨김)을 도달가능·간격 보장하며 재배치.
+    //   obj 사물은 조각과 함께 그려지므로 위치가 같이 따라간다(서사-사물 페어 유지).
+    const placed = [], shardsOut = D.shards.map(() => null);
+    const pool = shuffle(reach.filter(t => d2(t, sp) >= 9));        // 스폰 근접(≤3타일) 제외 — 첫 행동이 함정/즉시수집이 되지 않게
     for (let i = 0; i < D.shards.length; i++) {
-      if (shardsOut[i]) continue;
       const s = D.shards[i]; let tile = null, pi = -1;
       for (let k = 0; k < pool.length; k++) { if (placed.every(p => d2(p, pool[k]) >= 4)) { tile = pool[k]; pi = k; break; } }
       if (!tile) { shardsOut[i] = { ...s, tile: [s.tile[0], s.tile[1]] }; continue; }   // 폴백 원본
@@ -4663,6 +4660,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
       let unreachable = 0; for (const s of shards) if (!reach.has(s.tile[0]+","+s.tile[1])) unreachable++;
       return { bad, unreachable, shards: shards.length, idx: chapterIdx }; };
     window.__boss = () => boss ? { hp: boss.hp, dispelled: boss.dispelled, phase: boss.phase } : null;
+    window.__shards = () => shards.map(s => ({ id: s.id, type: s.type, t: [s.tile[0], s.tile[1]] }));   // 랜덤배치 검증용
     window.__setRandom = (v) => { RANDOMIZE = !!v; };   // 테스트 결정성용(랜덤 끄기)
     window.__title = () => gotoTitle();
     window.__sel = () => ({ phase, selIdx, clearedMax });
