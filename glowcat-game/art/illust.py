@@ -297,12 +297,40 @@ def _b64(im):
     buf = io.BytesIO(); q.save(buf, "PNG", optimize=True)
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
+# ── 외부 원화(드롭인) 오버라이드 ───────────────────────────────────
+# art/ext/<key>.png|jpg|jpeg|webp 가 있으면 절차생성 대신 그 그림을 임베드한다.
+# (회화 생성 AI로 만든 엔딩 일러스트 등을 코드 수정 없이 끼워 넣는 용도)
+EXT = os.path.join(HERE, "ext")
+EXT_W = 768                                          # 임베드 가로 상한(16:9 → 768×432)
+
+def _ext_path(key):
+    for ext in (".png", ".jpg", ".jpeg", ".webp"):
+        p = os.path.join(EXT, key + ext)
+        if os.path.exists(p): return p
+    return None
+
+def _ext_b64(path):
+    im = Image.open(path); im = im.convert("RGBA") if im.mode == "P" else im
+    # 16:9 캔버스에 맞춰 커버(중앙 크롭) → 게임 컷과 동일 비율
+    tw, th = EXT_W, EXT_W * H // W
+    sc = max(tw / im.width, th / im.height)
+    rs = im.resize((max(1, round(im.width*sc)), max(1, round(im.height*sc))), Image.LANCZOS)
+    L = (rs.width - tw)//2; T = (rs.height - th)//2
+    rs = rs.crop((L, T, L+tw, T+th)).convert("RGB")
+    buf = io.BytesIO(); rs.save(buf, "JPEG", quality=86, optimize=True)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+
 def export_illustrations():
     game = os.path.join(HERE, "..", "game")
     lines = ["// 자동 생성 — art/illust.py export_illustrations(). 원화 키아트(스테이지 깨달음+엔딩).",
              "const ILL = {"]
     for k, fn in ILL.items():
-        lines.append(f'  {k}: "{_b64(fn())}",')
+        ep = _ext_path(k)
+        if ep:
+            lines.append(f'  {k}: "{_ext_b64(ep)}",   // ← ext/{os.path.basename(ep)}')
+            print(f"  [ext] {k} <- {os.path.relpath(ep, HERE)}")
+        else:
+            lines.append(f'  {k}: "{_b64(fn())}",')
     lines += ["};", "if (typeof module !== 'undefined') module.exports = ILL;"]
     path = os.path.join(game, "illust.js")
     with open(path, "w") as f: f.write("\n".join(lines) + "\n")
