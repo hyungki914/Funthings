@@ -609,6 +609,73 @@ const MUSIC_THEMES = {
       { t: 0,  note: -29, dur: 14.0, vol: 0.4, voice: 'bass', type: 'sine' },    // E1
     ],
   },
+
+  // haru(2층·하루의 방): 가장 무겁고 사적인 슬픔. 느린 하행 단음(탄식) + 멈춘 오르골 파편 + 어두운 패드.
+  haru: {
+    stepDur: 0.6, steps: 24, melType: 'sine', padType: 'sine', bassType: 'sine', melVol: 0.85, padVol: 0.7,
+    patterns: [
+      // 느린 하행(D 단조 탄식): D5 → C5 → A4 → F4 → G4(풀리지 않는 반음)
+      { t: 0,  note: 5,   dur: 1.6, vol: 0.6,  voice: 'mel', type: 'sine' },     // D5
+      { t: 4,  note: 3,   dur: 1.6, vol: 0.55, voice: 'mel', type: 'sine' },     // C5
+      { t: 8,  note: 0,   dur: 1.8, vol: 0.55, voice: 'mel', type: 'sine' },     // A4
+      { t: 13, note: -4,  dur: 2.2, vol: 0.5,  voice: 'mel', type: 'sine' },     // F4
+      { t: 18, note: -2,  dur: 1.4, vol: 0.45, voice: 'mel', type: 'sine' },     // G4
+      // 멀리서 깨진 오르골 파편(높고 여리게)
+      { t: 6,  note: 16,  dur: 0.6, vol: 0.24, voice: 'mel', type: 'triangle' }, // C#6
+      { t: 20, note: 12,  dur: 0.7, vol: 0.22, voice: 'mel', type: 'triangle' }, // A5
+      // 어두운 패드(Dm 루트+단3도, 쳐지는 하강)
+      { t: 0,  note: -19, dur: 7.0, vol: 0.5,  voice: 'pad', type: 'sine' },     // D3
+      { t: 0,  note: -16, dur: 7.0, vol: 0.35, voice: 'pad', type: 'sine' },     // F3
+      { t: 12, note: -21, dur: 6.5, vol: 0.5,  voice: 'pad', type: 'sine' },     // C3
+      // 아주 낮은 서브 드론
+      { t: 0,  note: -31, dur: 15.0, vol: 0.45, voice: 'bass', type: 'sine' },   // D2
+    ],
+  },
+
+  // town(집 근처·길거리·상가): 거니는 듯 그리운 일상. 따뜻하되 시린 C장조 산책 멜로디.
+  town: {
+    stepDur: 0.32, steps: 32, melType: 'triangle', padType: 'sine', bassType: 'sine', melVol: 0.95, padVol: 0.7,
+    patterns: [
+      // 산책 멜로디(C - Am - F - G 풍)
+      { t: 0,  note: 3,   dur: 0.5, vol: 0.65, voice: 'mel', type: 'triangle' }, // C5
+      { t: 2,  note: 7,   dur: 0.5, vol: 0.6,  voice: 'mel', type: 'triangle' }, // E5
+      { t: 4,  note: 10,  dur: 0.6, vol: 0.6,  voice: 'mel', type: 'triangle' }, // G5
+      { t: 7,  note: 7,   dur: 0.5, vol: 0.55, voice: 'mel', type: 'triangle' }, // E5
+      { t: 8,  note: 0,   dur: 0.5, vol: 0.6,  voice: 'mel', type: 'triangle' }, // A4
+      { t: 10, note: 3,   dur: 0.5, vol: 0.55, voice: 'mel', type: 'triangle' }, // C5
+      { t: 12, note: 7,   dur: 0.6, vol: 0.55, voice: 'mel', type: 'triangle' }, // E5
+      { t: 15, note: 5,   dur: 0.5, vol: 0.5,  voice: 'mel', type: 'triangle' }, // D5
+      { t: 16, note: -4,  dur: 0.5, vol: 0.6,  voice: 'mel', type: 'triangle' }, // F4
+      { t: 18, note: 0,   dur: 0.5, vol: 0.55, voice: 'mel', type: 'triangle' }, // A4
+      { t: 20, note: 5,   dur: 0.6, vol: 0.55, voice: 'mel', type: 'triangle' }, // D5
+      { t: 23, note: 3,   dur: 0.5, vol: 0.5,  voice: 'mel', type: 'triangle' }, // C5
+      { t: 24, note: -2,  dur: 0.5, vol: 0.6,  voice: 'mel', type: 'triangle' }, // G4
+      { t: 26, note: 2,   dur: 0.5, vol: 0.55, voice: 'mel', type: 'triangle' }, // B4
+      { t: 28, note: 7,   dur: 0.6, vol: 0.55, voice: 'mel', type: 'triangle' }, // E5
+      { t: 30, note: 9,   dur: 0.7, vol: 0.5,  voice: 'mel', type: 'triangle' }, // F#5(그리운 6도)
+      // 부드러운 패드(코드 루트)
+      { t: 0,  note: -21, dur: 2.6, vol: 0.45, voice: 'pad', type: 'sine' },     // C3
+      { t: 8,  note: -24, dur: 2.6, vol: 0.45, voice: 'pad', type: 'sine' },     // A2
+      { t: 16, note: -28, dur: 2.6, vol: 0.45, voice: 'pad', type: 'sine' },     // F2
+      { t: 24, note: -26, dur: 2.6, vol: 0.45, voice: 'pad', type: 'sine' },     // G2
+      // 낮은 서브
+      { t: 0,  note: -33, dur: 11.0, vol: 0.4, voice: 'bass', type: 'sine' },    // C2
+    ],
+  },
+
+  // blank(빈자리·엔딩): 가장 텅 빈 공간. 낮은 드론 + 해소 없는 4도 + 멀리서 단 하나의 부름.
+  blank: {
+    stepDur: 1.1, steps: 16, melType: 'sine', padType: 'sine', bassType: 'sine', melVol: 0.8, padVol: 0.65,
+    patterns: [
+      { t: 0,  note: -24, dur: 9.0, vol: 0.85, voice: 'bass', type: 'sine' },    // A2
+      { t: 0,  note: -19, dur: 9.0, vol: 0.4,  voice: 'pad', type: 'sine' },     // D3(4도 — 해소 없는 공허)
+      { t: 8,  note: -24, dur: 8.0, vol: 0.85, voice: 'bass', type: 'sine' },
+      { t: 8,  note: -17, dur: 8.0, vol: 0.4,  voice: 'pad', type: 'sine' },     // E3
+      // 멀리서 들리는 단 하나의 부름(아주 여리게)
+      { t: 5,  note: 0,   dur: 3.0, vol: 0.4,  voice: 'mel', type: 'sine' },     // A4
+      { t: 12, note: -5,  dur: 3.4, vol: 0.32, voice: 'mel', type: 'sine' },     // E4(가라앉음)
+    ],
+  },
 };
 
 // 한 노트를 ctx 절대시각 startAbs에 스케줄. voice 종류별 음색/엔벨로프/필터를 분리.

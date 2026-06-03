@@ -85,11 +85,26 @@ if (window.__loadStage) {
   window.__loadStage(0);   // 본 루프는 챕터1로 복귀
 }
 
-// ── 깨달음→선택→엔딩 플로우(최종 챕터): 코어 수집 후 회상 몽타주 → choice → ending 무예외 ──
+// ── 가로 스크롤 카메라(챕터6 길거리 40×14): 우측 이동 시 카메라가 따라가는지 ──
+if (window.__loadStage) {
+  window.__loadStage(5);                                   // 챕터6(길거리, cols40)
+  const b = window.__ziro();
+  if (!(b.nw >= 640)) { console.log("FAIL: 챕터6 가로 맵 아님 (nw=" + b.nw + ")"); process.exit(1); }
+  const cam0 = b.camX;
+  fire("keydown", ev("ㅁ", "KeyD"));
+  for (let i = 0; i < 260; i++) { clock += 16; if (theFrame) theFrame(clock); }   // 충분히 우측으로(데드존 통과)
+  fire("keyup", ev("ㅁ", "KeyD"));
+  const a = window.__ziro();
+  if (!(a.camX > cam0 + 10)) { console.log("FAIL: 가로 카메라 추적 안 됨 (camX " + cam0.toFixed(0) + "→" + a.camX.toFixed(0) + ")"); process.exit(1); }
+  console.log("SCROLL OK — 챕터6 가로 스크롤 카메라 추적 (camX " + cam0.toFixed(0) + "→" + a.camX.toFixed(0) + ")");
+  window.__loadStage(0);
+}
+
+// ── 깨달음→선택→엔딩 플로우(최종 챕터10): 코어 수집 후 회상 몽타주 → choice → ending 무예외 ──
 if (window.__loadStage && window.__debugClear) {
-  window.__loadStage(2);                                  // 챕터3(공원·최종) 로드
+  window.__loadStage(9);                                   // 챕터10(빈자리·최종) 로드
   const r0 = window.__ziro();
-  if (r0.ch !== 2) { console.log("FAIL: 챕터3 로드 안 됨 (ch=" + r0.ch + ")"); process.exit(1); }
+  if (r0.ch !== 9) { console.log("FAIL: 챕터10 로드 안 됨 (ch=" + r0.ch + ")"); process.exit(1); }
   window.__debugClear();                                  // 코어 3 수집 → beginRealize
   let r1 = window.__ziro();
   if (r1.phase !== "realize") { console.log("FAIL: 깨달음 진입 안 됨 (phase=" + r1.phase + ")"); process.exit(1); }

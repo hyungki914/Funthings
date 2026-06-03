@@ -7,11 +7,20 @@
   try { cv.setAttribute("tabindex", "0"); cv.style.outline = "none"; cv.focus(); } catch (e) {}  // 키 포커스 확보
 
   const C = Core.C;
-  // 존재하는 챕터만 순서대로 — data.js에 chapter2/3 추가 시 자동 체이닝
-  const CHAPTERS = ["chapter1", "chapter2", "chapter3"].filter(k => DATA[k]);
+  // 서사 순서대로 — 존재하는 챕터만 체이닝(10스테이지)
+  const CHAPTERS = ["chapter1", "chapter2", "chapter3", "chapter4", "chapter5",
+                    "chapter6", "chapter7", "chapter8", "chapter9", "chapter10"].filter(k => DATA[k]);
   let chapterIdx = 0;
   let D, TILE, NW, NH, S, st, colls, safes, door, murks, echoes;   // loadStage()에서 채움
+  let camX = 0, camY = 0, VIEWW = 0, VIEWH = 0;                      // 카메라(스크롤) — 큰 맵은 추적, 작은 맵은 중앙
   const px = (t) => t * TILE + TILE / 2;
+  const toSX = (wx) => (wx - camX) * S;                              // 월드→화면 px (HUD 오버레이용)
+  const toSY = (wy) => (wy - camY) * S;
+  function updateCamera() {
+    VIEWW = cv.width / S; VIEWH = cv.height / S;
+    camX = NW <= VIEWW ? (NW - VIEWW) / 2 : clamp(player.x - VIEWW / 2, 0, NW - VIEWW);   // 작으면 중앙, 크면 추적+클램프
+    camY = NH <= VIEWH ? (NH - VIEWH) / 2 : clamp(player.y - VIEWH / 2, 0, NH - VIEWH);
+  }
 
   // ── 에셋 로드 ──────────────────────────────────────────────
   const IMG = {}; let toLoad = 0, loaded = 0, ready = false;
@@ -37,6 +46,8 @@
   let introT = 0, transT = 0, veil = 0, hasNext = false;
   // 깨달음(회상 몽타주) / 최종 선택 / 엔딩
   let realizeT = 0, realizeI = 0, realizeLines = [], choiceSel = 0, endingType = null;
+  // 연출: 환경 파티클(ambient) + 조각 수집 링 FX
+  let ambientKind = null, particles = [], collectFx = null;
   const INTRO = [
     { at: 0.0, line: "…어둡다." },
     { at: 2.2, line: "여기는… 어디지." },
@@ -73,7 +84,8 @@
   // 챕터 매니저 — 맵/엔티티를 idx 챕터로 (재)초기화 (data에 chapter2/3 추가 시 체이닝)
   function loadStage(idx) {
     chapterIdx = idx; D = DATA[CHAPTERS[idx]];
-    TILE = D.tile; NW = D.cols * TILE; NH = D.rows * TILE; S = Math.max(1, Math.floor(cv.width / NW));
+    TILE = D.tile; NW = D.cols * TILE; NH = D.rows * TILE;
+    S = Math.max(1, Math.round(cv.width / (22 * TILE)));   // 고정 게임플레이 줌(22타일 기준 ≈ 3). 맵 크기와 무관 → 스크롤 가능.
     st = Core.newState(D);
     colls = D.collision.map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
     safes = (D.safeZones || []).map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
@@ -88,6 +100,39 @@
     player.facing = "down"; player.flip = false; player.frame = 0; player.step = 0; player.dir = Math.PI/2;
     trail = []; illuminated.clear(); nearShard = null; hintTimer = 0; toasts = [];
     elapsed = 0; lTutDone = false; sawMurk = false; sawEcho = false; playerNoise = 0; corePulse = 0; flash = 0; shake = 0;
+    collectFx = null; initAmbient();
+    updateCamera();   // 첫 프레임 카메라 정렬
+  }
+
+  // ── 환경 파티클(ambient): dust(실내 먼지)·leaves(야외 낙엽)·motes(빈자리 빛입자). 경량(≤24). ──
+  function initAmbient() {
+    ambientKind = D.ambient || null; particles = [];
+    if (!ambientKind) return;
+    const n = ambientKind === "motes" ? 22 : 18;
+    for (let i = 0; i < n; i++) particles.push(newParticle());
+  }
+  function newParticle() {
+    const w = cv.width, h = cv.height, R = Math.random;
+    if (ambientKind === "leaves") return { x: R()*w, y: R()*h, vx: 12+R()*16, vy: 6+R()*10, r: 2+R()*2, a: 0.12+R()*0.12, ph: R()*6 };
+    if (ambientKind === "motes")  return { x: R()*w, y: R()*h, vx: (R()-0.5)*6, vy: -(8+R()*12), r: 1+R()*1.6, a: 0.15+R()*0.2, ph: 0 };
+    return { x: R()*w, y: R()*h, vx: (R()-0.5)*8, vy: (R()-0.3)*6, r: 0.8+R()*1.2, a: 0.06+R()*0.08, ph: 0 };  // dust
+  }
+  function updateAmbient(dt) {
+    if (!ambientKind) return;
+    for (const p of particles) {
+      p.x += p.vx*dt; p.y += p.vy*dt;
+      if (ambientKind === "leaves") { p.x += Math.sin(performance.now()/600 + p.ph)*0.3;
+        if (p.x > cv.width+12 || p.y > cv.height+12) { Object.assign(p, newParticle()); p.x = -10; p.y = Math.random()*cv.height*0.6; } }
+      else if (ambientKind === "motes") { if (p.y < -12) { Object.assign(p, newParticle()); p.y = cv.height+10; } }
+      else { if (p.x < -12 || p.x > cv.width+12 || p.y < -12 || p.y > cv.height+12) Object.assign(p, newParticle()); }
+    }
+  }
+  function drawAmbient() {
+    if (!ambientKind || !particles.length) return;
+    ctx.save();
+    ctx.fillStyle = ambientKind === "leaves" ? "#7a9a4a" : ambientKind === "motes" ? "#9af6f6" : "#9fb6b6";
+    for (const p of particles) { ctx.globalAlpha = p.a; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); }
+    ctx.restore();
   }
   function gotoTitle() { loadStage(0); phase = "title"; if (window.Audio2 && Audio2.music) try { Audio2.music(null); } catch (e) {} }
 
@@ -361,6 +406,9 @@
     // 클리어 → 깨달음(회상 몽타주) → (최종) 선택/엔딩 또는 다음 챕터 전환
     if (Core.chapterClear(st) && door && dist(player.x, player.y, door.x, door.y) < 14) beginRealize();
 
+    updateCamera();   // 플레이어 이동 후 카메라 추적
+    updateAmbient(dt);
+    if (collectFx) { collectFx.t -= dt; if (collectFx.t <= 0) collectFx = null; }
     if (flash > 0) flash -= dt; if (shake > 0) shake -= dt * 24;
     if (veil > 0) veil = Math.max(0, veil - dt);   // 방 진입 페이드인
     if (corePulse > 0) corePulse -= dt;
@@ -381,6 +429,8 @@
     if (res.ok === false) return;
     recall = { text: res.recallText || s.recall || "", type: res.type || s.type };
     phase = "recall";
+    const cc = shardCenter(s); collectFx = { x: cc.x, y: cc.y, type: s.type, t: 0.55 };   // 수집 링 FX
+    if (s.type === "false") { flash = 0.18; shake = 4; }
     if (s.type === "core") {
       toasts.push({ text: "코어 기억 " + st.coreOrder.length + " / " + st.coresNeeded + " 회복!", color: "#8ef548", t: 2.4 });
       corePulse = 0.7;
@@ -404,9 +454,9 @@
     ctx.clearRect(0, 0, cv.width, cv.height);
     ctx.imageSmoothingEnabled = false;
     const sx = (Math.random() - 0.5) * 2 * Math.max(0, shake), sy = (Math.random() - 0.5) * 2 * Math.max(0, shake);
-    ctx.scale(S, S); ctx.translate(sx, sy);
+    ctx.scale(S, S); ctx.translate(-camX + sx, -camY + sy);   // 카메라 오프셋 적용
 
-    if (!ready) { ctx.restore(); hudText("로딩…", NW*S/2, NH*S/2, "#34e2e2", 20, true); return; }
+    if (!ready) { ctx.restore(); hudText("로딩…", cv.width/2, cv.height/2, "#34e2e2", 20, true); return; }
 
     // 배경 — 현재 챕터의 bgKey(room1/room2/room3) 사용
     const bg = IMG[D.bgKey] || IMG.room1;
@@ -493,10 +543,20 @@
 
     // (직감 H의 메시지는 HUD 단계에서 캔버스 px로 그린다 — drawGuide)
 
+    // 조각 수집 링 — core 시안 / echo 흰빛 / false 차가운 황색(채도 빠짐)
+    if (collectFx) {
+      const f = collectFx.t / 0.55, t = 1 - f, rr = 6 + 22 * t;
+      const col = collectFx.type === "core" ? "154,246,246" : collectFx.type === "false" ? "202,161,90" : "230,240,240";
+      ctx.save(); ctx.globalAlpha = 0.7 * f; ctx.strokeStyle = `rgb(${col})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(collectFx.x, collectFx.y - 2, rr, 0, 7); ctx.stroke();
+      if (collectFx.type !== "false") { ctx.globalAlpha = 0.25 * f; ctx.fillStyle = `rgb(${col})`; ctx.beginPath(); ctx.arc(collectFx.x, collectFx.y - 2, rr*0.6, 0, 7); ctx.fill(); }
+      ctx.restore();
+    }
     // 피격 플래시
     if (flash > 0) { ctx.fillStyle = `rgba(255,90,90,${Math.min(0.5, flash)})`; ctx.fillRect(0, 0, NW, NH); }
 
     ctx.restore();
+    if (phase === "play" || phase === "recall") drawAmbient();
     drawHUD();
     if (phase === "play") drawGuide();
     if (phase === "title") overlayTitle();
@@ -746,7 +806,7 @@
     if (!ready) return;
     const W = cv.width, cores = (st.coreOrder ? st.coreOrder.length : 0), need = st.coresNeeded;
     const done = cores >= need;
-    if (keys["shift"]) { ctx.save(); ctx.textAlign = "center"; ctx.font = "bold 12px 'Noto Sans KR',sans-serif"; ctx.fillStyle = "#7fb0b3"; ctx.fillText("은신 중", player.x * S, player.y * S - 42); ctx.restore(); }
+    if (keys["shift"]) { ctx.save(); ctx.textAlign = "center"; ctx.font = "bold 12px 'Noto Sans KR',sans-serif"; ctx.fillStyle = "#7fb0b3"; ctx.fillText("은신 중", toSX(player.x), toSY(player.y) - 42); ctx.restore(); }
     // 목표 배너(상단 중앙)
     ctx.save();
     const bw = 380, bx = (W - bw) / 2, by = 12;
@@ -762,7 +822,7 @@
     ctx.restore();
     // 클리어 시 문 방향 화살표(상단)
     if (done && door) { ctx.save(); ctx.textAlign = "center"; ctx.font = "bold 26px sans-serif"; ctx.fillStyle = "#34e2e2";
-      ctx.globalAlpha = 0.55 + 0.45 * Math.sin(performance.now() / 200); ctx.fillText("↑", door.x * S, 72); ctx.restore(); }
+      ctx.globalAlpha = 0.55 + 0.45 * Math.sin(performance.now() / 200); ctx.fillText("↑", clamp(toSX(door.x), 30, cv.width - 30), 72); ctx.restore(); }
     // 진행 토스트(좌상단 코어 카운터 아래)
     let ty = 92; ctx.save(); ctx.textAlign = "left"; ctx.font = "bold 14px 'Noto Sans KR',sans-serif";
     for (const t of toasts) { const a = Math.min(1, t.t); ctx.globalAlpha = a;
@@ -772,7 +832,7 @@
     ctx.restore();
     // L 코치마크(첫 코어 전, 무입력 후) — 빈 방 문제 직격
     if (cores === 0 && elapsed > 3 && !lTutDone && trail.length === 0) {
-      const spx = player.x * S, spy = player.y * S;
+      const spx = toSX(player.x), spy = toSY(player.y);
       ctx.save(); ctx.textAlign = "center"; ctx.font = "bold 13px 'Noto Sans KR',sans-serif";
       const txt = "[L] 발자국 추적 — 기억의 흔적을 따라가자";
       const tw = ctx.measureText(txt).width + 20;
@@ -853,7 +913,7 @@
   // 디버그 스냅샷(테스트용, 무해): 상태 읽기 전용
   if (typeof window !== 'undefined') {
     window.__ziro = () => ({ phase, px: player.x, py: player.y, mem: st ? st.mem : 0, ch: chapterIdx,
-                             realizeI, realizeLen: realizeLines.length, choiceSel, endingType });
+                             camX, camY, nw: NW, nh: NH, realizeI, realizeLen: realizeLines.length, choiceSel, endingType });
     window.__loadStage = (i) => { loadStage(i); phase = "play"; };
     window.__debugClear = () => { for (const s of D.shards) if (s.type === "core") Core.collect(st, s); beginRealize(); };  // 테스트용: 코어 수집 후 깨달음 진입
   }
