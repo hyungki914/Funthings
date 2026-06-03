@@ -117,20 +117,53 @@ if (window.__loadStage && window.__debugClear) {
   }
   r1 = window.__ziro();
   if (r1.phase !== "choice") { console.log("FAIL: 선택 화면 진입 안 됨 (phase=" + r1.phase + ")"); process.exit(1); }
-  // '다시 잊기'로 토글 후 결정 → ending(forget)
+  // '받아들인다(길고양이)'로 토글 후 결정 → ending(stray)
   fire("keydown", ev("s", "KeyS")); fire("keyup", ev("s", "KeyS")); clock += 16; if (theFrame) theFrame(clock);
   fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); clock += 16; if (theFrame) theFrame(clock);
   r1 = window.__ziro();
   if (r1.phase !== "ending") { console.log("FAIL: 엔딩 진입 안 됨 (phase=" + r1.phase + ")"); process.exit(1); }
-  if (r1.endingType !== "forget") { console.log("FAIL: 엔딩 타입 (" + r1.endingType + ")"); process.exit(1); }
+  if (r1.endingType !== "stray") { console.log("FAIL: 엔딩 타입 (" + r1.endingType + ")"); process.exit(1); }
   // 엔딩 렌더 수 초간 무예외 + 스페이스로 타이틀 복귀
   for (let i = 0; i < 180; i++) { clock += 16; if (theFrame) theFrame(clock); }
   fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); clock += 16; if (theFrame) theFrame(clock);
   const r2 = window.__ziro();
   if (r2.phase !== "title") { console.log("FAIL: 엔딩 후 타이틀 복귀 안 됨 (phase=" + r2.phase + ")"); process.exit(1); }
-  console.log("ENDING OK — 챕터3 클리어→깨달음 " + lines + "줄→선택→회귀 엔딩→타이틀 (무예외)");
+  console.log("ENDING OK — 챕터10 클리어→깨달음 " + lines + "줄→최종선택→길고양이 엔딩→타이틀 (endingType=" + r1.endingType + ")");
   window.__loadStage(0);
 }
+
+// ── 중간 분기(마음 미터): 챕터4 클리어 → 깨달음 → branch → 희망 선택(+1) → 전환 무예외 ──
+if (window.__loadStage && window.__debugClear && window.__hope) {
+  window.__hope(0); window.__loadStage(3);                 // 챕터4(하루의 방)
+  window.__debugClear();
+  for (let i = 0; i < 14 && window.__ziro().phase === "realize"; i++) {
+    fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); clock += 16; if (theFrame) theFrame(clock);
+  }
+  let b = window.__ziro();
+  if (b.phase !== "branch") { console.log("FAIL: 중간 분기 진입 안 됨 (phase=" + b.phase + ")"); process.exit(1); }
+  fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); clock += 16; if (theFrame) theFrame(clock);  // 희망(0) 선택
+  if (window.__hope() !== 1) { console.log("FAIL: 마음 미터 누적 안 됨 (hope=" + window.__hope() + ")"); process.exit(1); }
+  b = window.__ziro();
+  if (b.phase !== "transition") { console.log("FAIL: 분기 후 전환 안 됨 (phase=" + b.phase + ")"); process.exit(1); }
+  console.log("BRANCH OK — 챕터4 깨달음→마음의 분기→희망(+1)→전환 (hope=" + window.__hope() + ")");
+  window.__hope(0); window.__loadStage(0);
+}
+// ── 보스 '공백' 연출: 챕터10 코어 수집 후 기억 비추기(Q)로 2회 비춰 해소 → 깨달음 ──
+if (window.__loadStage && window.__collectCores && window.__boss) {
+  window.__loadStage(9); window.__collectCores();
+  const b0 = window.__boss();
+  if (!b0 || b0.hp !== 2) { console.log("FAIL: 보스 미존재/HP (" + JSON.stringify(b0) + ")"); process.exit(1); }
+  for (let s = 0; s < 3 && window.__ziro().phase === "play"; s++) {       // Q 펄스 3회(스폰이 보스 사정거리 내)
+    fire("keydown", ev("q", "KeyQ")); clock += 16; if (theFrame) theFrame(clock);
+    fire("keyup", ev("q", "KeyQ")); for (let i = 0; i < 6; i++) { clock += 16; if (theFrame) theFrame(clock); }
+  }
+  for (let i = 0; i < 130; i++) { clock += 16; if (theFrame) theFrame(clock); }   // 해소 후 exitT → realize
+  const ph = window.__ziro().phase;
+  if (!(ph === "realize" || ph === "choice")) { console.log("FAIL: 보스 해소→깨달음 안 됨 (phase=" + ph + ", boss=" + JSON.stringify(window.__boss()) + ")"); process.exit(1); }
+  console.log("BOSS OK — 챕터10 코어수집→Q로 공백 해소→깨달음(phase=" + ph + ")");
+  window.__loadStage(0);
+}
+
 const walk = ["d", "d", "s", "s", "a", "w", "d", "s"];
 try {
   for (let i = 0; i < 700; i++) {

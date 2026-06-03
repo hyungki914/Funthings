@@ -381,7 +381,7 @@ DATA.chapter1 = {
       tile: [4, 6],            // 침대 위쪽 floor (검산: FREE)
       radius: 1.3,
       identitySlot: 3,         // '이름: ? (지로)'
-      recall: "사람의 손글씨: '오늘도 너는 창가에서 나를 기다렸지.' 이름이 적혀 있던 자리는 — 누군가 찢어낸 듯 비어 있다.",
+      recall: "'오늘도 너는 창가에서 나를 기다렸지.' 사람의 손글씨. 이름이 적혀 있던 자리는, 아직 내가 읽어내지 못한 채 비어 있다.",
       gainMem: 2,
       gainLight: 1
     },
@@ -433,7 +433,7 @@ DATA.chapter1 = {
       tile: [16, 11],          // 우중앙 하단 floor (옷장17~19 옆, col16 FREE). 스폰[10,9]서 ~101px — 코어보다 멀게(첫 행동이 함정이 되지 않도록)
       radius: 1.3,
       identitySlot: null,
-      recall: '하루가 웃으며 손을 흔든다 — 그런데 배경의 꽃은 이미 시들어 있다. 이건… 진짜가 아니야.',
+      recall: '하루가 웃으며 손을 흔든다 — 그런데 그 모습이 자꾸 흐려져, 손을 뻗으면 닿지 않는다. 이건… 진짜가 아니야.',
       gainMem: -2,            // false: 줍는 순간 메모리 감소(core.js FALSE_HIT 처리, 형식상 표기)
       gainLight: 0
     }
@@ -511,9 +511,9 @@ DATA.chapter2 = {
     { id: 'c2_button', type: 'echo', tile: [4, 6], radius: 1.2, identitySlot: null,
       recall: '소파 밑에서 굴러나온 낡은 단추. 하루의 외투에서 떨어진 것.' },
     { id: 'c2_memo', type: 'echo', tile: [10, 11], radius: 1.2, hidden: true, identitySlot: null,
-      recall: "식탁 밑에 붙은 작은 메모 — '약 먹는 시간'. 누구의 약이었을까." },
+      recall: "식탁 밑에 붙은 작은 메모 — '아침 약, 잊지 말 것'. 하루는 챙겨야 할 게 많은 사람이었다." },
     { id: 'c2_false', type: 'false', tile: [16, 11], radius: 1.3, identitySlot: null,
-      recall: '주방에서 하루가 부르는 목소리 — 그런데 불은 꺼졌고, 그릇엔 먼지가 앉았다. 이건… 진짜가 아니야.' }
+      recall: '주방에서 하루가 나를 부르는 목소리 — 그런데 돌아보면 아무도 없고, 그릇만 가만히 놓여 있다. 이건… 진짜가 아니야.' }
   ],
   // 시각 감지(Murk) — 거실 좌측 순찰
   murks: [
@@ -527,15 +527,15 @@ DATA.chapter2 = {
   epiphany: [
     '거실, 주방, 무릎 위의 담요 — 우리는 분명, 함께였다.',
     '매일 같은 시간 같은 자리에서, 나는 하루를 기다렸다.',
-    '그런데… 집은 어느 순간부터 너무 조용했다.',
-    '불은 꺼졌고, 그릇엔 먼지가 앉았다. 하루는 — 언제부터 없었던 걸까.'
+    '그런데 어느 아침부터, 집이 너무 조용해졌다.',
+    '하루는 — 어디로 간 걸까.'
   ]
 };
 
 // 공통 단축키 & 정체성 라벨(반복 축약). 이름 공개 전/후 두 종.
 const CTRL = [['이동', 'WASD/←↑↓→'], ['조사', 'E'], ['발자국 추적', 'L'], ['기억 비추기', 'Q'], ['기억 일지', 'Tab']];
-const LBL  = ['종: 고양이', '사는 곳: 하루의 집', '주인: 하루', '이름: ? (지로)', '왜 잊었나'];
-const LBLN = ['종: 고양이', '사는 곳: 하루의 집', '주인: 하루', '이름: 지로 (Ziro)', '왜 잊었나 — 너무 아파서, 스스로'];
+const LBL  = ['종: 고양이', '사는 곳: 하루의 집', '주인: 하루', '이름: ? (지로)', '하루는 어디에'];
+const LBLN = ['종: 고양이', '사는 곳: 하루의 집', '주인: 하루', '이름: 지로 (Ziro)', '하루는 어디에 — 갑자기 멀리, 아직 돌아오지 않은'];
 
 // =============================================================================
 // DATA.chapter3 — 「2층 복도·계단」 (세로 스크롤 18×26). bgKey 'hall2f'.
@@ -568,7 +568,7 @@ DATA.chapter3 = {
     { id: 'e_step_frame', type: 'echo', tile: [9, 9], radius: 1.2, identitySlot: null,
       recall: '벽에 걸린 액자들. 한쪽 끝의 한 장만, 누군가 일부러 뒤집어 놓았다.' },
     { id: 'e_step_slipper', type: 'echo', tile: [15, 16], radius: 1.2, hidden: true, identitySlot: null,
-      recall: '계단참에 놓인 한 켤레의 실내화. 오래 신지 않아, 형태만 남았다.' },
+      recall: '계단참에 놓인 한 켤레의 실내화. 급히 나간 듯, 한 짝이 비뚜로 놓여 있다.' },
     { id: 'f_step', type: 'false', tile: [4, 21], radius: 1.3, identitySlot: null,
       recall: '위층에서 하루의 발소리가 또박또박 내려온다 — 그런데 계단엔 먼지만 곱게 쌓여 있다. 이건… 진짜가 아니야.' }
   ],
@@ -603,27 +603,30 @@ DATA.chapter4 = {
   door: { tile: [10, 1], requires: 'cores' },
   shards: [
     { id: 'c_haru_bed', type: 'core', tile: [5, 6], radius: 1.3, identitySlot: 1,
-      recall: '한쪽만 눌린 침대, 식어버린 자리. 나는 매일 그 빈 쪽에 몸을 말고 누웠다 — 온기가 돌아오기를 기다리며.' },
+      recall: '이불이 한쪽으로 걷힌 채다. 누군가 급히 일어난 자리. 나는 매일 그 빈 쪽에 몸을 말고, 돌아올 온기를 기다렸다.' },
     { id: 'c_haru_clock', type: 'core', tile: [18, 5], radius: 1.3, identitySlot: 3,
-      recall: '벽시계의 바늘이 멈춰 있다. 어느 새벽의 시각에서, 시간이 더는 흐르지 않는다.' },
+      recall: '벽시계는 그날 새벽의 시각에서 멈춰 있다. 모든 게 그 아침에서 정지한 것처럼.' },
     { id: 'c_haru_bottle', type: 'core', tile: [3, 9], radius: 1.3, identitySlot: 2,
-      recall: '머리맡 약병들, 뚜껑이 열린 채. 하루는 자주 아팠다. 나는 그걸, 보지 않으려 했다.' },
+      recall: '머리맡 약병 하나가 뚜껑도 닫지 못한 채 넘어져 있다. 챙길 새도 없이, 하루는 그렇게 실려 갔다.' },
     { id: 'e_haru_sweater', type: 'echo', tile: [14, 11], radius: 1.2, hidden: true, identitySlot: null,
       recall: '의자에 걸린 하루의 스웨터. 코를 묻으면, 아직 옅게 하루의 냄새가 난다.' },
     { id: 'f_haru_wave', type: 'false', tile: [12, 5], radius: 1.3, identitySlot: null,
-      recall: '하루가 침대에서 일어나 나를 안아 올린다 — 그런데 그 품이 차갑고, 무게가 느껴지지 않는다. 이건… 진짜가 아니야.' },
+      recall: '하루가 침대에서 일어나 나를 안아 올린다 — 그런데 품에 온기가 없고, 무게도 느껴지지 않는다. 이건… 진짜가 아니야.' },
     { id: 'f_haru_call', type: 'false', tile: [15, 11], radius: 1.3, identitySlot: null,
-      recall: '달력 너머로 하루가 내일 보자고 손짓한다 — 그런데 그 내일은, 영영 오지 않는 날짜다. 이건… 진짜가 아니야.' }
+      recall: '달력 너머로 하루가 "내일 보자"고 손짓한다 — 그런데 그 내일이 며칠인지, 자꾸 흐려진다. 이건… 진짜가 아니야.' }
   ],
   murks: [],
   echoes: [{ id: 'e_haru', patrol: [[8, 5], [13, 5], [13, 9], [8, 9]], speed: 34, hearTiles: 3.6 }],
   identityLabels: LBL,
+  branch: { q: '급히 멈춘 이 방을 두고, 나는 어떻게 발을 떼야 할까.', options: [
+    { label: '찾으러 가자', sub: '하루는 어딘가에 살아 있다. 멈춘 건 시계뿐이다.', feedback: '발끝에 다시 온기가 돈다 — 나는 문을 향한다.' },
+    { label: '여기서 기다리자', sub: '떠난 자리는, 떠난 채로 두는 게 맞는지도 모른다.', feedback: '나는 빈 이불에 코를 묻는다. 조금만, 더.' } ] },
   epiphany: [
-    '멈춘 시계, 식은 자리, 열린 약병.',
-    '이 방의 모든 것이, 어느 한 지점에서 숨을 멈췄다.',
-    '나는 매일 이 빈자리에 누워 온기를 기다렸다 — 돌아오지 않을 온기를.',
-    '무언가… 잘못됐다. 내가 보지 않으려 했던 무언가가.',
-    '처음으로, 따뜻한 거짓말이 거짓말처럼 느껴진다.'
+    '걷힌 이불, 멈춘 시계, 넘어진 약병.',
+    '모든 게 어느 아침에서 급히 멈췄다.',
+    '그날, 하루는 갑자기 아팠고 — 들것에 실려 떠났다.',
+    '나는 영문도 모른 채, 빈자리에서 온기를 기다렸다.',
+    '잘못된 게 아니었다. 하루는 아직, 돌아오지 않았을 뿐이다.'
   ]
 };
 
@@ -650,13 +653,13 @@ DATA.chapter5 = {
     { id: 'c_yard_shed', type: 'core', tile: [20, 6], radius: 1.3, identitySlot: 1,
       recall: '마당 끝 작은 문. 하루의 손이 매일 밀어 열던 문이, 오늘은 혼자 삐걱인다.' },
     { id: 'c_yard_tree', type: 'core', tile: [3, 7], radius: 1.3, identitySlot: 3,
-      recall: '현관 문턱. 하루는 늘 여기서 나를 한 번 돌아보고 나갔다. 그 돌아봄이, 마지막엔 평소보다 길었다.' },
+      recall: '현관 문턱. 그날 아침, 하루는 들것에 실려 이 문턱을 넘어갔다 — 나를 한 번 돌아보며.' },
     { id: 'e_yard_bowl', type: 'echo', tile: [7, 11], radius: 1.2, identitySlot: null,
       recall: '댓돌 위 작은 물그릇. 하루가 길고양이들을 위해 내놓던 것. 물은 말랐다.' },
     { id: 'e_yard_paw', type: 'echo', tile: [18, 11], radius: 1.2, hidden: true, identitySlot: null,
-      recall: '마당 흙에 굳은 발자국 하나. 비를 맞으며 누군가를 따라 달렸던 자국.' },
+      recall: '마당 흙에 굳은 발자국 하나. 멀어지는 불빛을 따라, 대문까지 달렸던 자국.' },
     { id: 'f_yard', type: 'false', tile: [14, 11], radius: 1.3, identitySlot: null,
-      recall: '대문 너머로 하루가 장을 보고 돌아온다 — 그런데 손엔 아무것도 없고, 그림자도 지지 않는다. 이건… 진짜가 아니야.' }
+      recall: '대문 너머로 하루가 장을 보고 돌아온다 — 그런데 손엔 아무것도 없고, 발소리도 들리지 않는다. 이건… 진짜가 아니야.' }
   ],
   murks: [
     { id: 'm_yard_l', patrol: [[3, 7], [8, 7], [8, 11], [3, 11]], speed: 38, sightTiles: 3.3, fovDeg: 90 },
@@ -666,9 +669,9 @@ DATA.chapter5 = {
   identityLabels: LBL,
   epiphany: [
     '처음으로 집 밖에 선다. 햇빛은 아무 일 없었다는 듯 환하다.',
-    '거리의 사람들이 웃고, 바람이 불고, 세상은 그대로 흐른다.',
-    '그 무심함이, 나는 무섭다.',
-    '어떻게 하루가 없는데, 세상은 이렇게 멀쩡할 수 있을까.'
+    '세상은 그대로 흐르는데, 하루만 여기 없다.',
+    '그 무심함이 무섭다가도 — 문득 생각한다.',
+    '멀리 어딘가에서, 하루도 이 햇빛 아래 있을까.'
   ]
 };
 
@@ -698,7 +701,7 @@ DATA.chapter6 = {
     { id: 'c_st_steps', type: 'core', tile: [16, 7], radius: 1.3, identitySlot: 1,
       recall: '보도블록 위, 두 줄의 발자국. 사람의 보폭과 나의 보폭이 나란히 찍혀 있다. 우리는 이 길을 함께 걸었다.' },
     { id: 'c_st_light', type: 'core', tile: [34, 11], radius: 1.3, identitySlot: 3,
-      recall: '저녁 가로등. 불빛 아래에서 하루는 내 이름을 부르곤 했다 — 흐려서 들리지 않는, 그 두 음절.' },
+      recall: '저녁 가로등. 불빛 아래에서 하루는 내 이름을 부르곤 했다 — 그 두 음절. 어딘가에서, 다시 불러주고 있을까.' },
     { id: 'e_st_bench', type: 'echo', tile: [6, 11], radius: 1.2, identitySlot: null,
       recall: '길가 낡은 벤치. 둘이 잠깐 앉아 숨을 고르던 자리. 한쪽만 닳아 있다.' },
     { id: 'e_st_glove', type: 'echo', tile: [25, 11], radius: 1.2, hidden: true, identitySlot: null,
@@ -715,11 +718,14 @@ DATA.chapter6 = {
     { id: 'e_st_2', patrol: [[28, 11], [35, 11], [35, 12], [28, 12]], speed: 36, hearTiles: 3.6 }
   ],
   identityLabels: LBL,
+  branch: { q: '옆자리가 빈 이 길을, 나는 어떤 마음으로 걸을까.', options: [
+    { label: '이 길 끝에 하루가 있다', sub: '발자국은 끊겨도, 길은 이어진다.', feedback: '한 줄이던 발자국 옆에, 다시 한 줄을 그리며 걷는다.' },
+    { label: '이미 멀어진 길이다', sub: '따라잡지 못할 거리라면, 멈추는 것도 걸음이다.', feedback: '가로등 아래에서, 나는 잠시 발을 멈춘다.' } ] },
   epiphany: [
     '같은 길, 같은 모퉁이. 그런데 옆자리가 비어 있다.',
-    '두 줄이던 발자국이, 어느 순간부터 한 줄만 이어진다.',
+    '두 줄이던 발자국이, 어느 순간 한 줄이 됐다.',
     '길이 길수록, 그리움도 그만큼 길어진다.',
-    '나는 하루의 보폭에 맞춰 걷는 법을, 아직도 잊지 못했다.'
+    '그래도 이 길 끝 어딘가에 하루가 있다면, 나는 계속 걷겠다.'
   ]
 };
 
@@ -751,11 +757,11 @@ DATA.chapter7 = {
     { id: 'c_arc_right', type: 'core', tile: [21, 5], radius: 1.3, identitySlot: 3,
       recall: '펫샵 진열대의 그 간식. 하루는 망설임 없이 늘 같은 걸 집었다. 내가 제일 좋아하는 걸, 하루는 알고 있었다.' },
     { id: 'e_arc_chart', type: 'echo', tile: [7, 10], radius: 1.2, identitySlot: null,
-      recall: '병원 벽에 걸린 차트. 어느 칸 이후로, 새 기록이 없다.' },
+      recall: '병원 벽에 걸린 차트. 다음 검진 날짜에 작은 동그라미. 그날을, 우리는 함께 가지 못했다.' },
     { id: 'e_arc_collar', type: 'echo', tile: [16, 9], radius: 1.2, hidden: true, identitySlot: null,
       recall: '펫샵 한구석, 내 목걸이와 똑같은 것. 하루가 이걸 골라 내 목에 채워줬던 날의 손길.' },
     { id: 'e_arc_card', type: 'echo', tile: [12, 13], radius: 1.2, identitySlot: null,
-      recall: '카페 적립 카드. 도장 칸 옆에 작게 적힌 두 글자, 잉크가 번져 흐리다.' }
+      recall: '카페 적립 카드. 도장 한 칸만 채우면 무료 음료. "다음에 같이 받자, 지로." 그 다음이, 아직 안 왔다.' }
   ],
   murks: [{ id: 'm_arc', patrol: [[10, 2], [13, 2], [13, 4], [10, 4]], speed: 38, sightTiles: 3.3, fovDeg: 90 }],
   echoes: [
@@ -766,10 +772,10 @@ DATA.chapter7 = {
   identityLabels: LBL,
   epiphany: [
     '간식의 맛, 진료대의 온기, 내 이름을 불러주던 점원들.',
-    '이 거리의 모두가, 우리를 ‘하루와 지로’로 기억했다.',
-    '행복은 이렇게 구체적이어서 — 비어버린 지금이, 더 시리다.',
-    '좋았던 만큼, 정확히 그만큼이 아프다.',
-    '그래도 나는, 이 따뜻함을 하나도 버리고 싶지 않다.'
+    '이 거리의 모두가 우리를 ‘하루와 지로’로 기억한다.',
+    '행복이 이렇게 또렷해서 — 비어버린 지금이 더 시리다.',
+    '하지만 못 받은 도장 한 칸, 못 간 검진 하루 —',
+    '전부, 다음을 위해 남겨둔 자리다.'
   ]
 };
 
@@ -812,10 +818,13 @@ DATA.chapter8 = {
   ],
   echoes: [{ id: 'e_gate', patrol: [[3, 11], [7, 11], [7, 13], [3, 13]], speed: 36, hearTiles: 3.6 }],
   identityLabels: LBL,
+  branch: { q: '이 문 너머의 답을, 나는 마주할 준비가 됐을까.', options: [
+    { label: '문을 민다', sub: '답이 무엇이든, 모르는 채로는 둘 수 없다.', feedback: '떨리던 발에 힘이 들어간다. 문이 열린다.' },
+    { label: '여기까지일지도', sub: '모르는 채로 두면, 아무것도 끝나지 않는다.', feedback: '문고리에 닿은 발이, 잠깐 머뭇거린다.' } ] },
   epiphany: [
     '이 문을 지나면, 더는 모르는 척할 수 없다.',
-    '몸이 떨린다. 알고 싶지 않은 것을, 곧 알게 될 테니까.',
-    '그래도 여기까지 왔다. 하루가 기다리던 그 자리까지, 가야 한다.',
+    '몸이 떨린다. 알고 싶지 않은 게 아니라 — 알아내고 싶어서.',
+    '하루가 어디 있는지, 그 끝까지 가봐야 한다.',
     '무서워도 — 나는 문을 민다.'
   ]
 };
@@ -842,15 +851,15 @@ DATA.chapter9 = {
   door: { tile: [14, 1], requires: 'cores' },
   shards: [
     { id: 'c_park_bench', type: 'core', tile: [11, 5], radius: 1.3, identitySlot: 4,
-      recall: '벤치. 우리가 매일 함께 앉던 자리. 하루는 여기서 내 등을 쓰다듬으며, 오래오래 이야기했다.' },
+      recall: '벤치. 우리가 매일 함께 앉던 자리. 나는 여기서 하루를 기다렸다 — 그 아침 이후로, 오래오래.' },
     { id: 'c_park_walk', type: 'core', tile: [6, 12], radius: 1.3, identitySlot: 2,
       recall: '산책로에 남은 작은 발자국들. 하루의 옆에서, 나는 이 길을 수없이 걸었다.' },
     { id: 'c_park_last', type: 'core', tile: [25, 12], radius: 1.3, identitySlot: 3,
-      recall: "마지막 날의 햇살. 하루는 평소보다 오래 나를 안았다 — '기다리지 마, 지로.' 그 말의 뜻을, 그때는 몰랐다." },
+      recall: '마지막으로 함께한 날의 햇살. 하루는 평소보다 오래 나를 안았다 — "금방 올게, 지로." 그게, 갑자기 멀어질 줄은 몰랐다.' },
     { id: 'e_park_bell', type: 'echo', tile: [24, 7], radius: 1.2, identitySlot: null,
       recall: '풀숲에 떨어진 낡은 목걸이 방울. 흔들면, 아직 그날의 소리가 난다.' },
     { id: 'e_park_leaf', type: 'echo', tile: [8, 4], radius: 1.2, hidden: true, identitySlot: null,
-      recall: '벤치 밑에 눌린 마른 잎 한 장. 계절이 몇 번이나 바뀌도록, 나는 이 자리를 떠나지 못했다.' },
+      recall: '벤치 밑에 눌린 마른 잎 한 장. 계절이 몇 번 바뀌도록 이 자리를 지킨 건, 떠나지 못해서가 아니라 — 여기서 다시 만날 것 같아서였다.' },
     { id: 'f_park', type: 'false', tile: [17, 5], radius: 1.3, identitySlot: null,
       recall: '저 멀리 하루가 걸어온다 — 손을 흔들며. 그러나 다가갈수록 흐려지고, 끝내 닿지 않는다. 이건… 진짜가 아니야.' }
   ],
@@ -864,11 +873,11 @@ DATA.chapter9 = {
   ],
   identityLabels: LBLN,
   epiphany: [
-    '공원의 벤치. 우리가 매일 함께 걷던 길의 끝.',
-    '여기서 나는 하루를 기다렸다 — 하루가, 더는 오지 않게 된 뒤에도.',
-    '기억이 흐려진 건 잊어서가 아니었다. 너무 아파서, 내가 스스로 지운 거였다.',
-    '하루는 떠났다. 그리고 나는, 그 텅 빈 자리(The Blank)를 끌어안은 채 이 길을 맴돌고 있었다.',
-    '이제 마지막 조각을 마주한다.'
+    '공원의 벤치. 우리가 매일 걷던 길의 끝.',
+    '그 아침, 하루는 갑자기 사라졌고 — 나는 여기서 기다렸다.',
+    '기억이 흐려진 건 잊어서가 아니라, 너무 오래 혼자 기다려서였다.',
+    '하루는 떠난 게 아니다. 어쩌면 하루도, 지금 나를 찾고 있을지 모른다.',
+    '이제, 그 텅 빈 자리(The Blank)를 마주할 차례다.'
   ]
 };
 
@@ -886,26 +895,28 @@ DATA.chapter10 = {
   ],
   safeZones: [],
   door: { tile: [8, 1], requires: 'cores' },
+  boss: { hp: 2, tile: [8, 5] },     // 공백(The Blank) — 코어3 모은 뒤 기억 비추기(Q)로 해소(가벼운 연출형)
   shards: [
     { id: 'c_blank_name', type: 'core', tile: [4, 5], radius: 1.4, identitySlot: 4,
       recall: "비어 있던 이름표 위로, 글자가 천천히 떠오른다. '지로'. 하루가 처음 나를 안아 올리며 지어준, 세상에서 가장 따뜻한 두 음절." },
     { id: 'c_blank_promise', type: 'core', tile: [11, 5], radius: 1.4, identitySlot: 3,
-      recall: '끊긴 자동응답처럼 들려오는 하루의 목소리. “…밥 잘 챙겨주고… 금방 올게.” 지켜지지 못한 약속이, 이제야 들린다.' },
+      recall: '끊겼던 목소리가 이어진다. "…밥 잘 챙겨 먹고… 금방 올게." 아직 지켜지지 않았을 뿐인, 약속.' },
     { id: 'c_blank_void', type: 'core', tile: [8, 3], radius: 1.4, identitySlot: 4,
-      recall: '그리고 마침내, 텅 빈 자리. 하루가 남긴 공백. 이 공백은 슬픔이 아니라 — 사랑이 있던 자리의 모양이었다.' },
+      recall: '그리고 텅 빈 자리. 이 공백은 슬픔이 아니라 — 아직 하루가 돌아오지 않은, 채워질 수 있는 빈칸이었다.' },
     { id: 'e_blank_pov', type: 'echo', tile: [12, 3], radius: 1.2, hidden: true, identitySlot: null,
-      recall: '낯선 시점의 한 장면 — 하루의 눈으로 본 나. 창가에서 자기를 기다리는 작은 검은 고양이를, 하루는 오래 바라보고 있었다.' },
+      recall: '낯선 시점의 한 장면 — 멀리 어느 창가에서, 하루가 작은 검은 고양이를 떠올리고 있다. 어쩌면 하루도, 나를 찾고 있는지 모른다.' },
     { id: 'f_blank', type: 'false', tile: [8, 8], radius: 1.3, identitySlot: null,
-      recall: '공백 속에서 하루가 손을 내민다, 이 모든 게 꿈이었다는 듯이 — 그러나 그 손을 잡으면 모든 게 처음으로 되돌아간다. 이건… 진짜가 아니야.' }
+      recall: '공백 속에서 하루가 손을 내민다, 이 모든 게 꿈이었다는 듯이 — 그러나 그 손을 잡으면 기다림은 처음으로 되감긴다. 이건… 진짜가 아니야.' }
   ],
   murks: [],
   echoes: [],
   identityLabels: LBLN,
   epiphany: [
     '마지막 조각이, 손끝에 닿는다.',
-    '이걸 받아들이면 — 아픔까지 전부, 다시 내 것이 된다.',
-    '아니면 다시 잊고, 처음의 어둠으로 돌아갈 수도 있다.',
-    '어느 쪽도, 하루를 사랑한 방식이다.'
+    '내 이름은 지로. 하루가 불러주던 그 이름.',
+    '공백은 끝이 아니라, 아직 답을 받지 못한 물음이었다.',
+    '끝까지 찾아 나설지, 새 온기 속에서 살아갈지 —',
+    '이제, 내가 정한다.'
   ]
 };
 
@@ -2545,6 +2556,8 @@ if (typeof module !== 'undefined') module.exports = Journal;
   let introT = 0, transT = 0, veil = 0, hasNext = false;
   // 깨달음(회상 몽타주) / 최종 선택 / 엔딩
   let realizeT = 0, realizeI = 0, realizeLines = [], choiceSel = 0, endingType = null;
+  // 마음(희망↔체념) 미터 — 중간 분기 선택 누적 → 엔딩 분기. 보스(공백) 상태.
+  let hope = 0, branchSel = 0, boss = null;
   // 연출: 환경 파티클(ambient) + 조각 수집 링 FX
   let ambientKind = null, particles = [], collectFx = null;
   const INTRO = [
@@ -2600,6 +2613,8 @@ if (typeof module !== 'undefined') module.exports = Journal;
     trail = []; illuminated.clear(); nearShard = null; hintTimer = 0; toasts = [];
     elapsed = 0; lTutDone = false; sawMurk = false; sawEcho = false; playerNoise = 0; corePulse = 0; flash = 0; shake = 0;
     collectFx = null; initAmbient();
+    boss = D.boss ? { hp: D.boss.hp || 2, max: D.boss.hp || 2, x: px(D.boss.tile[0]), y: px(D.boss.tile[1]),
+                      t: 0, hit: 0, struck: false, dispelled: false } : null;
     updateCamera();   // 첫 프레임 카메라 정렬
   }
 
@@ -2633,7 +2648,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
     for (const p of particles) { ctx.globalAlpha = p.a; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); }
     ctx.restore();
   }
-  function gotoTitle() { loadStage(0); phase = "title"; if (window.Audio2 && Audio2.music) try { Audio2.music(null); } catch (e) {} }
+  function gotoTitle() { hope = 0; loadStage(0); phase = "title"; if (window.Audio2 && Audio2.music) try { Audio2.music(null); } catch (e) {} }
 
   // ── 입력 ──────────────────────────────────────────────────
   const keys = {}; const edge = {};
@@ -2686,9 +2701,11 @@ if (typeof module !== 'undefined') module.exports = Journal;
     if (phase === "intro") { skipIntro(); return; }
     if (phase === "recall") { closeRecall(); return; }
     if (phase === "realize") { edge[" "] = true; return; }              // 탭하여 다음 줄
-    if (phase === "choice") {                                            // 선택지 탭 = 선택+결정
-      for (let i = 0; i < 2; i++) { const oy = cv.height/2 - 6 + i*70, w = 520, x = (cv.width - w)/2;
-        if (p.x >= x && p.x <= x+w && p.y >= oy && p.y <= oy+56) { choiceSel = i; edge[" "] = true; return; } }
+    if (phase === "branch" || phase === "choice") {                     // 선택지 탭 = 선택+결정
+      const oy0 = phase === "branch" ? cv.height/2 + 2 : cv.height/2 - 14, w = 540, x = (cv.width - w)/2;
+      for (let i = 0; i < 2; i++) { const oy = oy0 + i*70;
+        if (p.x >= x && p.x <= x+w && p.y >= oy && p.y <= oy+56) {
+          if (phase === "branch") branchSel = i; else choiceSel = i; edge[" "] = true; return; } }
       return;
     }
     if (phase === "ending") { edge[" "] = true; return; }
@@ -2743,16 +2760,27 @@ if (typeof module !== 'undefined') module.exports = Journal;
       if (edge[" "] || edge["enter"] || realizeT > 4.2) {
         realizeT = 0; realizeI++;
         if (realizeI >= realizeLines.length) {
-          if (D.isFinal) { phase = "choice"; choiceSel = 0; } else beginTransition();
+          if (D.isFinal) { phase = "choice"; choiceSel = hope >= 0 ? 0 : 1; }   // 걸어온 마음이 기본값(희망→재회)
+          else if (D.branch) { phase = "branch"; branchSel = 0; }                 // 중간 마음의 분기
+          else beginTransition();
         } else if (window.Audio2 && Audio2.chime) try { Audio2.chime(); } catch (e) {}
       }
       clearEdges(); return;
     }
-    if (phase === "choice") {                            // 최종 선택: 받아들이기(0) / 다시 잊기(1)
+    if (phase === "branch") {                            // 중간 분기: 희망(0,+1) / 체념(1,−1)
+      if (edge["w"] || edge["s"] || edge["arrowup"] || edge["arrowdown"]) branchSel ^= 1;
+      if (edge[" "] || edge["enter"]) {
+        hope += branchSel === 0 ? 1 : -1;
+        const fb = (D.branch.options[branchSel] || {}).feedback;
+        beginTransition(); if (fb) toasts.push({ text: fb, color: branchSel === 0 ? "#8ef548" : "#9fc5c5", t: 3.2 });
+      }
+      clearEdges(); return;
+    }
+    if (phase === "choice") {                            // 최종 선택: 찾아 나선다=재회(0) / 받아들인다=길고양이(1)
       if (edge["w"] || edge["s"] || edge["arrowup"] || edge["arrowdown"]) choiceSel ^= 1;
       if (edge[" "] || edge["enter"]) {
-        endingType = choiceSel === 0 ? "accept" : "forget"; phase = "ending"; transT = 0;
-        if (window.Audio2) try { Audio2.drone(0); Audio2.heartbeat(0); if (endingType === "accept" && Audio2.chime) Audio2.chime(); } catch (e) {}
+        endingType = choiceSel === 0 ? "reunite" : "stray"; phase = "ending"; transT = 0;
+        if (window.Audio2) try { Audio2.drone(0); Audio2.heartbeat(0); if (Audio2.chime) Audio2.chime(); } catch (e) {}
       }
       clearEdges(); return;
     }
@@ -2802,6 +2830,12 @@ if (typeof module !== 'undefined') module.exports = Journal;
           const dd = dist(player.x, player.y, m.x, m.y) || 1;
           m.x += (m.x - player.x) / dd * 18; m.y += (m.y - player.y) / dd * 18;   // 한 번 밀어냄
         }
+        // 보스 '공백' — 모은 기억(코어 3)이 다 모였을 때, 빛으로 비추면 갈라진다(가벼운 연출형)
+        if (boss && !boss.dispelled && Core.chapterClear(st) && dist(player.x, player.y, boss.x, boss.y) <= AURA_R + 28) {
+          boss.hp -= 1; boss.hit = 0.7; flash = 0.14; shake = 3;
+          if (boss.hp <= 0) { boss.dispelled = true; boss.exitT = 1.4; toasts.push({ text: "공백이 흩어진다 — 빛만이 남는다", color: "#9af6f6", t: 2.4 }); }
+          else toasts.push({ text: "기억의 빛이 공백을 갈라낸다  (" + (boss.max - boss.hp) + "/" + boss.max + ")", color: "#9af6f6", t: 2.0 });
+        } else
         toasts.push({ text: "기억의 빛 — 그림자가 물러나 제자리로 돌아간다", color: "#9af6f6", t: 1.8 });
         if (window.Audio2 && Audio2.chime) try { Audio2.chime(); } catch (e) {}
       } else if (lowLightTip <= 0) { toasts.push({ text: "빛이 부족하다 — 기억을 모으거나 안전지대에서 회복", color: "#9fc5c5", t: 2.0 }); lowLightTip = 2.0; }
@@ -2902,8 +2936,13 @@ if (typeof module !== 'undefined') module.exports = Journal;
     // 위험 오디오
     if (window.Audio2) { Audio2.drone(danger ? 0.8 : 0); Audio2.heartbeat(st.mem <= 2 ? 96 : 0); }
 
+    // 보스(공백) 틱 — 피격 점멸·해소 후 잠시 뒤 깨달음
+    if (boss) {
+      boss.t += dt; if (boss.hit > 0) boss.hit -= dt;
+      if (boss.dispelled) { boss.exitT -= dt; if (boss.exitT <= 0) { beginRealize(); clearEdges(); return; } }
+    }
     // 클리어 → 깨달음(회상 몽타주) → (최종) 선택/엔딩 또는 다음 챕터 전환
-    if (Core.chapterClear(st) && door && dist(player.x, player.y, door.x, door.y) < 14) beginRealize();
+    if (!boss && Core.chapterClear(st) && door && dist(player.x, player.y, door.x, door.y) < 14) beginRealize();
 
     updateCamera();   // 플레이어 이동 후 카메라 추적
     updateAmbient(dt);
@@ -2997,6 +3036,23 @@ if (typeof module !== 'undefined') module.exports = Journal;
       ctx.beginPath(); ctx.arc(c.x, c.y - 1, fal ? 2.0 : 2.6, 0, 7); ctx.fill(); ctx.restore();
     }
 
+    // 보스 '공백(The Blank)' — 거대한 자아 그림자. 코어 3 모으면 비추기로 해소(가벼운 연출형).
+    if (boss && !boss.dispelled) {
+      const ready = Core.chapterClear(st), r = 16 * (boss.hp / boss.max) + 12, pul = 0.5 + 0.5*Math.sin(boss.t*2.2);
+      ctx.save();
+      const g = ctx.createRadialGradient(boss.x, boss.y, 2, boss.x, boss.y, r+22);
+      g.addColorStop(0, "rgba(18,14,32,0.96)"); g.addColorStop(0.55, "rgba(30,22,52,0.7)"); g.addColorStop(1, "rgba(18,14,32,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(boss.x, boss.y, r+22, 0, 7); ctx.fill();
+      ctx.fillStyle = "#191228";
+      for (const [ox, oy, rr] of [[0,0,r],[-r*0.5,2,r*0.6],[r*0.5,1,r*0.6],[0,-r*0.5,r*0.55]])   // 뭉치는 그림자
+        { ctx.beginPath(); ctx.arc(boss.x+ox, boss.y+oy + Math.sin(boss.t*3+ox)*1.5, rr, 0, 7); ctx.fill(); }
+      ctx.fillStyle = ready ? "#caa1ff" : "#7a5cff";                                              // 눈
+      ctx.beginPath(); ctx.ellipse(boss.x-6, boss.y-3, 2.3, 3.4, 0, 0, 7); ctx.ellipse(boss.x+6, boss.y-3, 2.3, 3.4, 0, 0, 7); ctx.fill();
+      if (ready) { ctx.globalAlpha = 0.4 + 0.45*pul; ctx.strokeStyle = "#9af6f6"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(boss.x, boss.y, r+20, 0, 7); ctx.stroke(); }
+      if (boss.hit > 0) { ctx.globalAlpha = Math.min(1, boss.hit/0.7); ctx.fillStyle = "rgba(154,246,246,0.55)"; ctx.beginPath(); ctx.arc(boss.x, boss.y, r+26, 0, 7); ctx.fill(); }
+      ctx.restore();
+    }
+
     // 근처 조각만 표시(글로우 OFF·3단 발견)
     if (nearShard && IMG.shard) {
       const c = shardCenter(nearShard);
@@ -3064,6 +3120,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
     if (phase === "cleared") overlayCenter("챕터 1 클리어 · 「지로의 방」", "#8ef548", "지로가 첫 기억들을 되찾았다.");
     if (phase === "intro") overlayIntro();
     if (phase === "realize") overlayRealize();
+    if (phase === "branch") overlayBranch();
     if (phase === "choice") overlayChoice();
     if (phase === "ending") overlayEnding();
     if (phase === "transition") overlayTransition();
@@ -3171,74 +3228,95 @@ if (typeof module !== 'undefined') module.exports = Journal;
     ctx.restore();
   }
 
-  // 최종 선택 — 받아들이기 / 다시 잊기 (The Blank가 마주본다)
-  function overlayChoice() {
-    ctx.save();
-    ctx.fillStyle = "#04060a"; ctx.fillRect(0, 0, cv.width, cv.height);
-    const t = performance.now() / 1000;                       // The Blank — 중앙의 일렁이는 공백
-    ctx.globalAlpha = 0.6 + 0.18 * Math.sin(t * 1.4);
-    const g = ctx.createRadialGradient(cv.width/2, cv.height/2 - 30, 6, cv.width/2, cv.height/2 - 30, 230);
-    g.addColorStop(0, "rgba(0,0,0,0.6)"); g.addColorStop(0.55, "rgba(8,8,14,0.4)"); g.addColorStop(1, "rgba(4,6,10,0)");
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cv.width/2, cv.height/2 - 30, 230, 0, 7); ctx.fill();
-    ctx.globalAlpha = 1; ctx.textAlign = "center";
-    ctx.fillStyle = "#9fb6b6"; ctx.font = "15px 'Noto Sans KR',sans-serif";
-    ctx.fillText("마지막 조각이 손끝에 닿는다. 텅 빈 자리 — The Blank가 너를 마주본다.", cv.width/2, cv.height/2 - 112);
-    ctx.fillStyle = "#eafaff"; ctx.font = "bold 24px 'Noto Sans KR',sans-serif";
-    ctx.fillText("이 진실을, 받아들이겠는가?", cv.width/2, cv.height/2 - 74);
-    const opts = [
-      { t: "받아들이기", s: "아픔째로 끌어안는다 — 함께한 시간은 사라지지 않는다", c: "#8ef548" },
-      { t: "다시 잊기",   s: "기억을 어둠 속으로 — 처음의 자리로 돌아간다",      c: "#7a5cff" }
-    ];
+  // 두 선택지 카드 공통 렌더
+  function drawOptionCards(opts, sel, oy0) {
     for (let i = 0; i < 2; i++) {
-      const oy = cv.height/2 - 6 + i*70, sel = choiceSel === i, w = 520, x = (cv.width - w)/2;
-      ctx.fillStyle = sel ? "rgba(52,226,226,.14)" : "rgba(10,16,20,.72)"; rrect(x, oy, w, 56, 10); ctx.fill();
-      ctx.strokeStyle = sel ? opts[i].c : "#27343a"; ctx.lineWidth = sel ? 2.5 : 1; rrect(x, oy, w, 56, 10); ctx.stroke();
-      ctx.fillStyle = sel ? "#eafaff" : "#9fb6b6"; ctx.font = "bold 20px 'Noto Sans KR',sans-serif";
-      ctx.fillText(opts[i].t, cv.width/2, oy + 26);
-      ctx.fillStyle = "#7f9b9b"; ctx.font = "13px 'Noto Sans KR',sans-serif"; ctx.fillText(opts[i].s, cv.width/2, oy + 46);
+      const oy = oy0 + i*70, s = sel === i, w = 540, x = (cv.width - w)/2;
+      ctx.fillStyle = s ? "rgba(52,226,226,.14)" : "rgba(10,16,20,.72)"; rrect(x, oy, w, 56, 10); ctx.fill();
+      ctx.strokeStyle = s ? opts[i].c : "#27343a"; ctx.lineWidth = s ? 2.5 : 1; rrect(x, oy, w, 56, 10); ctx.stroke();
+      ctx.textAlign = "center"; ctx.fillStyle = s ? "#eafaff" : "#9fb6b6"; ctx.font = "bold 20px 'Noto Sans KR',sans-serif";
+      ctx.fillText(opts[i].t, cv.width/2, oy + 25);
+      ctx.fillStyle = "#7f9b9b"; ctx.font = "13px 'Noto Sans KR',sans-serif"; ctx.fillText(opts[i].s, cv.width/2, oy + 45);
     }
-    ctx.fillStyle = "#5a7375"; ctx.font = "13px 'Noto Sans KR',sans-serif";
+  }
+
+  // 중간 분기 — 마음의 갈림(희망/체념). D.branch = {q, options:[{label,sub,feedback},...]}
+  function overlayBranch() {
+    const B = D.branch; if (!B) return;
+    ctx.save(); ctx.fillStyle = "#05070c"; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.textAlign = "center"; ctx.fillStyle = "#9fb6b6"; ctx.font = "14px 'Noto Sans KR',sans-serif";
+    ctx.fillText("— 마음의 갈림 —", cv.width/2, cv.height/2 - 96);
+    ctx.fillStyle = "#eafaff"; ctx.font = "bold 22px 'Noto Sans KR',sans-serif";
+    wrapCenter(B.q, cv.width/2, cv.height/2 - 56, cv.width - 220, 30);
+    drawOptionCards([
+      { t: B.options[0].label, s: B.options[0].sub, c: "#8ef548" },
+      { t: B.options[1].label, s: B.options[1].sub, c: "#34e2e2" }
+    ], branchSel, cv.height/2 + 2);
+    ctx.fillStyle = "#5a7375"; ctx.font = "13px 'Noto Sans KR',sans-serif"; ctx.textAlign = "center";
     ctx.fillText("↑↓ / W S 선택   ·   [Space] 결정", cv.width/2, cv.height - 34);
     ctx.restore();
   }
 
-  // 엔딩 — 진실(accept) / 회귀(forget)
-  function overlayEnding() {
-    const accept = endingType === "accept", fade = Math.min(1, transT / 1.4);
+  // 최종 선택 — 찾아 나선다(재회) / 받아들인다(새 삶). 걸어온 '마음'이 기본값을 비춘다.
+  function overlayChoice() {
     ctx.save();
-    if (accept) { const g = ctx.createRadialGradient(cv.width/2, cv.height/2, 20, cv.width/2, cv.height/2, cv.height);
-      g.addColorStop(0, "rgba(22,32,16,1)"); g.addColorStop(1, "rgba(4,8,5,1)"); ctx.fillStyle = g; }
-    else ctx.fillStyle = "#020305";
-    ctx.globalAlpha = fade; ctx.fillRect(0, 0, cv.width, cv.height); ctx.globalAlpha = 1;
+    ctx.fillStyle = "#05070c"; ctx.fillRect(0, 0, cv.width, cv.height);
+    const t = performance.now() / 1000;
+    ctx.globalAlpha = 0.5 + 0.18 * Math.sin(t * 1.4);
+    const g = ctx.createRadialGradient(cv.width/2, cv.height/2 - 40, 8, cv.width/2, cv.height/2 - 40, 240);
+    g.addColorStop(0, "rgba(154,246,246,0.10)"); g.addColorStop(1, "rgba(5,7,12,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cv.width/2, cv.height/2 - 40, 240, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1; ctx.textAlign = "center";
+    ctx.fillStyle = "#9fb6b6"; ctx.font = "15px 'Noto Sans KR',sans-serif";
+    ctx.fillText("공백이 옅어지자, 두 갈래 길이 환하게 열린다.", cv.width/2, cv.height/2 - 116);
+    ctx.fillStyle = "#eafaff"; ctx.font = "bold 24px 'Noto Sans KR',sans-serif";
+    ctx.fillText("이제, 어디로 가겠는가?", cv.width/2, cv.height/2 - 78);
+    drawOptionCards([
+      { t: "다시 만나러", s: "공백 너머로 — 끝까지 하루를 찾아 나선다", c: "#8ef548" },
+      { t: "여기를 떠나", s: "이 자리를 두고 — 새 온기 속에서 살아간다", c: "#34e2e2" }
+    ], choiceSel, cv.height/2 - 14);
+    const mind = hope > 0 ? "여기까지 걸어온 길이, 다시 만나러 가는 발끝을 비춘다" : hope < 0 ? "여기까지 걸어온 길이, 이 자리를 떠나는 발끝을 비춘다" : "마음은, 아직 어느 쪽도 아니다";
+    ctx.fillStyle = "#6b8a8c"; ctx.font = "13px 'Noto Sans KR',sans-serif"; ctx.fillText(mind, cv.width/2, cv.height/2 + 132);
+    ctx.fillStyle = "#5a7375"; ctx.fillText("↑↓ / W S 선택   ·   [Space] 결정", cv.width/2, cv.height - 32);
+    ctx.restore();
+  }
+
+  // 엔딩 — 재회(reunite, 따뜻한 그린) / 새 삶(stray, 차분한 시안 새벽). 둘 다 비극 아님.
+  function overlayEnding() {
+    const re = endingType === "reunite", fade = Math.min(1, transT / 1.4);
+    ctx.save();
+    const g = ctx.createRadialGradient(cv.width/2, cv.height/2, 20, cv.width/2, cv.height/2, cv.height);
+    if (re) { g.addColorStop(0, "rgba(26,36,18,1)"); g.addColorStop(1, "rgba(6,10,6,1)"); }
+    else    { g.addColorStop(0, "rgba(16,30,36,1)"); g.addColorStop(1, "rgba(5,9,12,1)"); }
+    ctx.fillStyle = g; ctx.globalAlpha = fade; ctx.fillRect(0, 0, cv.width, cv.height); ctx.globalAlpha = 1;
     if (transT < 1.0) { ctx.restore(); return; }
     const ap = Math.min(1, (transT - 1.0) / 1.0); ctx.globalAlpha = ap; ctx.textAlign = "center";
-    if (accept) {
+    if (re) {
       ctx.fillStyle = "#8ef548"; ctx.font = "16px 'Noto Sans KR',sans-serif";
-      ctx.fillText("— 진실 엔딩 —", cv.width/2, cv.height/2 - 124);
+      ctx.fillText("— 재회 엔딩 —", cv.width/2, cv.height/2 - 124);
       ctx.fillStyle = "#eafaff"; ctx.font = "18px 'Noto Sans KR',sans-serif";
-      wrapCenter("하루는 떠났다. 하지만 함께한 시간은, 어디로도 사라지지 않는다.", cv.width/2, cv.height/2 - 64, cv.width - 240, 28);
+      wrapCenter("끊겼던 발자국 끝에서, 익숙한 발소리가 다가온다.", cv.width/2, cv.height/2 - 64, cv.width - 240, 28);
       ctx.fillStyle = "#9fc5c5"; ctx.font = "15px 'Noto Sans KR',sans-serif";
-      ctx.fillText("비어 있던 이름표가, 마침내 또렷해진다 —", cv.width/2, cv.height/2 - 2);
-      const np = Math.min(1, (transT - 2.4) / 1.0);
-      if (np > 0) {
-        ctx.globalAlpha = np; ctx.shadowColor = "#34e2e2"; ctx.shadowBlur = 24;
-        ctx.fillStyle = "#9bf24a"; ctx.font = "bold 50px 'Noto Sans KR',sans-serif";
-        ctx.fillText("지로  ·  Ziro", cv.width/2, cv.height/2 + 66); ctx.shadowBlur = 0;
-        ctx.fillStyle = "#cfe6e6"; ctx.font = "15px 'Noto Sans KR',sans-serif";
-        ctx.fillText("하루가 불러주던, 세상에서 가장 따뜻한 소리.", cv.width/2, cv.height/2 + 104);
-      }
+      ctx.fillText("나를 부르는 그 목소리 — 더는 흐리지 않다. 또렷하다.", cv.width/2, cv.height/2 - 4);
     } else {
-      ctx.fillStyle = "#7a5cff"; ctx.font = "16px 'Noto Sans KR',sans-serif";
-      ctx.fillText("— 회귀 엔딩 —", cv.width/2, cv.height/2 - 92);
-      ctx.fillStyle = "#9ab"; ctx.font = "19px 'Noto Sans KR',sans-serif";
-      wrapCenter("나는 눈을 감았다. 아픈 기억은, 다시 어둠 속으로.", cv.width/2, cv.height/2 - 32, cv.width - 240, 28);
-      ctx.fillStyle = "#5a7375"; ctx.font = "17px 'Noto Sans KR',sans-serif";
-      ctx.fillText("…어둡다. 여기는… 어디지.", cv.width/2, cv.height/2 + 26);
-      ctx.fillText("나는… 나는 누구지?", cv.width/2, cv.height/2 + 56);
+      ctx.fillStyle = "#34e2e2"; ctx.font = "16px 'Noto Sans KR',sans-serif";
+      ctx.fillText("— 새 아침 엔딩 —", cv.width/2, cv.height/2 - 124);
+      ctx.fillStyle = "#eafaff"; ctx.font = "18px 'Noto Sans KR',sans-serif";
+      wrapCenter("나는 이 자리를 떠나기로 했다. 기다림이 아니라, 걸음으로.", cv.width/2, cv.height/2 - 64, cv.width - 240, 28);
+      ctx.fillStyle = "#9fc5c5"; ctx.font = "15px 'Noto Sans KR',sans-serif";
+      ctx.fillText("하루가 길고양이들에게 물을 내주던 그 마음을, 이제 내가 잇는다.", cv.width/2, cv.height/2 - 4);
+    }
+    const np = Math.min(1, (transT - 2.4) / 1.0);
+    if (np > 0) {
+      ctx.globalAlpha = np; ctx.shadowColor = "#34e2e2"; ctx.shadowBlur = 24;
+      ctx.fillStyle = "#9bf24a"; ctx.font = "bold 50px 'Noto Sans KR',sans-serif";
+      ctx.fillText("지로  ·  Ziro", cv.width/2, cv.height/2 + 64); ctx.shadowBlur = 0;
+      ctx.fillStyle = "#cfe6e6"; ctx.font = "15px 'Noto Sans KR',sans-serif";
+      ctx.fillText(re ? "하루가 다시, 내 이름을 부른다." : "어디에 있든 — 나는, 나다.", cv.width/2, cv.height/2 + 102);
     }
     if (transT > 2.4) { ctx.globalAlpha = 0.5 + 0.3 * Math.sin(performance.now() / 400);
-      ctx.fillStyle = accept ? "#8ef548" : "#7f9b9b"; ctx.font = "13px 'Noto Sans KR',sans-serif";
-      ctx.fillText("[Space] 처음으로", cv.width/2, cv.height - 38); }
+      ctx.fillStyle = re ? "#8ef548" : "#34e2e2"; ctx.font = "13px 'Noto Sans KR',sans-serif";
+      ctx.fillText("[Space] 처음으로", cv.width/2, cv.height - 36); }
     ctx.restore();
   }
 
@@ -3311,16 +3389,17 @@ if (typeof module !== 'undefined') module.exports = Journal;
     const bw = 380, bx = (W - bw) / 2, by = 12;
     ctx.fillStyle = "rgba(8,14,18,.82)"; rrect(bx, by, bw, 34, 10); ctx.fill();
     ctx.textAlign = "left"; ctx.font = "bold 14px 'Noto Sans KR',sans-serif";
-    if (done) { ctx.fillStyle = "#34e2e2"; ctx.textAlign = "center"; ctx.fillText("문이 열렸다 — 위쪽 ↑ 문으로 가라", W / 2, by + 22); }
+    if (done && boss) { ctx.fillStyle = "#9af6f6"; ctx.textAlign = "center"; ctx.fillText("[Q] 모은 기억의 빛으로 공백을 비춰라", W / 2, by + 22); }
+    else if (done) { ctx.fillStyle = "#34e2e2"; ctx.textAlign = "center"; ctx.fillText("문이 열렸다 — 위쪽 ↑ 문으로 가라", W / 2, by + 22); }
     else {
-      ctx.fillStyle = "#eafaff"; ctx.fillText("목표 · 코어 기억 모으기", bx + 14, by + 22);
-      const dotx = bx + 158;
+      ctx.fillStyle = "#eafaff"; ctx.fillText(boss ? "목표 · 기억을 모아 공백을 마주하라" : "목표 · 코어 기억 모으기", bx + 14, by + 22);
+      const dotx = bx + 200;
       for (let i = 0; i < need; i++) { ctx.beginPath(); ctx.arc(dotx + i * 20, by + 16, 6, 0, 7); ctx.fillStyle = i < cores ? "#8ef548" : "#27343a"; ctx.fill(); }
-      ctx.fillStyle = "#9fc5c5"; ctx.font = "12px 'Noto Sans KR',sans-serif"; ctx.fillText("빛나는 기억에 다가가 [E]", dotx + need * 20 + 6, by + 22);
+      ctx.fillStyle = "#9fc5c5"; ctx.font = "12px 'Noto Sans KR',sans-serif"; ctx.fillText("빛나는 기억에 다가가 [E]", dotx + need * 20 + 8, by + 22);
     }
     ctx.restore();
-    // 클리어 시 문 방향 화살표(상단)
-    if (done && door) { ctx.save(); ctx.textAlign = "center"; ctx.font = "bold 26px sans-serif"; ctx.fillStyle = "#34e2e2";
+    // 클리어 시 문 방향 화살표(상단) — 보스 스테이지는 제외
+    if (done && door && !boss) { ctx.save(); ctx.textAlign = "center"; ctx.font = "bold 26px sans-serif"; ctx.fillStyle = "#34e2e2";
       ctx.globalAlpha = 0.55 + 0.45 * Math.sin(performance.now() / 200); ctx.fillText("↑", clamp(toSX(door.x), 30, cv.width - 30), 72); ctx.restore(); }
     // 진행 토스트(좌상단 코어 카운터 아래)
     let ty = 92; ctx.save(); ctx.textAlign = "left"; ctx.font = "bold 14px 'Noto Sans KR',sans-serif";
@@ -3414,7 +3493,10 @@ if (typeof module !== 'undefined') module.exports = Journal;
     window.__ziro = () => ({ phase, px: player.x, py: player.y, mem: st ? st.mem : 0, ch: chapterIdx,
                              camX, camY, nw: NW, nh: NH, realizeI, realizeLen: realizeLines.length, choiceSel, endingType });
     window.__loadStage = (i) => { loadStage(i); phase = "play"; };
-    window.__debugClear = () => { for (const s of D.shards) if (s.type === "core") Core.collect(st, s); beginRealize(); };  // 테스트용: 코어 수집 후 깨달음 진입
+    window.__debugClear = () => { for (const s of D.shards) if (s.type === "core") Core.collect(st, s); if (boss) boss.dispelled = true; beginRealize(); };  // 테스트용
+    window.__hope = (v) => { if (typeof v === "number") hope = v; return hope; };
+    window.__collectCores = () => { for (const s of D.shards) if (s.type === "core") Core.collect(st, s); };  // 보스 테스트용(해소 안 함)
+    window.__boss = () => boss ? { hp: boss.hp, dispelled: boss.dispelled } : null;
   }
   loadStage(0);                 // 첫 챕터 초기화(맵·엔티티·상태)
   requestAnimationFrame(frame);
