@@ -124,8 +124,9 @@
     if (reach.length < D.shards.length + 8) return orig;            // 너무 좁으면 원본
     const sp = D.spawn, d2 = (a, b) => (a[0]-b[0])**2 + (a[1]-b[1])**2;
     const shuffle = a => { for (let i = a.length-1; i > 0; i--) { const j = (Math.random()*(i+1))|0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
-    // core·false·hidden 은 서사/공정성 위해 원본 고정. 비숨김 echo 만 위치 셔플(리플레이성).
-    const fixedOf = s => (s.type === "core" || s.type === "false" || s.hidden);
+    // 페어 랜덤: obj(옮길 수 있는 물건이 함께 그려짐) 또는 비숨김 echo 는 위치 셔플(물건도 같이 이동 → 서사 유지).
+    //   구조물에 얽힌 core(창·문·계단·벤치 등)·false·hidden 은 고정.
+    const fixedOf = s => !(s.obj || (s.type === "echo" && !s.hidden));
     const placed = [], shardsOut = D.shards.map(s => fixedOf(s) ? { ...s, tile: [s.tile[0], s.tile[1]] } : null);
     D.shards.forEach((s, i) => { if (shardsOut[i]) placed.push(s.tile); });
     const pool = shuffle(reach.filter(t => d2(t, sp) >= 9));
@@ -730,6 +731,12 @@
       ctx.fillStyle = fal ? "#caa15a" : "#34e2e2";
       ctx.beginPath(); ctx.arc(c.x, c.y - 1, fal ? 2.0 : 2.6, 0, 7); ctx.fill(); ctx.restore();
     }
+    // 페어 물건 — obj 조각은 그 물건을 기억과 함께 표시(랜덤 배치돼도 '그 물건 이야기'가 유지됨)
+    for (const s of shards) {
+      if (isDone(s) || !s.obj) continue;
+      if (s.hidden && !illuminated.has(s.id)) continue;
+      const c = shardCenter(s); drawObj(s.obj, c.x, c.y + 4);
+    }
 
     // 보스 '공백(The Blank)' — 거대한 자아 그림자. 코어 3 모으면 비추기로 해소(가벼운 연출형).
     if (boss && !boss.dispelled) {
@@ -1095,6 +1102,18 @@
   }
 
   function glow(fn, color, blur) { ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = blur; fn(); ctx.restore(); }
+  // 페어 물건 아이콘(월드 좌표, 작게) — 기억과 함께 이동하는 '스토리텔링 오브젝트'
+  function drawObj(kind, x, y) {
+    ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.lineWidth = 1;
+    if (kind === "frame") { ctx.fillStyle = "#6b5536"; ctx.fillRect(-4, -5, 8, 9); ctx.fillStyle = "#9fc5c5"; ctx.fillRect(-3, -4, 6, 6); ctx.fillStyle = "#caa15a"; ctx.fillRect(-2, -3, 2, 2); }
+    else if (kind === "bottle") { ctx.fillStyle = "#cfe6e6"; ctx.fillRect(-2, -5, 4, 8); ctx.fillStyle = "#8aa7a9"; ctx.fillRect(-2, -6, 4, 2); ctx.fillStyle = "#9af6f6"; ctx.fillRect(-1, 0, 2, 3); }
+    else if (kind === "bowl") { ctx.fillStyle = "#7a6a52"; ctx.beginPath(); ctx.ellipse(0, 1, 5, 3, 0, 0, 7); ctx.fill(); ctx.fillStyle = "#3a4a4e"; ctx.beginPath(); ctx.ellipse(0, 0, 4, 2, 0, 0, 7); ctx.fill(); }
+    else if (kind === "treat") { ctx.fillStyle = "#caa15a"; ctx.beginPath(); ctx.ellipse(-1, 0, 4, 2.4, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.moveTo(3, 0); ctx.lineTo(6, -2); ctx.lineTo(6, 2); ctx.closePath(); ctx.fill(); }
+    else if (kind === "chart") { ctx.fillStyle = "#e6eef0"; ctx.fillRect(-4, -5, 8, 10); ctx.strokeStyle = "#7a9aa0"; ctx.beginPath(); for (let i = -3; i <= 3; i += 2) { ctx.moveTo(-3, i); ctx.lineTo(3, i); } ctx.stroke(); }
+    else if (kind === "card") { ctx.fillStyle = "#caa15a"; rrect(-5, -3, 10, 6, 2); ctx.fill(); ctx.fillStyle = "#6b5536"; ctx.fillRect(-3, 0, 6, 1.5); }
+    else if (kind === "bell") { ctx.fillStyle = "#caa15a"; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fill(); ctx.fillStyle = "#6b5536"; ctx.beginPath(); ctx.arc(0, 1, 1.4, 0, 7); ctx.fill(); ctx.fillStyle = "#8aa7a9"; ctx.fillRect(-1, -6, 2, 2); }
+    ctx.restore();
+  }
   function cbMark(m) {            // 색약 보조: 추격 중인 적에 색과 무관한 표식(흰 점선 고리 + !)
     if (!cbAid || !m.chasing) return;
     ctx.save(); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);

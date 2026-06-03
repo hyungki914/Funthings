@@ -590,8 +590,8 @@ DATA.chapter3 = {
       recall: '난간 끝, 닳아 반들거리는 자리. 하루의 손이 매일 여기를 잡았다. 손의 온기까지 닳아버린 듯.' },
     { id: 'c_step_door', type: 'core', tile: [4, 17], radius: 1.3, identitySlot: 3,
       recall: '복도 끝, 반쯤 닫힌 문 하나. 그 앞에서 나는 늘 멈춰 섰다 — 들어가도 될지, 알 수 없어서.' },
-    { id: 'e_step_frame', type: 'echo', tile: [9, 9], radius: 1.2, identitySlot: null,
-      recall: '벽에 걸린 액자들. 한쪽 끝의 한 장만, 누군가 일부러 뒤집어 놓았다.' },
+    { id: 'e_step_frame', type: 'echo', tile: [9, 9], radius: 1.2, identitySlot: null, obj: 'frame',
+      recall: '빛바랜 액자 하나. 한쪽이 일부러 뒤집힌 채다 — 차마 보지 못한 한 장.' },
     { id: 'e_step_slipper', type: 'echo', tile: [15, 16], radius: 1.2, hidden: true, identitySlot: null,
       recall: '계단참에 놓인 한 켤레의 실내화. 급히 나간 듯, 한 짝이 비뚜로 놓여 있다.' },
     { id: 'f_step', type: 'false', tile: [4, 21], radius: 1.3, identitySlot: null,
@@ -631,8 +631,8 @@ DATA.chapter4 = {
       recall: '이불이 한쪽으로 걷힌 채다. 누군가 급히 일어난 자리. 나는 매일 그 빈 쪽에 몸을 말고, 돌아올 온기를 기다렸다.' },
     { id: 'c_haru_clock', type: 'core', tile: [18, 5], radius: 1.3, identitySlot: 3,
       recall: '벽시계는 그날 새벽의 시각에서 멈춰 있다. 모든 게 그 아침에서 정지한 것처럼.' },
-    { id: 'c_haru_bottle', type: 'core', tile: [3, 9], radius: 1.3, identitySlot: 2,
-      recall: '머리맡 약병 하나가 뚜껑도 닫지 못한 채 넘어져 있다. 챙길 새도 없이, 하루는 그렇게 실려 갔다.' },
+    { id: 'c_haru_bottle', type: 'core', tile: [3, 9], radius: 1.3, identitySlot: 2, obj: 'bottle',
+      recall: '뚜껑도 닫지 못한 채 넘어진 약병 하나. 챙길 새도 없이, 하루는 그렇게 실려 갔다.' },
     { id: 'e_haru_sweater', type: 'echo', tile: [14, 11], radius: 1.2, hidden: true, identitySlot: null,
       recall: '의자에 걸린 하루의 스웨터. 코를 묻으면, 아직 옅게 하루의 냄새가 난다.' },
     { id: 'f_haru_wave', type: 'false', tile: [12, 5], radius: 1.3, identitySlot: null,
@@ -679,8 +679,8 @@ DATA.chapter5 = {
       recall: '마당 끝 작은 문. 하루의 손이 매일 밀어 열던 문이, 오늘은 혼자 삐걱인다.' },
     { id: 'c_yard_tree', type: 'core', tile: [3, 7], radius: 1.3, identitySlot: 3,
       recall: '현관 문턱. 그날 아침, 하루는 들것에 실려 이 문턱을 넘어갔다 — 나를 한 번 돌아보며.' },
-    { id: 'e_yard_bowl', type: 'echo', tile: [7, 11], radius: 1.2, identitySlot: null,
-      recall: '댓돌 위 작은 물그릇. 하루가 길고양이들을 위해 내놓던 것. 물은 말랐다.' },
+    { id: 'e_yard_bowl', type: 'echo', tile: [7, 11], radius: 1.2, identitySlot: null, obj: 'bowl',
+      recall: '작은 물그릇 하나. 하루가 길고양이들을 위해 내놓던 것. 물은 말랐다.' },
     { id: 'e_yard_paw', type: 'echo', tile: [18, 11], radius: 1.2, hidden: true, identitySlot: null,
       recall: '마당 흙에 굳은 발자국 하나. 멀어지는 불빛을 따라, 대문까지 달렸던 자국.' },
     { id: 'f_yard', type: 'false', tile: [14, 11], radius: 1.3, identitySlot: null,
@@ -779,14 +779,14 @@ DATA.chapter7 = {
       recall: '동물병원 진료대. 차가운 금속, 그런데 하루의 손이 늘 내 등을 받쳐주어 무섭지 않았다. “괜찮아, 지로.” 그 목소리.' },
     { id: 'c_arc_mid', type: 'core', tile: [11, 8], radius: 1.3, identitySlot: 2,
       recall: '단골 카페 창가 자리. 하루는 따뜻한 걸 마시고, 나는 그 무릎에서 졸았다. 점원이 늘 내 몫의 간식을 챙겨줬다.' },
-    { id: 'c_arc_right', type: 'core', tile: [21, 5], radius: 1.3, identitySlot: 3,
-      recall: '펫샵 진열대의 그 간식. 하루는 망설임 없이 늘 같은 걸 집었다. 내가 제일 좋아하는 걸, 하루는 알고 있었다.' },
-    { id: 'e_arc_chart', type: 'echo', tile: [7, 10], radius: 1.2, identitySlot: null,
-      recall: '병원 벽에 걸린 차트. 다음 검진 날짜에 작은 동그라미. 그날을, 우리는 함께 가지 못했다.' },
+    { id: 'c_arc_right', type: 'core', tile: [21, 5], radius: 1.3, identitySlot: 3, obj: 'treat',
+      recall: '내가 제일 좋아하던 그 간식. 하루는 망설임 없이 늘 같은 걸 집었다 — 내가 뭘 좋아하는지, 다 알았다.' },
+    { id: 'e_arc_chart', type: 'echo', tile: [7, 10], radius: 1.2, identitySlot: null, obj: 'chart',
+      recall: '병원 진료 차트 한 장. 다음 검진 날짜에 작은 동그라미. 그날을, 우리는 함께 가지 못했다.' },
     { id: 'e_arc_collar', type: 'echo', tile: [16, 9], radius: 1.2, hidden: true, identitySlot: null,
-      recall: '펫샵 한구석, 내 목걸이와 똑같은 것. 하루가 이걸 골라 내 목에 채워줬던 날의 손길.' },
-    { id: 'e_arc_card', type: 'echo', tile: [12, 13], radius: 1.2, identitySlot: null,
-      recall: '카페 적립 카드. 도장 한 칸만 채우면 무료 음료. "다음에 같이 받자, 지로." 그 다음이, 아직 안 왔다.' }
+      recall: '내 목걸이와 똑같은 것. 하루가 이걸 골라 내 목에 채워줬던 날의 손길.' },
+    { id: 'e_arc_card', type: 'echo', tile: [12, 13], radius: 1.2, identitySlot: null, obj: 'card',
+      recall: '카페 적립 카드 한 장. 도장 한 칸만 채우면 무료 음료. "다음에 같이 받자, 지로." 그 다음이, 아직 안 왔다.' }
   ],
   murks: [{ id: 'm_arc', patrol: [[10, 2], [13, 2], [13, 4], [10, 4]], speed: 38, sightTiles: 3.3, fovDeg: 90 }],
   echoes: [
@@ -881,8 +881,8 @@ DATA.chapter9 = {
       recall: '산책로에 남은 작은 발자국들. 하루의 옆에서, 나는 이 길을 수없이 걸었다.' },
     { id: 'c_park_last', type: 'core', tile: [25, 12], radius: 1.3, identitySlot: 3,
       recall: '마지막으로 함께한 날의 햇살. 하루는 평소보다 오래 나를 안았다 — "금방 올게, 지로." 그게, 갑자기 멀어질 줄은 몰랐다.' },
-    { id: 'e_park_bell', type: 'echo', tile: [24, 7], radius: 1.2, identitySlot: null,
-      recall: '풀숲에 떨어진 낡은 목걸이 방울. 흔들면, 아직 그날의 소리가 난다.' },
+    { id: 'e_park_bell', type: 'echo', tile: [24, 7], radius: 1.2, identitySlot: null, obj: 'bell',
+      recall: '낡은 목걸이 방울 하나. 흔들면, 아직 그날의 소리가 난다.' },
     { id: 'e_park_leaf', type: 'echo', tile: [8, 4], radius: 1.2, hidden: true, identitySlot: null,
       recall: '벤치 밑에 눌린 마른 잎 한 장. 계절이 몇 번 바뀌도록 이 자리를 지킨 건, 떠나지 못해서가 아니라 — 여기서 다시 만날 것 같아서였다.' },
     { id: 'f_park', type: 'false', tile: [17, 5], radius: 1.3, identitySlot: null,
@@ -2931,8 +2931,9 @@ if (typeof module !== 'undefined') module.exports = Journal;
     if (reach.length < D.shards.length + 8) return orig;            // 너무 좁으면 원본
     const sp = D.spawn, d2 = (a, b) => (a[0]-b[0])**2 + (a[1]-b[1])**2;
     const shuffle = a => { for (let i = a.length-1; i > 0; i--) { const j = (Math.random()*(i+1))|0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
-    // core·false·hidden 은 서사/공정성 위해 원본 고정. 비숨김 echo 만 위치 셔플(리플레이성).
-    const fixedOf = s => (s.type === "core" || s.type === "false" || s.hidden);
+    // 페어 랜덤: obj(옮길 수 있는 물건이 함께 그려짐) 또는 비숨김 echo 는 위치 셔플(물건도 같이 이동 → 서사 유지).
+    //   구조물에 얽힌 core(창·문·계단·벤치 등)·false·hidden 은 고정.
+    const fixedOf = s => !(s.obj || (s.type === "echo" && !s.hidden));
     const placed = [], shardsOut = D.shards.map(s => fixedOf(s) ? { ...s, tile: [s.tile[0], s.tile[1]] } : null);
     D.shards.forEach((s, i) => { if (shardsOut[i]) placed.push(s.tile); });
     const pool = shuffle(reach.filter(t => d2(t, sp) >= 9));
@@ -3537,6 +3538,12 @@ if (typeof module !== 'undefined') module.exports = Journal;
       ctx.fillStyle = fal ? "#caa15a" : "#34e2e2";
       ctx.beginPath(); ctx.arc(c.x, c.y - 1, fal ? 2.0 : 2.6, 0, 7); ctx.fill(); ctx.restore();
     }
+    // 페어 물건 — obj 조각은 그 물건을 기억과 함께 표시(랜덤 배치돼도 '그 물건 이야기'가 유지됨)
+    for (const s of shards) {
+      if (isDone(s) || !s.obj) continue;
+      if (s.hidden && !illuminated.has(s.id)) continue;
+      const c = shardCenter(s); drawObj(s.obj, c.x, c.y + 4);
+    }
 
     // 보스 '공백(The Blank)' — 거대한 자아 그림자. 코어 3 모으면 비추기로 해소(가벼운 연출형).
     if (boss && !boss.dispelled) {
@@ -3902,6 +3909,18 @@ if (typeof module !== 'undefined') module.exports = Journal;
   }
 
   function glow(fn, color, blur) { ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = blur; fn(); ctx.restore(); }
+  // 페어 물건 아이콘(월드 좌표, 작게) — 기억과 함께 이동하는 '스토리텔링 오브젝트'
+  function drawObj(kind, x, y) {
+    ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.lineWidth = 1;
+    if (kind === "frame") { ctx.fillStyle = "#6b5536"; ctx.fillRect(-4, -5, 8, 9); ctx.fillStyle = "#9fc5c5"; ctx.fillRect(-3, -4, 6, 6); ctx.fillStyle = "#caa15a"; ctx.fillRect(-2, -3, 2, 2); }
+    else if (kind === "bottle") { ctx.fillStyle = "#cfe6e6"; ctx.fillRect(-2, -5, 4, 8); ctx.fillStyle = "#8aa7a9"; ctx.fillRect(-2, -6, 4, 2); ctx.fillStyle = "#9af6f6"; ctx.fillRect(-1, 0, 2, 3); }
+    else if (kind === "bowl") { ctx.fillStyle = "#7a6a52"; ctx.beginPath(); ctx.ellipse(0, 1, 5, 3, 0, 0, 7); ctx.fill(); ctx.fillStyle = "#3a4a4e"; ctx.beginPath(); ctx.ellipse(0, 0, 4, 2, 0, 0, 7); ctx.fill(); }
+    else if (kind === "treat") { ctx.fillStyle = "#caa15a"; ctx.beginPath(); ctx.ellipse(-1, 0, 4, 2.4, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.moveTo(3, 0); ctx.lineTo(6, -2); ctx.lineTo(6, 2); ctx.closePath(); ctx.fill(); }
+    else if (kind === "chart") { ctx.fillStyle = "#e6eef0"; ctx.fillRect(-4, -5, 8, 10); ctx.strokeStyle = "#7a9aa0"; ctx.beginPath(); for (let i = -3; i <= 3; i += 2) { ctx.moveTo(-3, i); ctx.lineTo(3, i); } ctx.stroke(); }
+    else if (kind === "card") { ctx.fillStyle = "#caa15a"; rrect(-5, -3, 10, 6, 2); ctx.fill(); ctx.fillStyle = "#6b5536"; ctx.fillRect(-3, 0, 6, 1.5); }
+    else if (kind === "bell") { ctx.fillStyle = "#caa15a"; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fill(); ctx.fillStyle = "#6b5536"; ctx.beginPath(); ctx.arc(0, 1, 1.4, 0, 7); ctx.fill(); ctx.fillStyle = "#8aa7a9"; ctx.fillRect(-1, -6, 2, 2); }
+    ctx.restore();
+  }
   function cbMark(m) {            // 색약 보조: 추격 중인 적에 색과 무관한 표식(흰 점선 고리 + !)
     if (!cbAid || !m.chasing) return;
     ctx.save(); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
