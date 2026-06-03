@@ -115,31 +115,40 @@ def draw_cat(step=0):
 
 
 def draw_cat_side(step=0):
-    """옆모습(왼쪽 보기) 고양이 — 이동 방향 표현용."""
-    W, H = 32, 28
+    """옆모습(왼쪽 보기) 고양이 — 둥근 몸통 + 네 다리(발끝 시안 발바닥) + 위로 컬한 꼬리 + ':3' 옆얼굴.
+    보행 2프레임(앞/뒤 다리 교차)."""
+    W, H = 34, 28
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
-    K = PAL['k']; DK = PAL['d']; BS = PAL['b']; C = PAL['C']; CH = PAL['h']
-    G = PAL['G']; GD = PAL['g']; YH = PAL['Y']; WT = PAL['W']
-    # 꼬리(뒤=오른쪽, 위로 컬)
-    d.line([(24,18),(28,14),(29,8),(27,5)], fill=K, width=4)
-    d.line([(24,18),(28,14),(29,8),(27,5)], fill=DK, width=2)
-    d.ellipse((25,4,29,9), fill=C); d.ellipse((26,5,28,8), fill=CH)
-    # 몸통
-    d.ellipse((6,12,26,26), fill=K); d.ellipse((7,13,25,25), fill=DK); d.ellipse((9,15,18,23), fill=BS)
-    # 다리(시안) — step 보행
-    fo = 2 if step == 1 else 0
-    for x in (9-0, 19-fo):
-        d.rectangle((x,23,x+2,27), fill=K); d.rectangle((x,23,x+1,26), fill=C)
-    for x in (13+fo, 22):
-        d.rectangle((x,23,x+2,27), fill=K); d.rectangle((x,23,x+1,26), fill=C)
-    # 머리(앞=왼쪽)
-    d.ellipse((1,6,15,22), fill=K); d.ellipse((2,7,14,21), fill=DK); d.ellipse((3,9,9,16), fill=BS)
+    K = PAL['k']; D = PAL['d']; B = PAL['b']; L = PAL['l']
+    C = PAL['C']; Cd = PAL['c']; Ch = PAL['h']; G = PAL['G']; Y = PAL['Y']; Wt = PAL['W']
+    el = lambda bb, f: d.ellipse(bb, fill=f)
+    poly = lambda p, f: d.polygon(p, fill=f)
+
+    def leg(lx, fwd):                                        # 다리 한 짝(앞으로 fwd 픽셀) + 발끝 시안
+        x = lx + fwd
+        d.rectangle((x, 18, x + 2, 24), fill=K); d.rectangle((x, 18, x + 1, 23), fill=D)
+        el((x - 1, 23, x + 3, 26), K); el((x, 24, x + 2, 26), C)
+    back, front = (2, -1) if step == 1 else ((-1, 2) if step == 2 else (1, 0))
+    leg(23, back); leg(19, front)                           # 뒷다리
+    # 꼬리(뒤=우측, 위로 컬)
+    d.line([(24, 15), (29, 11), (30, 5), (27, 2)], fill=K, width=5)
+    d.line([(24, 15), (29, 11), (30, 5), (27, 2)], fill=D, width=3)
+    el((25, 1, 30, 6), C); el((26, 2, 29, 5), Ch)
+    # 몸통(둥글게) + 등 윤곽 빛 + 배 밝은면
+    el((6, 9, 28, 24), K); el((7, 10, 27, 23), D)
+    d.arc((8, 9, 26, 22), 195, 345, fill=L, width=1)
+    el((10, 15, 21, 22), B)
+    leg(13, front); leg(8, back)                            # 앞다리
+    # 목·머리(앞=좌) + 머리 위 빛
+    el((1, 4, 16, 20), K); el((2, 5, 15, 19), D)
+    d.arc((3, 4, 13, 13), 200, 340, fill=L, width=1)
     # 귀
-    d.polygon([(3,7),(5,0),(9,7)], fill=K); d.polygon([(4,6),(6,2),(8,6)], fill=DK); d.polygon([(5,6),(6,3),(7,6)], fill=C)
-    d.polygon([(9,7),(12,1),(14,7)], fill=K); d.polygon([(10,6),(12,3),(13,6)], fill=DK)
-    # 눈(앞쪽)
-    d.ellipse((3,11,8,18), fill=K); d.ellipse((4,12,7,17), fill=GD); d.ellipse((4,12,7,16), fill=G); d.point((5,13), fill=YH)
-    d.point((2,15), fill=C)  # 코
+    poly([(2, 5), (5, -3), (9, 5)], K); poly([(3, 4), (5, -1), (8, 4)], D); poly([(4, 3), (5, 0), (7, 3)], C)
+    poly([(9, 5), (12, -2), (15, 5)], K); poly([(10, 4), (12, 0), (14, 4)], D)
+    # 눈(옆, 아몬드 빛남) + 주둥이/코 + ':3' 입
+    el((3, 10, 8, 17), K); el((4, 11, 7, 16), G); el((4, 11, 6, 14), Y); d.point((5, 12), fill=Wt)
+    el((0, 12, 2, 15), K); d.point((0, 13), fill=Ch)
+    for p in [(2, 15), (3, 16), (4, 15)]: d.point(p, fill=Cd)
     return im
 
 
