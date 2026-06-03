@@ -236,17 +236,43 @@ def s10():  # 빈자리 — 어둠 속 떠오르는 이름표 '지로', 빛으�
     cat(d, W//2, 188, 1.5, eye=(150, 250, 200))
     return finish(im, glow_r=4.0, vig=0.46)
 
-def end_reunite():  # 재회 — 달려가 안기는 재회, 따뜻한 그린 빛
-    im = vgrad([(0, (30, 42, 22)), (1, (10, 14, 8))]); d = ImageDraw.Draw(im)
-    d.rectangle((0, 170, W, H), fill=(20, 26, 14))
-    # 빛/광선을 먼저(배경) → 그 위에 하루 실루엣을 그려 또렷이 읽히게(클라이맥스 임팩트)
-    im = glow(im, 290, 120, 180, (150, 240, 120), 0.75); im = rays(im, 290, 104, (180, 255, 150), 9, 300, 2.6, 0.5)
-    pl = person_layer(290, 184, 1.3, (34, 44, 26), 255, 0.5, arms="open")   # 하루 — 두 팔 벌린 소녀 실루엣(빛 위)
-    im = Image.alpha_composite(im, pl)
-    d = ImageDraw.Draw(im)
-    d.ellipse((281, 106, 299, 124), outline=(210, 255, 180), width=1)    # 머리 역광 림라이트
-    cat(d, 150, 184, 1.4, run=True, eye=(180, 255, 150))                 # 달려가는 지로
-    return particles(finish(im, glow_r=3.4, vig=0.42), 20, (200, 255, 180), "spark")
+def end_reunite():  # 재회 — 하루가 지로를 안고, 지로는 어깨에 기대 눈을 감음(레퍼런스 포옹 리터치)
+    im = vgrad([(0, (78, 92, 80)), (0.5, (60, 72, 58)), (1, (26, 32, 24))]); d = ImageDraw.Draw(im)
+    im = glow(im, 70, 46, 150, (224, 242, 214), 0.55)                    # 좌상 창문 빛
+    import random; random.seed(7)
+    bk = Image.new("RGBA", (W, H), (0, 0, 0, 0)); db = ImageDraw.Draw(bk)
+    for _ in range(14):                                                  # 우측 초록 보케
+        x, y, r = random.randint(W//2, W), random.randint(0, H), random.uniform(3, 9)
+        db.ellipse((x-r, y-r, x+r, y+r), fill=(150, 200, 150, random.randint(20, 55)))
+    im = Image.alpha_composite(im, bk); d = ImageDraw.Draw(im)
+    # 하루(전경) — 긴 머리카락(상단~우측 크게) + 뒤통수
+    hair, hhi = (34, 28, 34), (56, 48, 56)
+    d.polygon([(215, 0), (W, 0), (W, 205), (348, 175), (320, 90), (270, 24)], fill=hair)
+    d.ellipse((250, 10, 376, 165), fill=hair)
+    d.ellipse((282, 30, 356, 124), fill=(28, 24, 28))                    # 뒤통수
+    for sx in (322, 342, 362): d.line([(sx, 70), (sx+4, 175)], fill=hhi, width=1)   # 머리카락 결
+    # 하루 — 크림 케이블니트 어깨(전경, 크게 — 안고 있는 어깨)
+    knit, ksh, khi = (216, 198, 162), (184, 166, 132), (240, 226, 196)
+    d.ellipse((70, 176, 430, 400), fill=knit)
+    d.ellipse((70, 176, 430, 400), outline=ksh, width=2)
+    for rx in range(96, 412, 15):                                        # 케이블 니트 결(어깨 안쪽만)
+        d.line([(rx, 184), (rx, H)], fill=ksh, width=2); d.line([(rx+3, 186), (rx+3, H)], fill=khi, width=1)
+    # 지로 — 하루의 어깨에 머리를 기댄 작은 검은 고양이(눈 감고 만족), 앞발은 어깨 위로
+    cb, crim = (16, 18, 26), (52, 226, 226)
+    hx, hy = 188, 144                                                    # 머리 중심
+    d.ellipse((hx-44, hy+4, hx+4, hy+46), fill=cb)                       # 살짝 보이는 등(어깨 뒤)
+    d.line([(hx-40, hy+30), (hx-58, hy+16), (hx-64, hy+2)], fill=cb, width=6)  # 꼬리
+    d.ellipse((hx-24, hy-22, hx+24, hy+24), fill=cb)                     # 머리(작게)
+    d.polygon([(hx-18, hy-14), (hx-24, hy-40), (hx-4, hy-16)], fill=cb)  # 귀
+    d.polygon([(hx+4, hy-16), (hx+22, hy-42), (hx+20, hy-12)], fill=cb)
+    d.ellipse((hx+16, hy+22, hx+38, hy+42), fill=cb)                     # 어깨 감싼 앞발
+    d.arc((hx-24, hy-22, hx+24, hy+24), 290, 80, fill=crim, width=1)     # 등/머리 우측 림라이트(역광)
+    # 감은 눈(만족) 곡선 둘 + 코 + 잔잔한 미소
+    d.arc((hx-13, hy-2, hx-1, hy+7), 200, 340, fill=(150, 246, 130), width=2)
+    d.arc((hx+2, hy-2, hx+14, hy+7), 200, 340, fill=(150, 246, 130), width=2)
+    d.point((hx, hy+9), fill=(210, 130, 150)); d.point((hx+1, hy+9), fill=(210, 130, 150))   # 코
+    d.arc((hx-6, hy+8, hx+7, hy+15), 20, 160, fill=(46, 50, 62), width=1)   # 미소
+    return finish(im, glow_r=3.2, vig=0.42)
 
 def end_stray():    # 길고양이 — 새벽 골목, 물그릇, 다른 고양이들, 열린 하늘
     im = vgrad([(0, (150, 188, 196)), (0.5, (110, 150, 162)), (1, (60, 86, 96))]); d = ImageDraw.Draw(im)
