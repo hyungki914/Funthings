@@ -24,12 +24,16 @@
 
   // ── 에셋 로드 ──────────────────────────────────────────────
   const IMG = {}; let toLoad = 0, loaded = 0, ready = false;
+  const tick = () => { if (++loaded >= toLoad) ready = true; };
   for (const k in ASSETS) {
-    toLoad++; const im = new Image();
-    im.onload = () => { if (++loaded >= toLoad) ready = true; };
-    im.onerror = () => { if (++loaded >= toLoad) ready = true; };
-    im.src = ASSETS[k]; IMG[k] = im;
+    toLoad++; const im = new Image(); im.onload = tick; im.onerror = tick; im.src = ASSETS[k]; IMG[k] = im;
   }
+  // 원화 일러스트(스테이지 깨달음 + 엔딩) — illust.js 의 ILL
+  const ILLIMG = {};
+  if (typeof ILL !== "undefined") for (const k in ILL) {
+    toLoad++; const im = new Image(); im.onload = tick; im.onerror = tick; im.src = ILL[k]; ILLIMG[k] = im;
+  }
+  const stageIll = () => ILLIMG["s" + (chapterIdx + 1)];   // 현재 스테이지 깨달음 원화
 
   // ── 상태 ──────────────────────────────────────────────────
   let phase = "title";   // title | intro | play | recall | setback | journal | realize | choice | ending | transition
@@ -690,31 +694,44 @@
     ctx.restore();
   }
 
-  // 깨달음(회상 몽타주) — 되찾은 코어 회상 → 챕터 깨달음을 한 줄씩 페이드 인
+  // 원화 패널을 비율 유지하여 그린다(둥근 테 + 은은한 프레임 글로우)
+  function drawIllPanel(img, cx, cy, maxW, maxH, alpha) {
+    if (!img || !img.width) return 0;
+    const r = Math.min(maxW / img.width, maxH / img.height), w = img.width*r, h = img.height*r, x = cx - w/2, y = cy - h/2;
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.shadowColor = "rgba(52,226,226,0.5)"; ctx.shadowBlur = 22;
+    ctx.fillStyle = "#05080c"; rrect(x-3, y-3, w+6, h+6, 10); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.save(); rrect(x, y, w, h, 8); ctx.clip();
+    const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img, x, y, w, h); ctx.imageSmoothingEnabled = sm; ctx.restore();
+    ctx.globalAlpha = alpha; ctx.strokeStyle = "rgba(120,200,200,0.35)"; ctx.lineWidth = 1.5; rrect(x, y, w, h, 8); ctx.stroke();
+    ctx.restore(); return h;
+  }
+
+  // 깨달음(회상 몽타주) — 상단 원화 패널 + 한 줄씩 페이드 인하는 회상/깨달음 텍스트
   function overlayRealize() {
     ctx.save();
     ctx.fillStyle = "#04070b"; ctx.fillRect(0, 0, cv.width, cv.height);
     const line = realizeLines[Math.min(realizeI, realizeLines.length - 1)];
     if (!line) { ctx.restore(); return; }
     const epi = line.kind === "epiphany", appear = Math.min(1, realizeT / 0.8);
+    // 원화 패널(이 스테이지 키아트) — 상단
+    const panelH = Math.min(348, cv.height * 0.5), panelW = panelH * 16/9, iy = 26;
+    drawIllPanel(stageIll(), cv.width/2, iy + panelH/2, Math.min(panelW, cv.width - 90), panelH, 0.6 + 0.4*appear);
+    const baseY = iy + panelH + 12;
     ctx.textAlign = "center";
-    // 은은한 중앙 빛무리(깨달음일 때 더 밝게)
-    ctx.globalAlpha = appear * (epi ? 0.5 : 0.3);
-    const gg = ctx.createRadialGradient(cv.width/2, cv.height/2 - 20, 10, cv.width/2, cv.height/2 - 20, 260);
-    gg.addColorStop(0, epi ? "rgba(142,245,72,0.16)" : "rgba(52,226,226,0.12)"); gg.addColorStop(1, "rgba(4,7,11,0)");
-    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(cv.width/2, cv.height/2 - 20, 260, 0, 7); ctx.fill();
-    ctx.globalAlpha = 0.75 * appear; ctx.fillStyle = epi ? "#8ef548" : "#34e2e2"; ctx.font = "14px 'Noto Sans KR',sans-serif";
-    ctx.fillText(epi ? "— 깨달음 —" : "— 되찾은 기억 —", cv.width/2, cv.height/2 - 78);
+    ctx.globalAlpha = 0.8 * appear; ctx.fillStyle = epi ? "#8ef548" : "#34e2e2"; ctx.font = "14px 'Noto Sans KR',sans-serif";
+    ctx.fillText(epi ? "— 깨달음 —" : "— 되찾은 기억 —", cv.width/2, baseY + 6);
     ctx.globalAlpha = appear; ctx.fillStyle = epi ? "#eafaff" : "#cfe6e6";
-    ctx.font = (epi ? "bold 22px" : "20px") + " 'Noto Sans KR',sans-serif";
-    wrapCenter(line.text, cv.width/2, cv.height/2 - 26, cv.width - 220, 32);
+    ctx.font = (epi ? "bold 21px" : "19px") + " 'Noto Sans KR',sans-serif";
+    wrapCenter(line.text, cv.width/2, baseY + 38, cv.width - 200, 30);
     // 진행 점
-    const n = realizeLines.length, dotY = cv.height/2 + 116;
+    const n = realizeLines.length, dotY = cv.height - 58;
     for (let i = 0; i < n; i++) { ctx.globalAlpha = i <= realizeI ? 0.95 : 0.3;
       ctx.fillStyle = i <= realizeI ? (realizeLines[i].kind === "epiphany" ? "#8ef548" : "#34e2e2") : "#27343a";
       ctx.beginPath(); ctx.arc(cv.width/2 - (n-1)*7 + i*14, dotY, 3, 0, 7); ctx.fill(); }
     ctx.globalAlpha = 0.5; ctx.fillStyle = "#5a7375"; ctx.font = "13px 'Noto Sans KR',sans-serif";
-    ctx.fillText("아무 키 / 클릭 — 계속", cv.width/2, cv.height - 38);
+    ctx.fillText("아무 키 / 클릭 — 계속", cv.width/2, cv.height - 32);
     ctx.restore();
   }
 
@@ -779,30 +796,33 @@
     if (re) { g.addColorStop(0, "rgba(26,36,18,1)"); g.addColorStop(1, "rgba(6,10,6,1)"); }
     else    { g.addColorStop(0, "rgba(16,30,36,1)"); g.addColorStop(1, "rgba(5,9,12,1)"); }
     ctx.fillStyle = g; ctx.globalAlpha = fade; ctx.fillRect(0, 0, cv.width, cv.height); ctx.globalAlpha = 1;
+    // 엔딩 원화 — 상단 패널(텍스트는 하단)
+    drawIllPanel(ILLIMG[endingType], cv.width/2, 24 + Math.min(300, cv.height*0.46)/2, Math.min(560, cv.width-90), Math.min(300, cv.height*0.46), fade);
     if (transT < 1.0) { ctx.restore(); return; }
     const ap = Math.min(1, (transT - 1.0) / 1.0); ctx.globalAlpha = ap; ctx.textAlign = "center";
+    const ty = cv.height - 188;                                          // 텍스트 안착(원화 패널 아래)
     if (re) {
       ctx.fillStyle = "#8ef548"; ctx.font = "16px 'Noto Sans KR',sans-serif";
-      ctx.fillText("— 재회 엔딩 —", cv.width/2, cv.height/2 - 124);
+      ctx.fillText("— 재회 엔딩 —", cv.width/2, ty);
       ctx.fillStyle = "#eafaff"; ctx.font = "18px 'Noto Sans KR',sans-serif";
-      wrapCenter("끊겼던 발자국 끝에서, 익숙한 발소리가 다가온다.", cv.width/2, cv.height/2 - 64, cv.width - 240, 28);
+      wrapCenter("끊겼던 발자국 끝에서, 익숙한 발소리가 다가온다.", cv.width/2, ty + 30, cv.width - 200, 26);
       ctx.fillStyle = "#9fc5c5"; ctx.font = "15px 'Noto Sans KR',sans-serif";
-      ctx.fillText("나를 부르는 그 목소리 — 더는 흐리지 않다. 또렷하다.", cv.width/2, cv.height/2 - 4);
+      ctx.fillText("나를 부르는 그 목소리 — 더는 흐리지 않다. 또렷하다.", cv.width/2, ty + 60);
     } else {
       ctx.fillStyle = "#34e2e2"; ctx.font = "16px 'Noto Sans KR',sans-serif";
-      ctx.fillText("— 새 아침 엔딩 —", cv.width/2, cv.height/2 - 124);
+      ctx.fillText("— 새 아침 엔딩 —", cv.width/2, ty);
       ctx.fillStyle = "#eafaff"; ctx.font = "18px 'Noto Sans KR',sans-serif";
-      wrapCenter("나는 이 자리를 떠나기로 했다. 기다림이 아니라, 걸음으로.", cv.width/2, cv.height/2 - 64, cv.width - 240, 28);
+      wrapCenter("나는 이 자리를 떠나기로 했다. 기다림이 아니라, 걸음으로.", cv.width/2, ty + 30, cv.width - 200, 26);
       ctx.fillStyle = "#9fc5c5"; ctx.font = "15px 'Noto Sans KR',sans-serif";
-      ctx.fillText("하루가 길고양이들에게 물을 내주던 그 마음을, 이제 내가 잇는다.", cv.width/2, cv.height/2 - 4);
+      ctx.fillText("하루가 길고양이들에게 물을 내주던 그 마음을, 이제 내가 잇는다.", cv.width/2, ty + 60);
     }
     const np = Math.min(1, (transT - 2.4) / 1.0);
     if (np > 0) {
       ctx.globalAlpha = np; ctx.shadowColor = "#34e2e2"; ctx.shadowBlur = 24;
-      ctx.fillStyle = "#9bf24a"; ctx.font = "bold 50px 'Noto Sans KR',sans-serif";
-      ctx.fillText("지로  ·  Ziro", cv.width/2, cv.height/2 + 64); ctx.shadowBlur = 0;
-      ctx.fillStyle = "#cfe6e6"; ctx.font = "15px 'Noto Sans KR',sans-serif";
-      ctx.fillText(re ? "하루가 다시, 내 이름을 부른다." : "어디에 있든 — 나는, 나다.", cv.width/2, cv.height/2 + 102);
+      ctx.fillStyle = "#9bf24a"; ctx.font = "bold 40px 'Noto Sans KR',sans-serif";
+      ctx.fillText("지로  ·  Ziro", cv.width/2, ty + 104); ctx.shadowBlur = 0;
+      ctx.fillStyle = "#cfe6e6"; ctx.font = "14px 'Noto Sans KR',sans-serif";
+      ctx.fillText(re ? "하루가 다시, 내 이름을 부른다." : "어디에 있든 — 나는, 나다.", cv.width/2, ty + 132);
     }
     if (transT > 2.4) { ctx.globalAlpha = 0.5 + 0.3 * Math.sin(performance.now() / 400);
       ctx.fillStyle = re ? "#8ef548" : "#34e2e2"; ctx.font = "13px 'Noto Sans KR',sans-serif";

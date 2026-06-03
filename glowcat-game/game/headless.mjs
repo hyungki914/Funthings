@@ -6,6 +6,7 @@ const require = createRequire(import.meta.url);
 
 // 전역 의존성(브라우저에선 <script> 전역) 주입
 globalThis.ASSETS = require("./assets.js");
+try { globalThis.ILL = require("./illust.js"); } catch (e) { /* 일러스트 없으면 main이 가드 */ }
 globalThis.Core = require("./core.js");
 globalThis.DATA = require("./data.js");
 globalThis.window = globalThis;

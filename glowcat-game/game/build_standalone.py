@@ -5,7 +5,7 @@
 """
 import os, re
 HERE = os.path.dirname(os.path.abspath(__file__))
-ORDER = ["assets.js", "core.js", "data.js", "audio.js", "journal.js", "main.js"]
+ORDER = ["assets.js", "illust.js", "core.js", "data.js", "audio.js", "journal.js", "main.js"]
 
 html = open(os.path.join(HERE, "index.html"), encoding="utf-8").read()
 for name in ORDER:
