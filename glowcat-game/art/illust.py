@@ -213,12 +213,16 @@ def s10():  # 빈자리 — 어둠 속 떠오르는 이름표 '지로', 빛으�
 def end_reunite():  # 재회 — 달려가 안기는 재회, 따뜻한 그린 빛
     im = vgrad([(0, (30, 42, 22)), (1, (10, 14, 8))]); d = ImageDraw.Draw(im)
     d.rectangle((0, 170, W, H), fill=(20, 26, 14))
-    pl = person_layer(290, 178, 1.2, (60, 70, 48), 230, 1.0)             # 하루(팔 벌림 느낌)
-    d2 = ImageDraw.Draw(pl); d2.line([(276,150),(250,168)], fill=(60,70,48,230), width=7); d2.line([(304,150),(326,168)], fill=(60,70,48,230), width=7)
+    # 빛/광선을 먼저(배경) → 그 위에 하루 실루엣을 그려 또렷이 읽히게(클라이맥스 임팩트)
+    im = glow(im, 285, 116, 180, (150, 240, 120), 0.75); im = rays(im, 285, 104, (180, 255, 150), 9, 300, 2.6, 0.5)
+    pl = person_layer(290, 178, 1.25, (34, 44, 26), 255, 0.6)            # 하루 — 진한 실루엣(빛 위)
+    d2 = ImageDraw.Draw(pl)
+    d2.line([(276,150),(250,168)], fill=(34,44,26,255), width=8); d2.line([(304,150),(326,168)], fill=(34,44,26,255), width=8)  # 벌린 팔
     im = Image.alpha_composite(im, pl)
-    im = glow(im, 250, 120, 170, (150, 240, 120), 0.7); im = rays(im, 250, 110, (180, 255, 150), 9, 300, 2.6, 0.5)
-    d = ImageDraw.Draw(im); cat(d, 150, 182, 1.4, run=True, eye=(180, 255, 150))   # 달려가는 지로
-    return particles(finish(im, glow_r=4.0, vig=0.42), 20, (200, 255, 180), "spark")
+    d = ImageDraw.Draw(im)
+    d.ellipse((273, 116, 307, 150), outline=(210, 255, 180), width=1)    # 하루 머리 림라이트(역광 가장자리)
+    cat(d, 150, 182, 1.4, run=True, eye=(180, 255, 150))                 # 달려가는 지로
+    return particles(finish(im, glow_r=3.4, vig=0.42), 20, (200, 255, 180), "spark")
 
 def end_stray():    # 길고양이 — 새벽 골목, 물그릇, 다른 고양이들, 열린 하늘
     im = vgrad([(0, (150, 188, 196)), (0.5, (110, 150, 162)), (1, (60, 86, 96))]); d = ImageDraw.Draw(im)

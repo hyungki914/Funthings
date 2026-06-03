@@ -58,8 +58,12 @@
   // 진행 저장(클리어 스테이지) + 스테이지 선택/시퀀스 재생
   let clearedMax = -1, selIdx = 0, realizeReview = false, realizeIllKey = null, hoverKey = null;
   const SAVE_KEY = "ziro_progress_v1";
-  function loadProgress() { try { const v = JSON.parse(localStorage.getItem(SAVE_KEY) || "{}"); if (typeof v.clearedMax === "number") clearedMax = v.clearedMax; } catch (e) {} }
-  function saveProgress() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ clearedMax })); } catch (e) {} }
+  function loadProgress() { try {                                  // 손상/구버전 방어: 정수화 + 범위 클램프
+    const v = JSON.parse(localStorage.getItem(SAVE_KEY) || "{}");
+    let c = Number.isFinite(v.clearedMax) ? Math.floor(v.clearedMax) : -1;
+    clearedMax = Math.max(-1, Math.min(CHAPTERS.length - 1, c));
+  } catch (e) { clearedMax = -1; } }
+  function saveProgress() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, clearedMax })); } catch (e) {} }
   function markCleared(idx) { if (idx > clearedMax) { clearedMax = idx; saveProgress(); } }
   // 연출: 환경 파티클(ambient) + 조각 수집 링 FX
   let ambientKind = null, particles = [], collectFx = null;
@@ -113,18 +117,22 @@
   }
   function makeLayout(D) {
     const orig = { shards: D.shards.map(s => ({ ...s })), murkP: (D.murks||[]).map(m => m.patrol), echoP: (D.echoes||[]).map(m => m.patrol) };
-    if (!RANDOMIZE) return orig;
+    if (!RANDOMIZE || chapterIdx <= 1) return orig;                // 튜토리얼(1·2장)은 의도된 배치 고정
     const reach = reachableTiles(D);
     if (reach.length < D.shards.length + 8) return orig;            // 너무 좁으면 원본
     const sp = D.spawn, d2 = (a, b) => (a[0]-b[0])**2 + (a[1]-b[1])**2;
     const shuffle = a => { for (let i = a.length-1; i > 0; i--) { const j = (Math.random()*(i+1))|0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
-    const pool = shuffle(reach.filter(t => d2(t, sp) >= 9));        // 스폰서 ≥3타일
-    const placed = [], shardsOut = [];
-    for (const s of D.shards) {
-      let tile = null, pi = -1;
-      for (let i = 0; i < pool.length; i++) { if (placed.every(p => d2(p, pool[i]) >= 4)) { tile = pool[i]; pi = i; break; } }  // 서로 ≥2타일
-      if (!tile) return orig;
-      pool.splice(pi, 1); placed.push(tile); shardsOut.push({ ...s, tile: [tile[0], tile[1]] });
+    // core·false·hidden 은 서사/공정성 위해 원본 고정. 비숨김 echo 만 위치 셔플(리플레이성).
+    const fixedOf = s => (s.type === "core" || s.type === "false" || s.hidden);
+    const placed = [], shardsOut = D.shards.map(s => fixedOf(s) ? { ...s, tile: [s.tile[0], s.tile[1]] } : null);
+    D.shards.forEach((s, i) => { if (shardsOut[i]) placed.push(s.tile); });
+    const pool = shuffle(reach.filter(t => d2(t, sp) >= 9));
+    for (let i = 0; i < D.shards.length; i++) {
+      if (shardsOut[i]) continue;
+      const s = D.shards[i]; let tile = null, pi = -1;
+      for (let k = 0; k < pool.length; k++) { if (placed.every(p => d2(p, pool[k]) >= 4)) { tile = pool[k]; pi = k; break; } }
+      if (!tile) { shardsOut[i] = { ...s, tile: [s.tile[0], s.tile[1]] }; continue; }   // 폴백 원본
+      pool.splice(pi, 1); placed.push(tile); shardsOut[i] = { ...s, tile: [tile[0], tile[1]] };
     }
     const genPatrol = () => {                                       // 빈 타일 사각 루프(모서리·변 모두 빈칸)
       for (let tn = 0; tn < 50; tn++) {
