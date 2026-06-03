@@ -228,71 +228,102 @@ def tile_rug():
         px[0, y] = px[15, y] = (*TPAL['q'], 255)
     return im
 
-def tile_grass(variant=0):
-    im = Image.new("RGBA", (16, 16)); px = im.load()
-    base, dk, lt = (28, 46, 30), (22, 38, 24), (36, 56, 36)
+def _fill_dither(px, base, dk, lt, a=6, b=7):
+    """2-톤 디더로 평면 타일에 질감 — 단조로움 제거."""
     for y in range(16):
         for x in range(16):
-            px[x, y] = (*base, 255)
+            c = base
+            if (x*2 + y) % a == 0: c = dk
+            elif (x + y*2) % b == 0: c = lt
+            px[x, y] = (*c, 255)
+
+def tile_grass(variant=0):   # 잔디 — 다톤 디더 + 풀잎 + 가끔 들꽃
+    im = Image.new("RGBA", (16, 16)); px = im.load()
+    base, dk, lt = (34, 56, 34), (24, 42, 26), (48, 72, 44)
+    _fill_dither(px, base, dk, lt, 5, 7)
     blades = [(3, 4), (8, 2), (12, 6), (5, 11), (11, 13), (14, 9)] if not variant \
         else [(2, 7), (6, 5), (9, 10), (13, 3), (7, 13), (12, 12)]
     for (x, y) in blades:
         px[x, y] = (*lt, 255)
         if y + 1 < 16: px[x, y + 1] = (*dk, 255)
+    if variant:                                  # 작은 들꽃 한 송이(포인트)
+        fx, fy = 10, 4
+        for (dx, dy, col) in [(0, 0, (224, 198, 110)), (1, 0, (238, 226, 150)), (0, 1, (206, 152, 96)), (1, 1, (236, 120, 140))]:
+            px[fx+dx, fy+dy] = (*col, 255)
     return im
 
-def tile_path():
+def tile_path():     # 흙 산책로(베이스). 가장자리 음영 + 자갈.
     im = Image.new("RGBA", (16, 16)); px = im.load()
-    base, dk, lt = (60, 54, 44), (48, 43, 35), (74, 67, 54)
+    base, dk, lt = (64, 56, 44), (50, 44, 34), (80, 71, 56)
+    _fill_dither(px, base, dk, lt, 7, 9)
+    for x in range(16): px[x, 0] = (*lt, 255); px[x, 15] = (*dk, 255)
+    for (x, y) in [(4, 5), (10, 9), (7, 12), (12, 3)]: px[x, y] = (95, 88, 76, 255)   # 자갈
+    return im
+
+def tile_cobble():   # 공원/관문 산책로 — 둥근 돌 포석
+    im = Image.new("RGBA", (16, 16)); px = im.load()
+    base, dk, lt = (96, 92, 84), (66, 62, 56), (124, 120, 110)
+    for y in range(16):
+        for x in range(16): px[x, y] = (*base, 255)
+    for (cx, cy) in [(4, 4), (12, 4), (4, 12), (12, 12), (8, 8)]:        # 돌 5개
+        for yy in range(cy-3, cy+4):
+            for xx in range(cx-3, cx+4):
+                if 0 <= xx < 16 and 0 <= yy < 16 and (xx-cx)**2 + (yy-cy)**2 <= 9:
+                    px[xx, yy] = (*(lt if (yy-cy) < 0 else base), 255)
+    for x in range(16):                                                  # 줄눈
+        for y in range(16):
+            if px[x, y][:3] == base and ((x % 8 == 0) or (y % 8 == 0)): px[x, y] = (*dk, 255)
+    return im
+
+def tile_sidewalk(): # 길거리 보도 — 회색 콘크리트 슬래브 + 줄눈
+    im = Image.new("RGBA", (16, 16)); px = im.load()
+    base, seam, lt = (108, 110, 116), (84, 86, 92), (124, 126, 132)
+    for y in range(16):
+        for x in range(16): px[x, y] = (*base, 255)
+    for x in range(16): px[x, 0] = (*lt, 255); px[x, 15] = (*seam, 255); px[x, 7] = (*seam, 255)
+    for y in range(16): px[0, y] = (*seam, 255)
+    return im
+
+def tile_carpet():   # 하루의 방 — 슬픔의 청회 카펫(엮은 결)
+    im = Image.new("RGBA", (16, 16)); px = im.load()
+    base, dk, lt = (50, 46, 56), (40, 36, 46), (58, 54, 66)
     for y in range(16):
         for x in range(16):
-            px[x, y] = (*base, 255)
-    for x in range(16):
-        px[x, 0] = (*lt, 255); px[x, 15] = (*dk, 255)
-    for (x, y) in [(4, 5), (10, 9), (7, 12), (12, 3)]:
-        px[x, y] = (*dk, 255)
-    return im
-
-def tile_carpet():   # 하루의 방 — 어두운 청회 카펫
-    im = Image.new("RGBA", (16, 16)); px = im.load()
-    base, dk, lt = (46, 42, 52), (38, 34, 44), (54, 50, 62)
-    for y in range(16):
-        for x in range(16): px[x, y] = (*base, 255)
-    for (x, y) in [(3, 3), (8, 8), (12, 5), (5, 12), (14, 11)]: px[x, y] = (*lt, 255)
+            px[x, y] = (*(lt if (x + y) % 4 == 0 else base), 255)        # 직조 결
     for x in range(16): px[x, 15] = (*dk, 255)
+    for (x, y) in [(3, 3), (12, 5), (5, 12), (14, 11)]: px[x, y] = (*dk, 255)
     return im
 
-def tile_lino():     # 상가·주방 — 매끈한 격자 타일
+def tile_lino():     # 상가·주방 — 매끈한 격자 타일 + 하이라이트
     im = Image.new("RGBA", (16, 16)); px = im.load()
-    base, grout = (84, 86, 94), (62, 64, 70)
+    base, grout, lt = (86, 88, 96), (62, 64, 70), (104, 106, 114)
     for y in range(16):
         for x in range(16): px[x, y] = (*base, 255)
+    px[1, 1] = (*lt, 255); px[9, 1] = (*lt, 255)                          # 광택 점
     for x in range(16): px[x, 0] = (*grout, 255); px[x, 8] = (*grout, 255)
     for y in range(16): px[0, y] = (*grout, 255); px[8, y] = (*grout, 255)
     return im
 
-def tile_asphalt():  # 길거리 — 어두운 아스팔트
+def tile_asphalt():  # 길거리 차도 — 어두운 아스팔트 + 미세 균열
     im = Image.new("RGBA", (16, 16)); px = im.load()
-    base, dk, lt = (44, 46, 52), (36, 38, 44), (54, 56, 62)
-    for y in range(16):
-        for x in range(16): px[x, y] = (*base, 255)
-    for (x, y) in [(2, 5), (9, 3), (13, 10), (6, 13), (11, 7)]: px[x, y] = (*dk, 255)
-    for (x, y) in [(4, 9), (12, 4)]: px[x, y] = (*lt, 255)
+    base, dk, lt = (46, 48, 54), (38, 40, 46), (56, 58, 64)
+    _fill_dither(px, base, dk, lt, 5, 8)
+    for (x, y) in [(2, 5), (9, 3), (13, 10), (6, 13)]: px[x, y] = (*dk, 255)
     return im
 
-def tile_dirt():     # 마당 — 흙
+def tile_dirt():     # 마당 — 흙 + 잔돌 + 잡초
     im = Image.new("RGBA", (16, 16)); px = im.load()
-    base, dk, lt = (70, 56, 40), (58, 46, 32), (84, 68, 48)
-    for y in range(16):
-        for x in range(16): px[x, y] = (*base, 255)
-    for (x, y) in [(3, 4), (8, 9), (12, 6), (5, 12), (14, 11)]: px[x, y] = (*dk, 255)
-    for (x, y) in [(6, 3), (11, 13)]: px[x, y] = (*lt, 255)
+    base, dk, lt = (74, 60, 44), (60, 48, 34), (90, 74, 52)
+    _fill_dither(px, base, dk, lt, 6, 9)
+    for (x, y) in [(3, 4), (12, 6), (8, 12)]: px[x, y] = (112, 106, 96, 255)   # 잔돌
+    for (x, y) in [(6, 9), (14, 3)]: px[x, y] = (52, 84, 44, 255)              # 잡초
     return im
 
-def tile_void():     # 빈자리 — 거의 검정
+def tile_void():     # 빈자리 — 거의 검정(미세 명암)
     im = Image.new("RGBA", (16, 16)); px = im.load()
     for y in range(16):
-        for x in range(16): px[x, y] = (9, 10, 15, 255)
+        for x in range(16):
+            px[x, y] = (12, 13, 19, 255) if (x*3 + y*5) % 11 == 0 else (9, 10, 15, 255)
     return im
 
 
@@ -507,33 +538,59 @@ PROP_COLORS = {
     'pale':    ((96, 98, 106), (120, 122, 130)),
 }
 
+def _shade(col, d):
+    return (max(0, min(255, col[0]+d)), max(0, min(255, col[1]+d)), max(0, min(255, col[2]+d)))
+
 def _draw_block(d, x0, y0, x1, y1, body, top):
-    out = (max(0, body[0]-20), max(0, body[1]-20), max(0, body[2]-20))
+    out = _shade(body, -20)
     d.rectangle((x0, y0, x1, y1), fill=body, outline=out)
-    d.rectangle((x0, y0, x1, y0+2), fill=top)
+    d.rectangle((x0, y0, x1, y0+2), fill=top)                       # 윗면 하이라이트
+    d.line((x0+1, y0+3, x0+1, y1-1), fill=_shade(body, 10))         # 좌측 림(광원 좌상)
+    d.line((x1-1, y0+3, x1-1, y1-1), fill=_shade(body, -14))        # 우측 음영
 
 def _draw_tree(d, x0, y0, w, h, TW):
     cx, cy = x0 + w*TW//2, y0 + h*TW//2
-    d.rectangle((cx-3, cy+2, cx+3, y0+h*TW), fill=(58, 42, 28), outline=(28, 20, 12))   # 줄기
+    d.rectangle((cx-3, cy+2, cx+3, y0+h*TW), fill=(60, 44, 30), outline=(30, 22, 14))   # 줄기
+    d.line((cx-2, cy+2, cx-2, y0+h*TW), fill=(78, 58, 38))                              # 줄기 좌측 하이라이트
     R = max(11, (min(w, h)*TW)//2 + 4)
-    for (ox, oy, rr, col) in [(0, -4, R, (30, 70, 36)), (-R//2, 2, R-3, (36, 84, 42)),
-                              (R//2, 2, R-3, (26, 62, 32)), (0, 6, R-5, (42, 96, 50))]:
+    for (ox, oy, rr, col) in [(0, -4, R, (28, 62, 32)), (R//2, 3, R-3, (24, 54, 28)),   # 우/하 = 그늘
+                              (-R//2, 1, R-3, (38, 88, 44)), (0, 4, R-5, (46, 100, 52))]:
         d.ellipse((cx+ox-rr, cy+oy-rr, cx+ox+rr, cy+oy+rr), fill=col)
+    for (ox, oy, rr) in [(-R//2, -R//3, R//3), (-2, 2, R//4)]:                          # 좌상 햇빛 얼룩
+        d.ellipse((cx+ox-rr, cy+oy-rr, cx+ox+rr, cy+oy+rr), fill=(64, 122, 66))
+    for (ox, oy) in [(-R//2-1, -R//3-1), (-3, -1), (2, 3)]:                             # 잎 하이라이트 점
+        d.ellipse((cx+ox-1, cy+oy-1, cx+ox+1, cy+oy+1), fill=(96, 150, 92))
+
+def _draw_bench(d, x0, y0, x1, y1):
+    body, top, leg = (78, 56, 36), (104, 78, 50), (44, 30, 18)
+    d.rectangle((x0, y0-9, x1, y0-2), fill=body, outline=_shade(body, -22))             # 등받이
+    d.line((x0+1, y0-7, x1-1, y0-7), fill=top); d.line((x0+1, y0-4, x1-1, y0-4), fill=_shade(body, -10))
+    d.rectangle((x0, y0, x1, y1), fill=body, outline=_shade(body, -22))                 # 좌판
+    for sx in range(x0+2, x1-1, 5): d.line((sx, y0+1, sx, y1-1), fill=top)              # 좌판 슬랫
+    for lx in (x0+3, x1-5): d.rectangle((lx, y1, lx+2, y1+6), fill=leg)                 # 다리
 
 def _draw_fountain(d, x0, y0, x1, y1):
-    d.ellipse((x0, y0, x1, y1), fill=(78, 84, 92), outline=(40, 44, 50))
-    d.ellipse((x0+8, y0+8, x1-8, y1-8), fill=(26, 120, 130), outline=(40, 44, 50))
+    d.ellipse((x0, y0, x1, y1), fill=(86, 92, 100), outline=(44, 48, 54))               # 외곽 석재
+    d.ellipse((x0+3, y0+3, x1-3, y1-3), fill=(64, 70, 78), outline=(40, 44, 50))        # 단차
+    d.ellipse((x0+8, y0+8, x1-8, y1-8), fill=(24, 96, 116), outline=(40, 44, 50))       # 물
     cx, cy = (x0+x1)//2, (y0+y1)//2
-    d.ellipse((cx-7, cy-7, cx+7, cy+7), fill=(52, 226, 226))     # 물 하이라이트(글로우)
+    d.ellipse((cx-9, cy-9, cx+9, cy+9), fill=(40, 170, 186))
+    d.ellipse((cx-5, cy-5, cx+5, cy+5), fill=(52, 226, 226))                            # 분출 하이라이트(글로우)
+    for (ox, oy) in [(-6, -3), (5, -5), (3, 6)]: d.point((cx+ox, cy+oy), fill=(210, 250, 250))  # 물 반짝임
 
 def _draw_bush(d, x0, y0, x1, y1):
     for (ox, oy) in [(0, 0), ((x1-x0)//3, 2), (-(x1-x0)//3, 2)]:
-        d.ellipse((x0+ox, y0+oy, x1+ox-((x1-x0)//2), y1+oy), fill=(36, 84, 42), outline=(20, 50, 28))
-    d.ellipse((x0, y0, x1, y1), fill=(40, 90, 52), outline=(20, 50, 28))
+        d.ellipse((x0+ox, y0+oy, x1+ox-((x1-x0)//2), y1+oy), fill=(34, 80, 40), outline=(20, 50, 28))
+    d.ellipse((x0, y0, x1, y1), fill=(42, 92, 50), outline=(22, 52, 30))
+    d.ellipse((x0+2, y0+1, x0+(x1-x0)//2, y0+(y1-y0)//2), fill=(54, 110, 60))           # 좌상 하이라이트
+    for (ox, oy, col) in [((x1-x0)//2, (y1-y0)//3, (236, 226, 150)), ((x1-x0)//3, (y1-y0)*2//3, (230, 130, 150))]:
+        d.ellipse((x0+ox-1, y0+oy-1, x0+ox+1, y0+oy+1), fill=col)                        # 작은 꽃
 
 def _draw_lamp(d, cx, cy):
-    d.rectangle((cx, cy, cx+3, cy+28), fill=(40, 44, 50))
-    d.ellipse((cx-7, cy-12, cx+10, cy+5), fill=(214, 255, 154), outline=(147, 232, 74))  # 글로우 빛
+    d.rectangle((cx, cy, cx+3, cy+28), fill=(38, 42, 48), outline=(22, 24, 28))         # 기둥
+    d.ellipse((cx-9, cy-14, cx+12, cy+7), fill=(150, 140, 70))                          # 헤일로(은은)
+    d.ellipse((cx-6, cy-11, cx+9, cy+4), fill=(220, 232, 150))                          # 갓
+    d.ellipse((cx-3, cy-8, cx+6, cy+1), fill=(255, 252, 196))                           # 전구(글로우)
 
 def _floor_pair(theme):
     if theme == 'grass':  return tile_grass(0), tile_grass(1)
@@ -544,20 +601,32 @@ def _floor_pair(theme):
     if theme == 'void':   t = tile_void();    return t, t
     return tile_floor(0), tile_floor(1)      # 'wood'
 
+PATH_TILES = {'path': tile_path, 'cobble': tile_cobble, 'sidewalk': tile_sidewalk}
+
 def _draw_border(d, scene, cols, rows, kind, blit):
     TW = 16
     if kind == 'wall':
         wall = tile_wall()
         for tx in range(cols): blit(wall, tx, 0); blit(wall, tx, 1); blit(wall, tx, rows-1)
         for ty in range(rows): blit(wall, 0, ty); blit(wall, cols-1, ty)
+        d.line((0, 2*TW-1, cols*TW, 2*TW-1), fill=(20, 26, 40))                          # 상단 벽 그림자선
+        d.line((0, 2*TW, cols*TW, 2*TW), fill=(48, 56, 78))                              # 베이스보드 하이라이트
     elif kind == 'hedge':
         for box in [(0, 0, cols*TW, 2*TW), (0, (rows-1)*TW, cols*TW, rows*TW),
                     (0, 0, TW, rows*TW), ((cols-1)*TW, 0, cols*TW, rows*TW)]:
-            d.rectangle(box, fill=(18, 40, 22), outline=(10, 24, 14))
-    elif kind == 'fence':
-        d.rectangle((0, 0, cols*TW, 2*TW), fill=(40, 42, 50), outline=(24, 26, 32))      # 상단 건물 띠
-        for bx in range(TW, cols*TW-TW, 3*TW):
-            d.rectangle((bx+4, 6, bx+14, 17), fill=(70, 80, 96))                          # 창문
+            d.rectangle(box, fill=(22, 46, 26), outline=(10, 24, 14))
+        for bx in range(0, cols*TW, 10):                                                 # 헤지 잎 질감
+            d.point((bx+3, 6), fill=(34, 66, 36)); d.point((bx+7, 1*TW+4), fill=(34, 66, 36))
+        d.line((0, 2*TW, cols*TW, 2*TW), fill=(40, 80, 44))                              # 햇빛 받는 윗면
+    elif kind == 'fence':                                                                # 길거리: 건물 파사드 + 점등 창
+        d.rectangle((0, 0, cols*TW, 2*TW), fill=(34, 36, 46), outline=(20, 22, 30))
+        cols_b = [(46, 44, 56), (40, 46, 58), (52, 46, 50)]
+        for i, bx in enumerate(range(TW, cols*TW-TW, 3*TW)):
+            d.rectangle((bx-2, 2, bx+3*TW-6, 2*TW-3), fill=cols_b[i % 3], outline=(18, 20, 28))
+            for wy in (5, 16):
+                for wx in range(bx+3, bx+3*TW-10, 9):
+                    lit = ((wx + wy) % 3 == 0)
+                    d.rectangle((wx, wy, wx+5, wy+7), fill=(255, 224, 150) if lit else (60, 70, 90))  # 점등=글로우
         for box in [(0, (rows-1)*TW, cols*TW, rows*TW), (0, 0, TW, rows*TW), ((cols-1)*TW, 0, cols*TW, rows*TW)]:
             d.rectangle(box, fill=(34, 36, 42), outline=(20, 22, 26))
     elif kind == 'void':
@@ -565,7 +634,7 @@ def _draw_border(d, scene, cols, rows, kind, blit):
                     (0, 0, TW, rows*TW), ((cols-1)*TW, 0, cols*TW, rows*TW)]:
             d.rectangle(box, fill=(5, 6, 10))
 
-def build_scene(cols, rows, floor='wood', border='wall', props=(), paths=()):
+def build_scene(cols, rows, floor='wood', border='wall', props=(), paths=(), path_tile='path', outdoor=False):
     TW = 16
     scene = Image.new("RGBA", (cols*TW, rows*TW), (*TPAL['5'], 255))
     f0, f1 = _floor_pair(floor)
@@ -574,26 +643,47 @@ def build_scene(cols, rows, floor='wood', border='wall', props=(), paths=()):
         for tx in range(cols):
             blit(f1 if (tx*3 + ty*5) % 7 == 0 else f0, tx, ty)
     if paths:
-        pth = tile_path()
+        pth = PATH_TILES.get(path_tile, tile_path)()
         for (c, r, w, h) in paths:
             for ty in range(r, r+h):
                 for tx in range(c, c+w): blit(pth, tx, ty)
     d = ImageDraw.Draw(scene)
     _draw_border(d, scene, cols, rows, border, blit)
+    # 그림자(프롭 아래) — 먼저 깔고 그 위에 프롭. 야외는 좌상 광원 → 우하 긴 그림자.
     sh = Image.new("RGBA", scene.size, (0, 0, 0, 0)); sd = ImageDraw.Draw(sh)
+    for p in props:
+        kind = p[0]; c, r, w, h = p[1], p[2], p[3], p[4]
+        x0, y0, x1, y1 = c*TW, r*TW, (c+w)*TW, (r+h)*TW
+        if kind == 'lamp': continue
+        if outdoor:
+            if kind == 'tree':
+                sd.ellipse((x0+6, y1-TW+8, x1+18, y1+16), fill=(0, 0, 0, 66))
+            else:
+                sd.ellipse((x0+6, (y0+y1)//2+6, x1+14, y1+12), fill=(0, 0, 0, 56))
+        else:
+            sd.ellipse((x0, y1-6, x1, y1+8), fill=(0, 0, 0, 80))                          # 실내 AO
+    scene.alpha_composite(sh)
+    # 가로등 지면 헤일로 — 빛이 바닥에 닿는 따뜻한 웅덩이(프롭 아래)
+    gl = Image.new("RGBA", scene.size, (0, 0, 0, 0)); gd = ImageDraw.Draw(gl)
+    for p in props:
+        if p[0] == 'lamp':
+            bx, by = p[1]*TW+1, p[2]*TW+27
+            for rr, aa in [(28, 26), (19, 38), (11, 54)]:
+                gd.ellipse((bx-rr, by-rr//2, bx+rr, by+rr//2), fill=(255, 234, 168, aa))
+    scene.alpha_composite(gl)
+    # 프롭
     for p in props:
         kind = p[0]; c, r, w, h = p[1], p[2], p[3], p[4]
         x0, y0, x1, y1 = c*TW, r*TW, (c+w)*TW, (r+h)*TW
         if kind == 'tree':    _draw_tree(d, x0, y0, w, h, TW)
         elif kind == 'fountain': _draw_fountain(d, x0, y0, x1, y1)
         elif kind == 'bush':  _draw_bush(d, x0, y0, x1, y1)
+        elif kind == 'bench': _draw_bench(d, x0, y0, x1-1, y1-1)
         elif kind == 'lamp':  _draw_lamp(d, x0, y0)
         else:
             ck = p[5] if len(p) > 5 else 'wood'
             body, top = PROP_COLORS.get(ck, PROP_COLORS['wood'])
             _draw_block(d, x0, y0, x1-1, y1-1, body, top)
-            sd.ellipse((x0, y1-6, x1, y1+8), fill=(0, 0, 0, 80))      # AO(블록만)
-    scene.alpha_composite(sh)
     return scene.convert("RGB")
 
 
@@ -614,12 +704,12 @@ SCENE_SPECS = {
         ('block', 3, 3, 4, 3, 'bed'), ('block', 16, 3, 4, 2, 'wood'), ('block', 9, 7, 4, 2, 'wood'),
         ('block', 17, 9, 3, 3, 'cabinet'), ('block', 2, 10, 3, 2, 'shelf'), ('lamp', 20, 2, 0, 0)]),
     # 5. 집 근처/마당
-    'yard': dict(cols=24, rows=14, floor='dirt', border='hedge', paths=[(11, 2, 3, 11)], props=[
+    'yard': dict(cols=24, rows=14, floor='dirt', border='hedge', outdoor=True, paths=[(11, 2, 3, 11)], props=[
         ('tree', 2, 3, 3, 2), ('block', 18, 3, 4, 2, 'wood'), ('bush', 9, 6, 4, 2),
         ('block', 5, 9, 3, 2, 'wood'), ('block', 16, 9, 4, 2, 'stone'), ('lamp', 3, 6, 0, 0), ('lamp', 20, 6, 0, 0)]),
     # 6. 길거리 (가로 스크롤)
-    'street': dict(cols=40, rows=14, floor='asphalt', border='fence', paths=[(1, 6, 38, 2)], props=[
-        ('tree', 5, 3, 3, 2), ('block', 5, 9, 3, 2, 'wood'), ('block', 14, 4, 4, 2, 'metal'),
+    'street': dict(cols=40, rows=14, floor='asphalt', border='fence', outdoor=True, path_tile='sidewalk', paths=[(1, 6, 38, 2)], props=[
+        ('tree', 5, 3, 3, 2), ('bench', 5, 9, 3, 2), ('block', 14, 4, 4, 2, 'metal'),
         ('bush', 13, 9, 3, 2), ('tree', 22, 3, 3, 2), ('block', 23, 9, 4, 2, 'metal'),
         ('block', 31, 4, 4, 2, 'cloth'), ('tree', 32, 9, 3, 2),
         ('lamp', 10, 6, 0, 0), ('lamp', 20, 6, 0, 0), ('lamp', 30, 6, 0, 0)]),
@@ -630,13 +720,13 @@ SCENE_SPECS = {
         ('block', 2, 12, 2, 2, 'wood'), ('block', 19, 11, 3, 2, 'shelf'),
         ('block', 6, 3, 1, 1, 'glass'), ('block', 21, 3, 1, 1, 'glass')]),
     # 8. 공원 입구 (관문)
-    'park_gate': dict(cols=22, rows=16, floor='grass', border='hedge', paths=[(9, 2, 3, 14)], props=[
+    'park_gate': dict(cols=22, rows=16, floor='grass', border='hedge', outdoor=True, path_tile='cobble', paths=[(9, 2, 3, 14)], props=[
         ('block', 1, 5, 8, 1, 'stone'), ('block', 12, 5, 9, 1, 'stone'), ('block', 1, 9, 7, 1, 'stone'),
         ('block', 14, 9, 7, 1, 'stone'), ('block', 3, 2, 3, 2, 'wood'), ('block', 16, 2, 4, 2, 'wood'),
         ('fountain', 9, 12, 4, 2), ('lamp', 2, 9, 0, 0), ('lamp', 19, 9, 0, 0)]),
     # 9. 공원 (확장)
-    'park': dict(cols=28, rows=16, floor='grass', border='hedge', paths=[(13, 2, 3, 13), (1, 12, 26, 2)], props=[
-        ('tree', 3, 3, 2, 2), ('block', 10, 3, 3, 1, 'wood'), ('tree', 22, 3, 3, 2),
+    'park': dict(cols=28, rows=16, floor='grass', border='hedge', outdoor=True, path_tile='cobble', paths=[(13, 2, 3, 13), (1, 12, 26, 2)], props=[
+        ('tree', 3, 3, 2, 2), ('bench', 10, 3, 3, 1), ('tree', 22, 3, 3, 2),
         ('fountain', 12, 8, 4, 4), ('tree', 4, 10, 2, 2), ('bush', 23, 10, 3, 2), ('bush', 7, 6, 3, 1),
         ('lamp', 10, 5, 0, 0), ('lamp', 19, 11, 0, 0)]),
     # 10. 빈자리 The Blank
@@ -647,11 +737,11 @@ SCENE_SPECS = {
 def export_game_assets():
     """game/assets.js — 10스테이지 배경+스프라이트를 base64 dataURI로 임베드(무서버 실행)."""
     assets = {
-        "room1": _b64(add_vignette(add_glow(build_room(with_entities=False)))),    # 챕터1 방
-        "room2": _b64(add_vignette(add_glow(build_room2(with_entities=False)))),   # 챕터2 집
+        "room1": _b64(finish(build_room(with_entities=False), SCENE_FX['room1'])),    # 챕터1 방
+        "room2": _b64(finish(build_room2(with_entities=False), SCENE_FX['room2'])),   # 챕터2 집
     }
-    for key, spec in SCENE_SPECS.items():                                          # 챕터3~10
-        assets[key] = _b64(add_vignette(add_glow(build_scene(**spec))))
+    for key, spec in SCENE_SPECS.items():                                            # 챕터3~10
+        assets[key] = _b64(finish(build_scene(**spec), SCENE_FX.get(key)))
     assets.update({
         "ziro_d0": _b64(draw_cat(0)), "ziro_d1": _b64(draw_cat(1)), "ziro_d2": _b64(draw_cat(2)),
         "ziro_s0": _b64(draw_cat_side(0)), "ziro_s1": _b64(draw_cat_side(1)),
@@ -691,6 +781,56 @@ def add_vignette(rgb, strength=0.55):
     dark = Image.new("RGB", (W, H), (3, 5, 9))
     inv = ImageChops.invert(mask).point(lambda v: int(v*strength))
     return Image.composite(dark, rgb, inv)
+
+
+# ── 컬러 그레이드 / 스카이라이트 / 채도 — 스테이지별 무드(시간대) 베이크 ────────
+def apply_desat(rgb, amt):
+    if not amt: return rgb
+    return Image.blend(rgb, rgb.convert("L").convert("RGB"), amt)
+
+def apply_grade(rgb, grade):
+    """grade = (r,g,b,alpha,mode) — multiply(그늘 채색)/screen(빛 채색)/overlay(대비+채색)."""
+    if not grade: return rgb
+    r, g, b, a, mode = grade
+    layer = Image.new("RGB", rgb.size, (r, g, b))
+    if mode == "multiply":  bl = ImageChops.multiply(rgb, layer)
+    elif mode == "screen":  bl = ImageChops.screen(rgb, layer)
+    elif mode == "overlay": bl = ImageChops.overlay(rgb, layer)
+    else:                   bl = layer
+    return Image.blend(rgb, bl, a)
+
+def apply_skylight(rgb, color=(255, 240, 200), strength=0.22):
+    """야외 깊이감 — 상단이 밝은 세로 빛 그라디언트를 스크린으로(해가 위)."""
+    W, H = rgb.size
+    col = Image.new("L", (1, H))
+    for y in range(H):
+        col.putpixel((0, y), int(255 * (1 - y / H) ** 1.35))
+    mask = col.resize((W, H))
+    screened = ImageChops.screen(rgb, Image.new("RGB", (W, H), color))
+    return Image.composite(screened, rgb, mask.point(lambda v: int(v * strength)))
+
+# 스테이지별 후처리 무드(환경 아트 리뷰 docs/14 기준 그레이드 테이블).
+SCENE_FX = {
+    'room1':     {'grade': (255, 196, 138, 0.30, 'multiply')},
+    'room2':     {'grade': (255, 214, 170, 0.22, 'multiply')},
+    'hall2f':    {'grade': (96, 104, 132, 0.40, 'multiply')},
+    'haru_room': {'grade': (120, 140, 196, 0.34, 'multiply'), 'desat': 0.35},
+    'arcade':    {'grade': (206, 222, 230, 0.30, 'screen')},
+    'yard':      {'grade': (255, 206, 150, 0.30, 'screen'),   'sky': {'color': (255, 240, 205), 'strength': 0.26}},
+    'street':    {'grade': (86, 78, 150, 0.42, 'multiply'),   'sky': {'color': (150, 150, 210), 'strength': 0.13}},
+    'park_gate': {'grade': (168, 158, 110, 0.30, 'overlay'),  'sky': {'color': (255, 236, 196), 'strength': 0.18}},
+    'park':      {'grade': (214, 188, 120, 0.38, 'overlay'),  'sky': {'color': (255, 228, 170), 'strength': 0.22}},
+    'blank':     {'grade': (40, 44, 58, 0.30, 'multiply'), 'vig': 0.62},
+}
+
+def finish(rgb, fx=None):
+    """씬 → 채도 → 그레이드 → 스카이라이트 → 네온블룸 → 비네팅."""
+    fx = fx or {}
+    out = apply_desat(rgb, fx.get('desat', 0))
+    out = apply_grade(out, fx.get('grade'))
+    if fx.get('sky'): out = apply_skylight(out, **fx['sky'])
+    out = add_glow(out)
+    return add_vignette(out, fx.get('vig', 0.55))
 
 
 def palette_strip():
