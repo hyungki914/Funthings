@@ -9,7 +9,7 @@
     font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;}
   #wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
     min-height:100%;gap:10px;padding:12px;box-sizing:border-box;}
-  canvas{image-rendering:pixelated;image-rendering:crisp-edges;background:#06090d;
+  canvas{image-rendering:pixelated;image-rendering:crisp-edges;background:#06090d;touch-action:none;
     border:1px solid #1d3236;box-shadow:0 0 40px rgba(52,226,226,.08);max-width:100%;height:auto;}
   #hint{font-size:13px;color:#5a7375;letter-spacing:.3px;}
   #hint b{color:#8ef548;font-weight:700;}
@@ -19,7 +19,8 @@
 <body>
 <div id="wrap">
   <canvas id="game" width="1056" height="672"></canvas>
-  <div id="hint">이동 <b>WASD/←↑↓→</b> · 조사 <b>E</b> · 발자국 추적 <b>L</b> · 기억 비추기 <b>Q</b>(빛) · 일지 <b>Tab</b> · 힌트 <b>H</b> · 은신 <b>Shift</b> · 음소거 <b>M</b></div>
+  <div id="hint">키보드: 이동 <b>WASD/←↑↓→</b> · 조사 <b>E</b> · 추적 <b>L</b> · 비추기 <b>Q</b> · 일지 <b>Tab</b> · 힌트 <b>H</b> · 은신 <b>Shift</b><br>
+    터치/태블릿: <b>왼쪽 드래그</b>로 이동 · <b>오른쪽 버튼</b>으로 스킬 (우상단 "터치 조작"으로 켜고 끄기)</div>
 </div>
 <!-- 로드 순서: 에셋 → 규칙 → 데이터 → 오디오 → 메인 -->
 <script>
@@ -2071,12 +2072,62 @@ if (typeof module !== 'undefined') module.exports = Journal;
   }
   addEventListener("keydown", e => setKey(e, true));
   addEventListener("keyup", e => setKey(e, false));
-  function onClick() { try { cv.focus(); } catch (e) {} firstGesture();
-    if (phase === "title") startIntro(); else if (phase === "intro") skipIntro(); else if (phase === "recall") closeRecall(); }
-  cv.addEventListener("mousedown", onClick);
   function firstGesture() { try { if (window.Audio2) Audio2.init(); } catch (e) {} }  // BGM은 music()이 담당
   addEventListener("keydown", firstGesture, { once: true });
   function clearEdges() { for (const k in edge) edge[k] = false; }
+
+  // ── 터치/포인터 조작 (키보드 없는 태블릿·터치패드) ────────────────
+  let touchUI = (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0) || (typeof window !== "undefined" && "ontouchstart" in window);
+  const touch = { joyId: null, joyCx: 0, joyCy: 0, jx: 0, jy: 0, sneak: false, holdQ: null };
+  function canvasXY(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * (cv.width / Math.max(1, r.width)), y: (e.clientY - r.top) * (cv.height / Math.max(1, r.height)) }; }
+  function touchButtons() {                       // 우하단 스킬 버튼 (캔버스 px)
+    const W = cv.width, H = cv.height, R = 33, bx = W - 66, by = H - 70;
+    return [
+      { id: "e",     label: "조사",   x: bx,        y: by,        r: 41, hold: false },
+      { id: "q",     label: "비추기", x: bx - 98,   y: by - 8,    r: R,  hold: true },
+      { id: "l",     label: "추적",   x: bx - 74,   y: by - 84,   r: R,  hold: false },
+      { id: "shift", label: "은신",   x: bx + 2,    y: by - 100,  r: R,  hold: "toggle" },
+      { id: "tab",   label: "일지",   x: bx - 156,  y: by - 66,   r: R,  hold: false },
+      { id: "h",     label: "힌트",   x: bx - 156,  y: by + 4,    r: R,  hold: false },
+    ];
+  }
+  const touchToggleRect = () => ({ x: cv.width - 150, y: 78, w: 136, h: 26 });
+  function hitBtn(x, y) { for (const b of touchButtons()) if ((x - b.x) ** 2 + (y - b.y) ** 2 <= b.r * b.r) return b; return null; }
+
+  function onPointerDown(e) {
+    try { cv.focus(); } catch (er) {} firstGesture();
+    if (e.pointerType === "touch") touchUI = true;
+    const p = canvasXY(e);
+    const tr = touchToggleRect();                                   // 터치 조작 토글 (어느 페이즈든)
+    if (p.x >= tr.x && p.x <= tr.x + tr.w && p.y >= tr.y && p.y <= tr.y + tr.h) { touchUI = !touchUI; return; }
+    if (phase === "title") { startIntro(); return; }
+    if (phase === "intro") { skipIntro(); return; }
+    if (phase === "recall") { closeRecall(); return; }
+    if (phase === "transition") { if (!hasNext) gotoTitle(); return; }
+    if (phase === "journal") { edge["tab"] = true; return; }        // 탭하여 닫기
+    if (phase !== "play" || !touchUI) return;
+    const b = hitBtn(p.x, p.y);
+    if (b) {
+      if (b.hold === true) { keys[b.id] = true; touch.holdQ = e.pointerId; }
+      else if (b.hold === "toggle") { touch.sneak = !touch.sneak; }
+      else { edge[b.id] = true; }
+      return;
+    }
+    if (p.x < cv.width * 0.5) { touch.joyId = e.pointerId; touch.joyCx = p.x; touch.joyCy = p.y; touch.jx = 0; touch.jy = 0; }  // 좌측 = 가상 조이스틱
+  }
+  function onPointerMove(e) {
+    if (touch.joyId !== e.pointerId) return;
+    const p = canvasXY(e), dx = p.x - touch.joyCx, dy = p.y - touch.joyCy, mag = Math.hypot(dx, dy);
+    if (mag < 8) { touch.jx = 0; touch.jy = 0; } else { const m = Math.min(1, mag / 60); touch.jx = (dx / mag) * m; touch.jy = (dy / mag) * m; }
+  }
+  function onPointerUp(e) {
+    if (touch.joyId === e.pointerId) { touch.joyId = null; touch.jx = 0; touch.jy = 0; }
+    if (touch.holdQ === e.pointerId) { keys["q"] = false; touch.holdQ = null; }
+  }
+  cv.addEventListener("pointerdown", onPointerDown);
+  cv.addEventListener("pointermove", onPointerMove);
+  cv.addEventListener("pointerup", onPointerUp);
+  cv.addEventListener("pointercancel", onPointerUp);
 
   // ── 헬퍼 ──────────────────────────────────────────────────
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -2104,14 +2155,18 @@ if (typeof module !== 'undefined') module.exports = Journal;
     if (edge["tab"]) { phase = "journal"; clearEdges(); return; }   // 기억 일지 열기
     elapsed += dt;
 
-    // 이동 입력
-    const stealth = keys["shift"];
+    // 이동 입력 (키보드 + 가상 조이스틱)
+    const stealth = keys["shift"] || touch.sneak;
     const sp = stealth ? C.STEALTH_SPEED : C.PLAYER_SPEED;
-    let ix = (keys["d"]||keys["arrowright"]?1:0) - (keys["a"]||keys["arrowleft"]?1:0);
-    let iy = (keys["s"]||keys["arrowdown"]?1:0) - (keys["w"]||keys["arrowup"]?1:0);
-    if (ix && iy) { const inv = 1/Math.sqrt(2); ix *= inv; iy *= inv; }
+    let ix, iy;
+    if (touch.joyId !== null && Math.hypot(touch.jx, touch.jy) > 0.01) { ix = touch.jx; iy = touch.jy; }  // 조이스틱(아날로그)
+    else {
+      ix = (keys["d"]||keys["arrowright"]?1:0) - (keys["a"]||keys["arrowleft"]?1:0);
+      iy = (keys["s"]||keys["arrowdown"]?1:0) - (keys["w"]||keys["arrowup"]?1:0);
+      if (ix && iy) { const inv = 1/Math.sqrt(2); ix *= inv; iy *= inv; }
+    }
     player.vx = ix * sp; player.vy = iy * sp;
-    const moving = (ix || iy) ? true : false;
+    const moving = (Math.abs(ix) + Math.abs(iy)) > 0.06;
 
     // 충돌 분리 이동
     moveAxis("x", player.vx * dt);
@@ -2365,6 +2420,35 @@ if (typeof module !== 'undefined') module.exports = Journal;
     if (phase === "transition") overlayTransition();
     if (phase === "journal" && window.Journal) { try { Journal.draw(ctx, cv, st, D, IMG); } catch (e) { console.error(e); } }
     if (veil > 0) { ctx.save(); ctx.fillStyle = "rgba(3,5,9," + Math.min(1, veil / 0.8) + ")"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.restore(); }
+    drawTouch();
+  }
+
+  // 화면 터치 조작(가상 조이스틱 + 스킬 버튼) + 토글
+  function drawTouch() {
+    if (!ready) return;
+    const tr = touchToggleRect();
+    ctx.save(); ctx.fillStyle = "rgba(10,16,20,.78)"; rrect(tr.x, tr.y, tr.w, tr.h, 8); ctx.fill();
+    ctx.fillStyle = touchUI ? "#8ef548" : "#8aa7a9"; ctx.font = "12px 'Noto Sans KR',sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(touchUI ? "터치 조작: 켜짐" : "터치 조작: 꺼짐", tr.x + tr.w / 2, tr.y + 17); ctx.restore();
+    if (!touchUI || phase !== "play") return;
+    // 가상 조이스틱(좌하단; 터치 중엔 누른 위치)
+    const jcx = touch.joyId !== null ? touch.joyCx : 124, jcy = touch.joyId !== null ? touch.joyCy : cv.height - 120;
+    ctx.save(); ctx.globalAlpha = 0.5; ctx.strokeStyle = "#34e2e2"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(jcx, jcy, 56, 0, 7); ctx.stroke();
+    ctx.fillStyle = "rgba(52,226,226,.22)"; ctx.beginPath(); ctx.arc(jcx + touch.jx * 44, jcy + touch.jy * 44, 24, 0, 7); ctx.fill();
+    ctx.globalAlpha = 0.7; ctx.fillStyle = "#6b8a8c"; ctx.font = "11px 'Noto Sans KR',sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("드래그하여 이동", jcx, jcy + 78); ctx.restore();
+    // 스킬 버튼(우하단)
+    for (const b of touchButtons()) {
+      const on = (b.id === "shift" && touch.sneak) || (b.id === "q" && touch.holdQ !== null);
+      ctx.save();
+      ctx.fillStyle = on ? "rgba(52,226,226,.35)" : "rgba(10,16,20,.82)";
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill();
+      ctx.strokeStyle = on ? "#9af6f6" : "#34e2e2"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.stroke();
+      ctx.fillStyle = "#eafaff"; ctx.font = "bold 13px 'Noto Sans KR',sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(b.label, b.x, b.y); ctx.textBaseline = "alphabetic"; ctx.restore();
+    }
   }
 
   // 인트로(콜드 오픈) — 어둠 속에서 눈을 뜨는 지로 + 흐릿한 독백 (01 §2-1)
@@ -2502,8 +2586,8 @@ if (typeof module !== 'undefined') module.exports = Journal;
       ctx.fillStyle = "rgba(8,14,18,.92)"; rrect(spx - tw / 2, spy - 74, tw, 26, 8); ctx.fill();
       ctx.fillStyle = "#8ef548"; ctx.fillText(txt, spx, spy - 56); ctx.restore();
     }
-    // 조작 힌트(하단) — 이 스테이지에서 쓰는 단축키만(data의 controls)
-    if (cores === 0 || elapsed < 16) {
+    // 조작 힌트(하단) — 이 스테이지에서 쓰는 단축키만(data의 controls). 터치 모드에선 숨김(버튼이 대신).
+    if (!touchUI && (cores === 0 || elapsed < 16)) {
       const list = (D.controls && D.controls.length) ? D.controls
         : [["이동", "WASD"], ["조사", "E"], ["추적", "L"], ["일지", "Tab"]];
       const txt = list.map(c => "[" + c[1] + "] " + c[0]).join("   ·   ");

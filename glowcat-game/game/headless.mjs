@@ -57,6 +57,19 @@ if (s1) {
   console.log("INPUT OK — 키로 시작/인트로 스킵 + KeyD 이동(IME 무관) px " + s0.px.toFixed(0) + "→" + s1.px.toFixed(0));
 }
 fire("keyup", ev("ㅇ", "KeyD"));
+
+// ── 터치 회귀: 토글 ON → 가상 조이스틱 드래그로 이동 ──
+const pev = (x, y, id, type) => ({ clientX: x, clientY: y, pointerId: id || 1, pointerType: type || "touch", preventDefault() {} });
+const fireP = (t, e) => { if (cvHandlers[t]) cvHandlers[t](e); };
+const tBefore = window.__ziro().px;
+fireP("pointerdown", pev(914, 86, 9, "touch"));            // '터치 조작' 토글 ON
+fireP("pointerdown", pev(120, 552, 1, "touch"));           // 좌하단 = 조이스틱 시작
+fireP("pointermove", pev(180, 552, 1, "touch"));           // 오른쪽 드래그
+for (let i = 0; i < 30; i++) { clock += 16; if (theFrame) theFrame(clock); }
+const tAfter = window.__ziro().px;
+fireP("pointerup", pev(180, 552, 1, "touch"));
+if (!(tAfter > tBefore + 1)) { console.log("FAIL: 가상 조이스틱 이동 안 됨 (px " + tBefore.toFixed(0) + "→" + tAfter.toFixed(0) + ")"); process.exit(1); }
+console.log("TOUCH OK — 토글 + 가상 조이스틱 이동 (px " + tBefore.toFixed(0) + "→" + tAfter.toFixed(0) + ")");
 const walk = ["d", "d", "s", "s", "a", "w", "d", "s"];
 try {
   for (let i = 0; i < 700; i++) {

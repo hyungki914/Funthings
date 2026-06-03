@@ -9,7 +9,7 @@
     font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;}
   #wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
     min-height:100%;gap:10px;padding:12px;box-sizing:border-box;}
-  canvas{image-rendering:pixelated;image-rendering:crisp-edges;background:#06090d;
+  canvas{image-rendering:pixelated;image-rendering:crisp-edges;background:#06090d;touch-action:none;
     border:1px solid #1d3236;box-shadow:0 0 40px rgba(52,226,226,.08);max-width:100%;height:auto;}
   #hint{font-size:13px;color:#5a7375;letter-spacing:.3px;}
   #hint b{color:#8ef548;font-weight:700;}
@@ -19,7 +19,8 @@
 <body>
 <div id="wrap">
   <canvas id="game" width="1056" height="672"></canvas>
-  <div id="hint">이동 <b>WASD/←↑↓→</b> · 조사 <b>E</b> · 발자국 추적 <b>L</b> · 기억 비추기 <b>Q</b>(빛) · 일지 <b>Tab</b> · 힌트 <b>H</b> · 은신 <b>Shift</b> · 음소거 <b>M</b></div>
+  <div id="hint">키보드: 이동 <b>WASD/←↑↓→</b> · 조사 <b>E</b> · 추적 <b>L</b> · 비추기 <b>Q</b> · 일지 <b>Tab</b> · 힌트 <b>H</b> · 은신 <b>Shift</b><br>
+    터치/태블릿: <b>왼쪽 드래그</b>로 이동 · <b>오른쪽 버튼</b>으로 스킬 (우상단 "터치 조작"으로 켜고 끄기)</div>
 </div>
 <!-- 로드 순서: 에셋 → 규칙 → 데이터 → 오디오 → 메인 -->
 <script src="assets.js"></script>
