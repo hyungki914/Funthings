@@ -243,7 +243,7 @@
   const touch = { joyId: null, joyCx: 0, joyCy: 0, jx: 0, jy: 0, sneak: false, holdQ: null };
   function canvasXY(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * (cv.width / Math.max(1, r.width)), y: (e.clientY - r.top) * (cv.height / Math.max(1, r.height)) }; }
   function touchButtons() {                       // 우하단 스킬 버튼 (캔버스 px)
-    const W = cv.width, H = cv.height, R = 33, bx = W - 66, by = H - 70;
+    const W = cv.width, H = cv.height, R = 33, bx = W - 72, by = H - 80;   // 가장자리 여유(잘림 방지)
     return [
       { id: "e",     label: "조사",   x: bx,        y: by,        r: 41, hold: false },
       { id: "q",     label: "비추기", x: bx - 98,   y: by - 8,    r: R,  hold: false },
