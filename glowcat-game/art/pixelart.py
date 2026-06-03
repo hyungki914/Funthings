@@ -741,6 +741,52 @@ SCENE_SPECS = {
     # 10. 빈자리 The Blank
     'blank': dict(cols=16, rows=12, floor='void', border='void', props=[
         ('block', 7, 5, 2, 2, 'pale'), ('block', 8, 3, 1, 1, 'glass')]),
+    # ── 20스테이지 확장: 신규 로케일 10종 (docs/20_level_balance_20stage.md) ──
+    # 3. 현관·신발장
+    'entryway': dict(cols=22, rows=14, floor='wood', border='wall', props=[
+        ('block', 2, 3, 4, 2, 'cabinet'), ('block', 16, 3, 4, 2, 'shelf'), ('block', 9, 6, 4, 2, 'wood'),
+        ('block', 2, 9, 3, 2, 'wood'), ('block', 17, 9, 3, 2, 'cabinet'), ('lamp', 11, 3, 0, 0)]),
+    # 7. 버스정류장
+    'busstop': dict(cols=22, rows=16, floor='asphalt', border='fence', outdoor=True, path_tile='sidewalk', paths=[(1, 8, 20, 2)], props=[
+        ('block', 3, 3, 5, 2, 'metal'), ('block', 14, 3, 5, 2, 'cloth'), ('bench', 9, 7, 4, 1),
+        ('bush', 3, 10, 3, 2), ('block', 16, 10, 3, 2, 'metal'), ('lamp', 5, 9, 0, 0), ('lamp', 17, 9, 0, 0)]),
+    # 8. 큰길(대로) — 44칸 회랑
+    'avenue': dict(cols=44, rows=14, floor='asphalt', border='fence', outdoor=True, path_tile='sidewalk', paths=[(1, 6, 42, 2)], props=[
+        ('tree', 6, 3, 4, 2), ('bush', 6, 9, 4, 2), ('block', 15, 4, 4, 2, 'metal'), ('bench', 16, 9, 3, 2),
+        ('tree', 24, 3, 4, 2), ('bush', 25, 9, 3, 2), ('block', 34, 4, 4, 2, 'cloth'), ('block', 34, 9, 4, 2, 'metal'),
+        ('lamp', 12, 6, 0, 0), ('lamp', 21, 6, 0, 0), ('lamp', 30, 6, 0, 0), ('lamp', 38, 6, 0, 0)]),
+    # 10. 골목 — 폭14 세로 미로
+    'alley': dict(cols=14, rows=24, floor='asphalt', border='wall', props=[
+        ('block', 1, 4, 3, 2, 'metal'), ('block', 9, 5, 3, 2, 'metal'), ('block', 4, 9, 3, 2, 'wood'),
+        ('block', 8, 12, 3, 2, 'wood'), ('block', 1, 16, 3, 2, 'metal'), ('bush', 9, 17, 3, 2),
+        ('lamp', 7, 5, 0, 0), ('lamp', 7, 18, 0, 0)]),
+    # 12. 병원 가는 길 — 26행 세로 클라임
+    'toclinic': dict(cols=22, rows=26, floor='dirt', border='hedge', outdoor=True, path_tile='cobble', paths=[(9, 2, 3, 23)], props=[
+        ('tree', 2, 4, 4, 2), ('tree', 16, 4, 4, 2), ('block', 8, 7, 5, 2, 'stone'), ('bush', 2, 11, 3, 2),
+        ('bush', 17, 11, 3, 2), ('block', 8, 15, 6, 2, 'stone'), ('bench', 3, 19, 4, 2), ('block', 15, 19, 4, 2, 'wood'),
+        ('lamp', 9, 9, 0, 0), ('lamp', 9, 17, 0, 0)]),
+    # 13. 병원 앞 — 오픈 플라자
+    'clinicfront': dict(cols=26, rows=16, floor='stone', border='fence', outdoor=True, path_tile='cobble', paths=[(1, 9, 24, 2)], props=[
+        ('bush', 3, 3, 4, 2), ('bush', 19, 3, 4, 2), ('fountain', 11, 7, 4, 3), ('bench', 4, 11, 3, 2),
+        ('bench', 19, 11, 3, 2), ('block', 10, 3, 2, 2, 'metal'), ('lamp', 5, 8, 0, 0), ('lamp', 20, 8, 0, 0)]),
+    # 14. 옥상
+    'rooftop': dict(cols=20, rows=22, floor='stone', border='fence', outdoor=True, props=[
+        ('block', 2, 4, 3, 3, 'metal'), ('block', 14, 4, 3, 3, 'metal'), ('block', 8, 8, 4, 2, 'wood'),
+        ('block', 2, 12, 3, 2, 'metal'), ('block', 15, 12, 3, 2, 'metal'), ('block', 8, 15, 4, 2, 'pale'),
+        ('lamp', 10, 11, 0, 0), ('lamp', 10, 18, 0, 0)]),
+    # 16. 분수 광장 — 순환 동선
+    'plaza': dict(cols=26, rows=18, floor='stone', border='hedge', outdoor=True, path_tile='cobble', paths=[(1, 9, 24, 2), (12, 2, 2, 15)], props=[
+        ('fountain', 11, 7, 4, 4), ('bush', 3, 4, 3, 2), ('bush', 20, 4, 3, 2), ('bush', 3, 12, 3, 2),
+        ('bush', 20, 12, 3, 2), ('block', 11, 3, 4, 1, 'stone'), ('bench', 11, 14, 4, 1), ('lamp', 6, 8, 0, 0), ('lamp', 18, 8, 0, 0)]),
+    # 17. 가로등 길(해질녘) — 36칸
+    'lamplane': dict(cols=36, rows=14, floor='asphalt', border='fence', outdoor=True, path_tile='sidewalk', paths=[(1, 6, 34, 2)], props=[
+        ('tree', 5, 3, 3, 2), ('bench', 5, 9, 3, 2), ('bush', 13, 4, 3, 2), ('bush', 13, 9, 3, 2),
+        ('tree', 21, 3, 3, 2), ('bench', 21, 9, 3, 2), ('block', 29, 4, 3, 2, 'cloth'), ('bush', 29, 9, 3, 2),
+        ('lamp', 10, 6, 0, 0), ('lamp', 18, 6, 0, 0), ('lamp', 26, 6, 0, 0), ('lamp', 34, 6, 0, 0)]),
+    # 19. 텅 빈 거리(새벽) — 엄폐 최소
+    'emptystreet': dict(cols=30, rows=16, floor='asphalt', border='fence', outdoor=True, path_tile='sidewalk', paths=[(1, 9, 28, 2)], props=[
+        ('tree', 4, 4, 3, 2), ('tree', 23, 4, 3, 2), ('block', 13, 7, 4, 3, 'metal'), ('bush', 4, 11, 3, 2),
+        ('bush', 23, 11, 3, 2), ('block', 11, 3, 2, 1, 'metal'), ('lamp', 7, 8, 0, 0), ('lamp', 15, 12, 0, 0), ('lamp', 21, 8, 0, 0)]),
 }
 
 def export_game_assets():
@@ -831,6 +877,17 @@ SCENE_FX = {
     'park_gate': {'grade': (168, 158, 110, 0.30, 'overlay'),  'sky': {'color': (255, 236, 196), 'strength': 0.18}},
     'park':      {'grade': (214, 188, 120, 0.38, 'overlay'),  'sky': {'color': (255, 228, 170), 'strength': 0.22}},
     'blank':     {'grade': (40, 44, 58, 0.30, 'multiply'), 'vig': 0.62},
+    # 신규 로케일 무드(20스테이지)
+    'entryway':    {'grade': (255, 210, 165, 0.24, 'multiply')},
+    'busstop':     {'grade': (120, 116, 168, 0.34, 'multiply'), 'sky': {'color': (185, 175, 215), 'strength': 0.14}},
+    'avenue':      {'grade': (96, 86, 150, 0.40, 'multiply'),   'sky': {'color': (160, 150, 205), 'strength': 0.14}},
+    'alley':       {'grade': (74, 70, 112, 0.46, 'multiply'),   'vig': 0.6},
+    'toclinic':    {'grade': (112, 130, 180, 0.36, 'multiply'), 'desat': 0.22, 'sky': {'color': (205, 214, 236), 'strength': 0.14}},
+    'clinicfront': {'grade': (150, 160, 196, 0.30, 'multiply'), 'desat': 0.25, 'sky': {'color': (226, 230, 246), 'strength': 0.18}},
+    'rooftop':     {'grade': (150, 150, 200, 0.32, 'screen'),   'sky': {'color': (222, 212, 240), 'strength': 0.20}},
+    'plaza':       {'grade': (214, 188, 120, 0.34, 'overlay'),  'sky': {'color': (255, 228, 170), 'strength': 0.20}},
+    'lamplane':    {'grade': (120, 96, 152, 0.42, 'multiply'),  'sky': {'color': (182, 152, 202), 'strength': 0.13}},
+    'emptystreet': {'grade': (150, 160, 202, 0.30, 'screen'),   'sky': {'color': (222, 226, 246), 'strength': 0.22}},
 }
 
 def finish(rgb, fx=None):

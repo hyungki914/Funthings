@@ -7,9 +7,12 @@
   try { cv.setAttribute("tabindex", "0"); cv.style.outline = "none"; cv.focus(); } catch (e) {}  // 키 포커스 확보
 
   const C = Core.C;
-  // 서사 순서대로 — 존재하는 챕터만 체이닝(10스테이지)
-  const CHAPTERS = ["chapter1", "chapter2", "chapter3", "chapter4", "chapter5",
-                    "chapter6", "chapter7", "chapter8", "chapter9", "chapter10"].filter(k => DATA[k]);
+  // 서사 순서대로 — 존재하는 챕터만 체이닝(20스테이지: 기존10 + 신규10 인터리빙)
+  //   설계: docs/20_story_20stage.md · docs/20_level_balance_20stage.md
+  const CHAPTERS = ["chapter1", "chapter2", "chapter_entry", "chapter3", "chapter4",
+                    "chapter5", "chapter_busstop", "chapter_avenue", "chapter6", "chapter_alley",
+                    "chapter7", "chapter_toclinic", "chapter_clinicfront", "chapter_rooftop", "chapter8",
+                    "chapter_plaza", "chapter_lamplane", "chapter9", "chapter_emptystreet", "chapter10"].filter(k => DATA[k]);
   let chapterIdx = 0;
   let D, TILE, NW, NH, S, st, colls, safes, door, murks, echoes;   // loadStage()에서 채움
   let shards = [];                                                   // 이번 진행의 조각(랜덤 배치된 사본)
@@ -1130,6 +1133,7 @@
     else if (kind === "chart") { ctx.fillStyle = "#e6eef0"; ctx.fillRect(-4, -5, 8, 10); ctx.strokeStyle = "#7a9aa0"; ctx.beginPath(); for (let i = -3; i <= 3; i += 2) { ctx.moveTo(-3, i); ctx.lineTo(3, i); } ctx.stroke(); }
     else if (kind === "card") { ctx.fillStyle = "#caa15a"; rrect(-5, -3, 10, 6, 2); ctx.fill(); ctx.fillStyle = "#6b5536"; ctx.fillRect(-3, 0, 6, 1.5); }
     else if (kind === "bell") { ctx.fillStyle = "#caa15a"; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fill(); ctx.fillStyle = "#6b5536"; ctx.beginPath(); ctx.arc(0, 1, 1.4, 0, 7); ctx.fill(); ctx.fillStyle = "#8aa7a9"; ctx.fillRect(-1, -6, 2, 2); }
+    else { ctx.fillStyle = "#7a6a52"; rrect(-4, -3, 8, 6, 2); ctx.fill(); ctx.fillStyle = "#9fc5c5"; ctx.fillRect(-3, -2, 6, 1.5); }   // 일반 사물(미정의 kind 폴백)
     ctx.restore();
   }
   function cbMark(m) {            // 색약 보조: 추격 중인 적에 색과 무관한 표식(흰 점선 고리 + !)

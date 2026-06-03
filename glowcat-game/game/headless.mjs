@@ -89,7 +89,7 @@ if (window.__loadStage) {
 // ── 가로 스크롤 카메라(챕터6 길거리 40×14): 우측 이동 시 카메라가 따라가는지 ──
 if (window.__loadStage) {
   if (window.__setRandom) window.__setRandom(false);       // 카메라 테스트는 결정적으로(랜덤 적 간섭 배제)
-  window.__loadStage(5);                                   // 챕터6(길거리, cols40)
+  window.__loadStage(8);                                   // 챕터6(길거리, cols40)
   const b = window.__ziro();
   if (!(b.nw >= 640)) { console.log("FAIL: 챕터6 가로 맵 아님 (nw=" + b.nw + ")"); process.exit(1); }
   const cam0 = b.camX;
@@ -103,11 +103,11 @@ if (window.__loadStage) {
   window.__loadStage(0);
 }
 
-// ── 깨달음→선택→엔딩 플로우(최종 챕터10): 코어 수집 후 회상 몽타주 → choice → ending 무예외 ──
+// ── 깨달음→선택→엔딩 플로우(최종 챕터20): 코어 수집 후 회상 몽타주 → choice → ending 무예외 ──
 if (window.__loadStage && window.__debugClear) {
-  window.__loadStage(9);                                   // 챕터10(빈자리·최종) 로드
+  window.__loadStage(19);                                   // 챕터20(빈자리·최종) 로드
   const r0 = window.__ziro();
-  if (r0.ch !== 9) { console.log("FAIL: 챕터10 로드 안 됨 (ch=" + r0.ch + ")"); process.exit(1); }
+  if (r0.ch !== 19) { console.log("FAIL: 챕터20 로드 안 됨 (ch=" + r0.ch + ")"); process.exit(1); }
   window.__debugClear();                                  // 코어 3 수집 → beginRealize
   let r1 = window.__ziro();
   if (r1.phase !== "realize") { console.log("FAIL: 깨달음 진입 안 됨 (phase=" + r1.phase + ")"); process.exit(1); }
@@ -131,13 +131,13 @@ if (window.__loadStage && window.__debugClear) {
   fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); clock += 16; if (theFrame) theFrame(clock);
   const r2 = window.__ziro();
   if (r2.phase !== "title") { console.log("FAIL: 엔딩 후 타이틀 복귀 안 됨 (phase=" + r2.phase + ")"); process.exit(1); }
-  console.log("ENDING OK — 챕터10 클리어→깨달음 " + lines + "줄→최종선택→길고양이 엔딩→타이틀 (endingType=" + r1.endingType + ")");
+  console.log("ENDING OK — 챕터20 클리어→깨달음 " + lines + "줄→최종선택→길고양이 엔딩→타이틀 (endingType=" + r1.endingType + ")");
   window.__loadStage(0);
 }
 
 // ── 중간 분기(마음 미터): 챕터4 클리어 → 깨달음 → branch → 희망 선택(+1) → 전환 무예외 ──
 if (window.__loadStage && window.__debugClear && window.__hope) {
-  window.__hope(0); window.__loadStage(3);                 // 챕터4(하루의 방)
+  window.__hope(0); window.__loadStage(4);                 // 챕터4(하루의 방)
   window.__debugClear();
   for (let i = 0; i < 14 && window.__ziro().phase === "realize"; i++) {
     fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); clock += 16; if (theFrame) theFrame(clock);
@@ -151,9 +151,9 @@ if (window.__loadStage && window.__debugClear && window.__hope) {
   console.log("BRANCH OK — 챕터4 깨달음→마음의 분기→희망(+1)→전환 (hope=" + window.__hope() + ")");
   window.__hope(0); window.__loadStage(0);
 }
-// ── 보스 '공백' 연출: 챕터10 코어 수집 후 기억 비추기(Q)로 2회 비춰 해소 → 깨달음 ──
+// ── 보스 '공백' 연출: 챕터20 코어 수집 후 기억 비추기(Q)로 2회 비춰 해소 → 깨달음 ──
 if (window.__loadStage && window.__collectCores && window.__boss) {
-  window.__loadStage(9); window.__collectCores();
+  window.__loadStage(19); window.__collectCores();
   const b0 = window.__boss();
   if (!b0 || b0.hp !== 3) { console.log("FAIL: 보스 미존재/HP (" + JSON.stringify(b0) + ")"); process.exit(1); }
   for (let i = 0; i < 260; i++) { clock += 16; if (theFrame) theFrame(clock); }   // 파동 charge/burst 사이클 무예외 소크(스폰=안전거리)
@@ -166,7 +166,7 @@ if (window.__loadStage && window.__collectCores && window.__boss) {
   for (let i = 0; i < 130; i++) { clock += 16; if (theFrame) theFrame(clock); }   // 해소 후 exitT → realize
   const ph = window.__ziro().phase;
   if (!(ph === "realize" || ph === "choice")) { console.log("FAIL: 보스 해소→깨달음 안 됨 (phase=" + ph + ", boss=" + JSON.stringify(window.__boss()) + ")"); process.exit(1); }
-  console.log("BOSS OK — 챕터10 코어수집→Q로 공백 해소→깨달음(phase=" + ph + ")");
+  console.log("BOSS OK — 챕터20 코어수집→Q로 공백 해소→깨달음(phase=" + ph + ")");
   window.__loadStage(0);
 }
 
@@ -193,10 +193,10 @@ if (window.__title && window.__sel) {
 // ── 랜덤 레이아웃 검증: 전 스테이지 반복 로드 → 조각·적 patrol이 가구 관통 없는지 ──
 if (window.__loadStage && window.__layoutCheck) {
   let totalBad = 0, totalUnreach = 0, loads = 0;
-  for (let n = 0; n < 10; n++) for (let s = 0; s < 10; s++) { window.__loadStage(s); const r = window.__layoutCheck(); totalBad += r.bad; totalUnreach += r.unreachable; loads++; }
+  for (let n = 0; n < 20; n++) for (let s = 0; s < 20; s++) { window.__loadStage(s); const r = window.__layoutCheck(); totalBad += r.bad; totalUnreach += r.unreachable; loads++; }
   if (totalBad > 0) { console.log("FAIL: 랜덤 배치가 벽/가구에 겹침 (" + totalBad + "건 / " + loads + "회)"); process.exit(1); }
   if (totalUnreach > 0) { console.log("FAIL: 도달 불가 조각 발생 (" + totalUnreach + "건 / " + loads + "회)"); process.exit(1); }
-  console.log("RANDOM OK — 전 10스테이지 " + loads + "회 랜덤 배치, 가구 관통 0 · 도달불가 0");
+  console.log("RANDOM OK — 전 20스테이지 " + loads + "회 랜덤 배치, 가구 관통 0 · 도달불가 0");
   window.__loadStage(0);
 }
 

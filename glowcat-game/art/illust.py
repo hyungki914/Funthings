@@ -236,6 +236,108 @@ def s10():  # 빈자리 — 어둠 속 떠오르는 이름표 '지로', 빛으�
     cat(d, W//2, 188, 1.5, eye=(150, 250, 200))
     return finish(im, glow_r=4.0, vig=0.46)
 
+# ── 20스테이지 확장: 신규 챕터 깨달음 키아트 10종 ──
+def s_entry():   # 현관 — 집과 바깥의 경계, 어긋난 신발 한 켤레, 문 너머 빛
+    im = vgrad([(0, (54, 42, 46)), (1, (26, 20, 24))]); d = ImageDraw.Draw(im)
+    d.rectangle((0, 170, W, H), fill=(24, 18, 22))
+    d.rectangle((250, 20, W, H), fill=(20, 16, 20))                       # 우측 현관문 벽
+    window(d, 286, 40, 60, 120, frame=(40, 32, 30), light=(255, 222, 168))  # 문 너머 빛
+    for sx, ang in ((150, 0), (172, 8)):                                  # 어긋난 신발 두 짝
+        d.rounded_rectangle((sx, 168, sx+18, 178), 4, fill=(60, 48, 40))
+    im = glow(im, 300, 96, 120, (255, 216, 156), 0.6)
+    d = ImageDraw.Draw(im); cat(d, 150, 178, 1.3)
+    return particles(finish(im, vig=0.48), 16, (255, 232, 190), "dust_e")
+
+def s_busstop():  # 버스정류장 — 황혼 정류장, 멀어지는 붉은 미등, 빈 벤치
+    im = vgrad([(0, (70, 62, 96)), (1, (28, 26, 44))]); d = ImageDraw.Draw(im)
+    d.rectangle((0, 168, W, H), fill=(26, 24, 38))
+    d.polygon([(150, 120), (250, 120), (360, H), (120, H)], fill=(34, 32, 48))  # 도로 원근
+    d.rectangle((40, 70, 130, 80), fill=(40, 40, 56)); d.rectangle((44, 80, 50, 168), fill=(34, 34, 48))  # 쉘터
+    d.rectangle((60, 150, 120, 158), fill=(44, 36, 30))                  # 벤치
+    im = glow(im, 300, 138, 40, (255, 110, 90), 0.7)                     # 멀어지는 붉은 미등
+    im = glow(im, 86, 70, 60, (255, 220, 160), 0.4)
+    d = ImageDraw.Draw(im); cat(d, 96, 168, 1.2)
+    return particles(finish(im, vig=0.5), 12, (210, 200, 230), "leaf_b")
+
+def s_avenue():   # 큰길 — 넓은 대로, 두 줄 발자국, 끝의 신호등
+    im = vgrad([(0, (60, 54, 96)), (1, (26, 26, 44))]); d = ImageDraw.Draw(im)
+    d.polygon([(120, 110), (264, 110), (390, H), (-6, H)], fill=(32, 30, 48))  # 넓은 차도
+    for i in range(7):                                                   # 두 줄 발자국
+        d.ellipse((150+i*14, 150+i*7, 156+i*14, 156+i*7), fill=(66, 62, 88))
+        d.ellipse((210+i*12, 150+i*7, 216+i*12, 156+i*7), fill=(66, 62, 88))
+    d.rectangle((312, 80, 318, 150), fill=(24, 24, 36))
+    im = glow(im, 315, 78, 36, (120, 240, 160), 0.7)                     # 끝 신호등(파란불)
+    d = ImageDraw.Draw(im); cat(d, 110, 182, 1.2)
+    return particles(finish(im, vig=0.5), 12, (200, 200, 232), "leaf_av")
+
+def s_alley():    # 골목 — 좁고 어두운 뒷길, 끝의 작은 불빛
+    im = vgrad([(0, (34, 32, 50)), (1, (14, 14, 24))]); d = ImageDraw.Draw(im)
+    d.polygon([(120, 40), (264, 40), (228, H), (156, H)], fill=(26, 26, 40))   # 좁은 골목(원근)
+    d.rectangle((40, 60, 156, H), fill=(20, 20, 32)); d.rectangle((228, 60, 344, H), fill=(20, 20, 32))  # 양벽
+    im = glow(im, 192, 56, 50, (255, 220, 150), 0.7)                     # 골목 끝 외등
+    d = ImageDraw.Draw(im); cat(d, 192, 188, 1.1)
+    return finish(im, vig=0.6)
+
+def s_toclinic(): # 병원 가는 길 — 오르막, 붉은 구급차 잔광, ←병원 표지
+    im = vgrad([(0, (40, 50, 78)), (1, (18, 22, 36))]); d = ImageDraw.Draw(im)
+    for i in range(7):                                                   # 오르막 길(위로)
+        x0 = 130 + i*16; y0 = 156 - i*18
+        d.rectangle((x0, y0, x0+88, y0+12), fill=_lerp((40, 44, 66), (22, 26, 42), i/6))
+    d.rectangle((286, 60, 320, 84), fill=(30, 40, 60)); d.line((300, 72, 288, 72), fill=(150, 200, 235), width=3)  # ←병원 표지
+    im = glow(im, 200, 150, 90, (255, 110, 90), 0.5)                     # 붉은 구급차 잔광
+    im = glow(im, 303, 70, 40, (150, 196, 232), 0.5)
+    d = ImageDraw.Draw(im); cat(d, 110, 188, 1.1)
+    return finish(im, vig=0.56)
+
+def s_clinicfront(): # 병원 앞 — 환한 자동문, 마른 분수, 기다림의 벤치
+    im = vgrad([(0, (60, 70, 96)), (1, (30, 36, 52))]); d = ImageDraw.Draw(im)
+    d.rectangle((0, 168, W, H), fill=(34, 38, 52))
+    d.rectangle((150, 30, 360, 168), fill=(26, 30, 44))                  # 병원 벽
+    window(d, 176, 48, 156, 116, frame=(44, 50, 68), light=(226, 236, 248))  # 환한 자동문/로비
+    d.ellipse((60, 160, 96, 176), outline=(60, 66, 86), width=2)         # 마른 분수
+    d.rectangle((96, 150, 150, 158), fill=(44, 48, 64))                  # 벤치
+    im = glow(im, 254, 100, 130, (210, 228, 246), 0.55)
+    d = ImageDraw.Draw(im); cat(d, 110, 176, 1.2)                        # 유리 앞 작은 지로
+    return particles(finish(im, vig=0.5), 12, (220, 232, 246), "dust_cf")
+
+def s_rooftop():  # 옥상 — 난간 너머 도시, 바람, 하늘
+    im = vgrad([(0, (78, 86, 128)), (0.6, (54, 58, 92)), (1, (28, 30, 48))]); d = ImageDraw.Draw(im)
+    d.rectangle((0, 150, W, H), fill=(34, 36, 54))                       # 옥상 바닥
+    for bx in range(30, 320, 26):                                        # 난간 너머 도시 실루엣
+        h = 30 + (bx * 7) % 60; d.rectangle((bx, 150-h, bx+18, 150), fill=(40, 44, 66))
+    d.line((0, 150, W, 150), fill=(70, 76, 104), width=2)                # 난간 라인
+    im = glow(im, 60, 40, 130, (210, 210, 246), 0.45)
+    d = ImageDraw.Draw(im); cat(d, 180, 168, 1.2)
+    return particles(finish(im, vig=0.5), 18, (220, 220, 248), "mote_rf")
+
+def s_plaza():    # 분수 광장 — 중앙 분수, 순환 동선, 아치
+    im = vgrad([(0, (210, 184, 130)), (0.55, (150, 150, 140), ), (1, (70, 78, 92))]); d = ImageDraw.Draw(im)
+    d.rectangle((0, 158, W, H), fill=(78, 86, 92))
+    d.ellipse((150, 140, 250, 184), fill=(60, 70, 80)); d.ellipse((168, 146, 232, 174), fill=(96, 130, 150))  # 분수
+    d.arc((150, 60, 250, 160), 180, 360, fill=(50, 44, 38), width=6)     # 아치
+    im = glow(im, 200, 150, 70, (180, 220, 230), 0.5); im = glow(im, 40, 40, 120, (255, 232, 176), 0.4)
+    d = ImageDraw.Draw(im); cat(d, 130, 168, 1.2)
+    return particles(finish(im, vig=0.48), 14, (220, 230, 220), "leaf_pz")
+
+def s_lamplane(): # 가로등 길 — 해질녘 늘어선 가로등, 길어진 그림자
+    im = vgrad([(0, (96, 70, 110)), (0.5, (70, 56, 92)), (1, (30, 28, 46))]); d = ImageDraw.Draw(im)
+    d.rectangle((0, 164, W, H), fill=(30, 28, 44))
+    for lx in (90, 180, 270):                                            # 늘어선 가로등
+        d.rectangle((lx, 80, lx+4, 164), fill=(26, 24, 36)); im = glow(im, lx+2, 78, 44, (255, 216, 150), 0.6)
+    d = ImageDraw.Draw(im)
+    d.polygon([(150, 178), (164, 178), (120, H), (96, H)], fill=(40, 36, 54))   # 길어진 그림자(하나)
+    cat(d, 150, 180, 1.2)
+    return particles(finish(im, vig=0.52), 12, (255, 220, 180), "leaf_ll")
+
+def s_emptystreet(): # 텅 빈 거리 — 새벽, 홀로 깜빡이는 신호등, 끝의 여명
+    im = vgrad([(0, (96, 110, 140)), (0.55, (70, 84, 116)), (1, (34, 40, 60))]); d = ImageDraw.Draw(im)
+    d.rectangle((0, 160, W, H), fill=(40, 46, 64))
+    d.polygon([(150, 120), (250, 120), (340, H), (60, H)], fill=(48, 54, 74))   # 텅 빈 도로
+    d.rectangle((196, 70, 202, 150), fill=(28, 30, 44)); im = glow(im, 199, 80, 30, (120, 240, 160), 0.7)  # 홀로 깜빡이는 신호
+    im = glow(im, 350, 150, 120, (220, 226, 246), 0.6)                   # 거리 끝 여명
+    d = ImageDraw.Draw(im); cat(d, 150, 180, 1.2)
+    return particles(finish(im, vig=0.5), 16, (220, 228, 248), "mote_es")
+
 def end_reunite():  # 재회 — 하루 품에 안긴 지로(깔끔한 실루엣 + 따뜻한 빛, 키아트 톤 통일)
     im = vgrad([(0, (66, 80, 62)), (0.5, (50, 62, 47)), (1, (24, 30, 22))]); d = ImageDraw.Draw(im)
     im = glow(im, 235, 96, 210, (176, 234, 156), 0.72)                   # 재회의 따뜻한 빛(중앙)
@@ -287,9 +389,15 @@ def title_art():   # 타이틀 — 서정적. 따뜻한 빛을 올려다보는 �
     cat(d, 110, 184, 1.7, eye=(140, 245, 190))                          # 올려다보는 지로
     return particles(finish(im, glow_r=3.6, vig=0.5), 26, (255, 240, 205), "title")
 
+# s1..s20 = main.js CHAPTERS 위치별 깨달음 키아트. 기존 s1~s10 그림은 새 순서의
+# 해당 위치로 재매핑(방=1·거실=2·2층=4·하루방=5·마당=6·길거리=9·상가=11·공원입구=15·공원=18·빈자리=20),
+# 신규 10챕터는 새 그림(s_*). (docs/20_story_20stage.md 순서)
 ILL = {"title": title_art,
-       "s1": s1, "s2": s2, "s3": s3, "s4": s4, "s5": s5, "s6": s6, "s7": s7,
-       "s8": s8, "s9": s9, "s10": s10, "reunite": end_reunite, "stray": end_stray}
+       "s1": s1,  "s2": s2,  "s3": s_entry,       "s4": s3,  "s5": s4,
+       "s6": s5,  "s7": s_busstop, "s8": s_avenue, "s9": s6,  "s10": s_alley,
+       "s11": s7, "s12": s_toclinic, "s13": s_clinicfront, "s14": s_rooftop, "s15": s8,
+       "s16": s_plaza, "s17": s_lamplane, "s18": s9, "s19": s_emptystreet, "s20": s10,
+       "reunite": end_reunite, "stray": end_stray}
 
 
 def _b64(im):

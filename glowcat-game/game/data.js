@@ -597,12 +597,12 @@ DATA.chapter9 = {
       recall: '저 멀리 하루가 걸어온다 — 손을 흔들며. 그러나 다가갈수록 흐려지고, 끝내 닿지 않는다. 이건… 진짜가 아니야.' }
   ],
   murks: [
-    { id: 'm_park_1', patrol: [[18, 5], [24, 5], [24, 8], [18, 8]], speed: 40, sightTiles: 3.4, fovDeg: 90 },
-    { id: 'm_park_2', patrol: [[5, 12], [11, 12], [11, 14], [5, 14]], speed: 40, sightTiles: 3.4, fovDeg: 90 }
+    { id: 'm_park_1', patrol: [[18, 5], [24, 5], [24, 8], [18, 8]], speed: 42, sightTiles: 3.5, fovDeg: 90 },
+    { id: 'm_park_2', patrol: [[5, 12], [11, 12], [11, 14], [5, 14]], speed: 42, sightTiles: 3.5, fovDeg: 90 }
   ],
   echoes: [
-    { id: 'e_park_1', patrol: [[8, 8], [11, 8], [11, 11], [8, 11]], speed: 38, hearTiles: 3.6 },
-    { id: 'e_park_2', patrol: [[17, 9], [22, 9], [22, 12], [17, 12]], speed: 38, hearTiles: 3.6 }
+    { id: 'e_park_1', patrol: [[8, 8], [11, 8], [11, 11], [8, 11]], speed: 38, hearTiles: 3.7 },
+    { id: 'e_park_2', patrol: [[17, 9], [22, 9], [22, 12], [17, 12]], speed: 38, hearTiles: 3.7 }
   ],
   identityLabels: LBLN,
   epiphany: [
@@ -650,6 +650,431 @@ DATA.chapter10 = {
     '공백은 끝이 아니라, 아직 답을 받지 못한 물음이었다.',
     '끝까지 찾아 나설지, 새 온기 속에서 살아갈지 —',
     '이제, 내가 정한다.'
+  ]
+};
+
+// =============================================================================
+// 20스테이지 확장 — 신규 10챕터(기존 10챕터 사이에 인터리빙). 순서는 main.js CHAPTERS.
+//   설계: docs/20_story_20stage.md(서사) · docs/20_level_balance_20stage.md(레벨/밸런스).
+//   런타임 makeLayout 가 idx>=2 의 비고정 조각·순찰을 안전 타일로 재배치하므로
+//   아래 좌표는 유효 시드(폴백). coresNeeded 전 챕터 3 유지.
+// =============================================================================
+
+// CH3 「현관」 — 집과 바깥의 경계. 두 짧은 갈래(신발장/우산꽂이) 미니 동선.
+DATA.chapter_entry = {
+  tile: 16, cols: 22, rows: 14, scale: 4, bgKey: 'entryway',
+  title: '현관', music: 'house', ambient: 'dust', controls: CTRL,
+  spawn: [11, 12], coresNeeded: 3,
+  collision: [
+    [0, 0, 22, 2], [0, 13, 22, 1], [0, 0, 1, 14], [21, 0, 1, 14],
+    [2, 3, 4, 2], [16, 3, 4, 2], [9, 6, 4, 2], [2, 9, 3, 2], [17, 9, 3, 2]
+  ],
+  safeZones: [[2, 6, 2, 1], [18, 7, 2, 1]],
+  door: { tile: [11, 1], requires: 'cores' },
+  shards: [
+    { id: 'c_ent_shoe', type: 'core', tile: [4, 6], radius: 1.3, identitySlot: 1, obj: 'shoe',
+      recall: '현관에 가지런하던 신발 한 켤레. 하루가 매일 신고 나섰다 — 그날만, 짝이 흐트러진 채였다.' },
+    { id: 'c_ent_leash', type: 'core', tile: [18, 6], radius: 1.3, identitySlot: 2, obj: 'leash',
+      recall: '벽에 걸린 산책 줄. 내 것이다. 이게 짤랑이면, 꼬리가 먼저 일어섰다.' },
+    { id: 'c_ent_mat', type: 'core', tile: [11, 9], radius: 1.3, identitySlot: 3,
+      recall: '문 앞 매트. 하루의 발과 내 발이 나란히 닦이던 자리. 흙냄새 끝엔 늘 집냄새가 났다.' },
+    { id: 'e_ent_umbrella', type: 'echo', tile: [15, 11], radius: 1.2, identitySlot: null, obj: 'umbrella',
+      recall: '미처 마르지 못한 우산 하나. 급히 나서느라 편 채로 둔 것.' },
+    { id: 'e_ent_key', type: 'echo', tile: [6, 11], radius: 1.2, hidden: true, identitySlot: null,
+      recall: '바닥에 떨어진 열쇠고리. 하루의 손에서 미끄러진 듯, 아직 그 자리다.' },
+    { id: 'f_ent', type: 'false', tile: [13, 4], radius: 1.3, identitySlot: null,
+      recall: '현관문이 열리며 하루가 들어선다 — 그런데 신발 소리가 없고, 발밑에 그림자도 지지 않는다. 이건… 진짜가 아니야.' }
+  ],
+  murks: [{ id: 'm_ent', patrol: [[8, 3], [13, 3], [13, 5], [8, 5]], speed: 38, sightTiles: 3.3, fovDeg: 90 }],
+  echoes: [{ id: 'e_ent', patrol: [[13, 11], [18, 11], [18, 12], [13, 12]], speed: 36, hearTiles: 3.6 }],
+  identityLabels: LBL, branch: null,
+  epiphany: [
+    '집과 바깥의 경계, 현관.',
+    '하루는 늘 여기서 한 번 나를 돌아보고 나섰다.',
+    '그날의 신발만, 짝이 어긋난 채였다.',
+    '그 어긋남을 따라, 나는 처음 문 밖으로 발을 내민다.'
+  ]
+};
+
+// CH7 「버스정류장」 — 함께 떠나던 출발점. 앉아 기다리는 척(정지)으로 통과.
+DATA.chapter_busstop = {
+  tile: 16, cols: 22, rows: 16, scale: 4, bgKey: 'busstop',
+  title: '버스정류장', music: 'town', ambient: 'leaves', controls: CTRL,
+  spawn: [11, 14], coresNeeded: 3,
+  collision: [
+    [0, 0, 22, 2], [0, 15, 22, 1], [0, 0, 1, 16], [21, 0, 1, 16],
+    [3, 3, 5, 2], [14, 3, 5, 2], [9, 7, 4, 1], [3, 10, 3, 2], [16, 10, 3, 2]
+  ],
+  safeZones: [[9, 9, 2, 1], [18, 5, 2, 1]],
+  door: { tile: [11, 1], requires: 'cores' },
+  shards: [
+    { id: 'c_bus_sign', type: 'core', tile: [16, 5], radius: 1.3, identitySlot: 2, obj: 'sign',
+      recall: '정류장 노선도. 하루가 손가락으로 짚으며 "여기서 갈아타자" 하던 그 자리. 우리가 어딘가로 떠나던 출발점.' },
+    { id: 'c_bus_bench', type: 'core', tile: [11, 9], radius: 1.3, identitySlot: 1,
+      recall: '둘이 버스를 기다리던 벤치. 나는 늘 하루의 발치에 몸을 말고, 도착 안내를 같이 들었다.' },
+    { id: 'c_bus_step', type: 'core', tile: [7, 12], radius: 1.3, identitySlot: 3,
+      recall: '정류장 바닥의 작은 발자국. 차가 설 때마다 한 발 앞으로 나서던 버릇 — 떠나는 게 아니라, 함께 타려고.' },
+    { id: 'e_bus_ticket', type: 'echo', tile: [7, 5], radius: 1.2, identitySlot: null, obj: 'ticket',
+      recall: '구겨진 승차권 한 장. 하루의 외투 주머니에서 떨어진 것일까.' },
+    { id: 'e_bus_glove', type: 'echo', tile: [15, 12], radius: 1.2, hidden: true, identitySlot: null,
+      recall: '벤치 밑 장갑 한 짝. 추운 날, 하루가 한 손을 비워 나를 쓰다듬던 그 손의 것.' },
+    { id: 'f_bus', type: 'false', tile: [12, 4], radius: 1.3, identitySlot: null,
+      recall: '버스가 서고 하루가 손짓하며 내린다 — 그런데 문이 열리는 소리가 없고, 발이 보도에 닿지 않는다. 이건… 진짜가 아니야.' }
+  ],
+  murks: [{ id: 'm_bus', patrol: [[14, 5], [18, 5], [18, 7], [14, 7]], speed: 38, sightTiles: 3.4, fovDeg: 90 }],
+  echoes: [
+    { id: 'e_bus_1', patrol: [[6, 8], [12, 8], [12, 10], [6, 10]], speed: 36, hearTiles: 3.6 },
+    { id: 'e_bus_2', patrol: [[12, 12], [17, 12], [17, 13], [12, 13]], speed: 36, hearTiles: 3.6 }
+  ],
+  identityLabels: LBL, branch: null,
+  epiphany: [
+    '버스를 기다리던 정류장.',
+    '함께 어딘가로 떠나던, 우리의 출발점이었다.',
+    '이제 나 혼자, 같은 자리에 앉아 도착을 센다.',
+    '그래도 어느 버스의 끝엔, 하루가 있을 것만 같다.'
+  ]
+};
+
+// CH8 「큰길」 — 44칸 최장 가로 회랑. 4 징검다리로 달리고-숨기. 분기.
+DATA.chapter_avenue = {
+  tile: 16, cols: 44, rows: 14, scale: 4, bgKey: 'avenue',
+  title: '큰길', music: 'dusk', ambient: 'leaves', controls: CTRL,
+  spawn: [2, 7], coresNeeded: 3,
+  collision: [
+    [0, 0, 44, 2], [0, 13, 44, 1], [0, 0, 1, 14], [43, 0, 1, 14],
+    [6, 3, 4, 2], [6, 9, 4, 2], [15, 4, 4, 2], [16, 9, 3, 2],
+    [24, 3, 4, 2], [25, 9, 3, 2], [34, 4, 4, 2], [34, 9, 4, 2]
+  ],
+  safeZones: [[12, 6, 2, 1], [21, 6, 2, 1], [30, 6, 2, 1], [38, 6, 2, 1]],
+  door: { tile: [42, 1], requires: 'cores' },
+  shards: [
+    { id: 'c_av_cross', type: 'core', tile: [10, 11], radius: 1.3, identitySlot: 2,
+      recall: '넓은 횡단보도. 하루는 늘 한 팔로 내 앞을 막아 세우고 신호를 기다렸다. "지로, 잠깐." 그 팔이 없는 지금, 나는 처음 혼자 신호를 센다.' },
+    { id: 'c_av_walk', type: 'core', tile: [22, 7], radius: 1.3, identitySlot: 1,
+      recall: '대로에 남은 두 줄 발자국. 사람의 보폭과 나의 보폭이 끝까지 나란하다. 우리는 이 넓은 길도 함께 건넜다.' },
+    { id: 'c_av_light', type: 'core', tile: [39, 11], radius: 1.3, identitySlot: 3,
+      recall: '대로 끝 신호등. 파란불이 켜질 때마다, 하루는 내 이름을 부르며 발을 뗐다. 그 두 음절이 신호처럼 남아 있다.' },
+    { id: 'e_av_bag', type: 'echo', tile: [18, 11], radius: 1.2, identitySlot: null, obj: 'bag',
+      recall: '길에 떨어진 장바구니. 하루가 자주 들던 것 — 안엔 늘 내 간식이 한 봉지 있었다.' },
+    { id: 'e_av_scarf', type: 'echo', tile: [31, 11], radius: 1.2, hidden: true, identitySlot: null,
+      recall: '가로수에 걸린 목도리 한 장. 바람에 오래 흔들리며, 누군가의 온기를 붙잡고 있다.' },
+    { id: 'f_av', type: 'false', tile: [29, 4], radius: 1.3, identitySlot: null,
+      recall: '저 앞에서 하루가 손짓한다 — 그런데 다가갈수록 횡단보도가 끝없이 늘어나, 끝내 닿지 않는다. 이건… 진짜가 아니야.' }
+  ],
+  murks: [
+    { id: 'm_av_1', patrol: [[9, 6], [16, 6], [16, 8], [9, 8]], speed: 40, sightTiles: 3.4, fovDeg: 90 },
+    { id: 'm_av_2', patrol: [[28, 6], [37, 6], [37, 8], [28, 8]], speed: 40, sightTiles: 3.4, fovDeg: 90 }
+  ],
+  echoes: [
+    { id: 'e_av_1', patrol: [[18, 11], [24, 11], [24, 12], [18, 12]], speed: 36, hearTiles: 3.6 },
+    { id: 'e_av_2', patrol: [[31, 11], [38, 11], [38, 12], [31, 12]], speed: 36, hearTiles: 3.6 }
+  ],
+  identityLabels: LBL,
+  branch: { q: '끝이 보이지 않는 큰길. 나는 어떤 걸음으로 이 길을 건널까.', options: [
+    { label: '끝까지 달린다', sub: '길이 길수록, 더 빨리.', feedback: '네 발에 바람이 붙는다 — 나는 대로를 가른다.' },
+    { label: '그늘을 따라 간다', sub: '천천히, 들키지 않게 한 칸씩.', feedback: '가로수 그늘을 짚으며, 나는 숨을 죽인다.' } ] },
+  epiphany: [
+    '도시의 대로. 차도, 사람도 무심히 흐른다.',
+    '그 흐름 속에서 옆자리만, 비어 있다.',
+    '길이 아무리 넓어도, 함께 걷던 폭은 좁고 따뜻했다.',
+    '이 끝 어딘가에 하루가 있다면 — 나는, 달리겠다.'
+  ]
+};
+
+// CH10 「골목」 — 폭14 세로 미로. 느리지만 멀리 듣는 echo, 정지로 끊어 가기.
+DATA.chapter_alley = {
+  tile: 16, cols: 14, rows: 24, scale: 4, bgKey: 'alley',
+  title: '골목', music: 'dusk', ambient: 'dust', controls: CTRL,
+  spawn: [7, 22], coresNeeded: 3,
+  collision: [
+    [0, 0, 14, 2], [0, 23, 14, 1], [0, 0, 1, 24], [13, 0, 1, 24],
+    [1, 4, 3, 2], [9, 5, 3, 2], [4, 9, 3, 2], [8, 12, 3, 2], [1, 16, 3, 2], [9, 17, 3, 2]
+  ],
+  safeZones: [[6, 8, 2, 1], [6, 15, 2, 1]],
+  door: { tile: [7, 1], requires: 'cores' },
+  shards: [
+    { id: 'c_al_paw', type: 'core', tile: [7, 19], radius: 1.3, identitySlot: 2,
+      recall: '좁은 골목 바닥의 발자국. 사람들은 모르는 지름길로, 하루의 뒤를 바짝 따라 걷던 길. 어둑해도 무섭지 않았다.' },
+    { id: 'c_al_wall', type: 'core', tile: [6, 11], radius: 1.3, identitySlot: 3,
+      recall: '담벼락 낮은 곳에 밴 내 냄새. 여긴 내 길이라고 매일 다시 적어 두던 자리. 나는 분명, 이 동네를 살았다.' },
+    { id: 'c_al_light', type: 'core', tile: [7, 6], radius: 1.3, identitySlot: 1,
+      recall: '골목 끝 작은 외등. 해가 지면 하루는 나를 안아 들고 이 불빛 아래를 빠르게 지났다 — 집까지, 따뜻한 품 안에서.' },
+    { id: 'e_al_can', type: 'echo', tile: [3, 14], radius: 1.2, identitySlot: null, obj: 'can',
+      recall: '발에 차여 굴러다니던 빈 깡통. 그 소리가 날 때마다 하루가 웃었다.' },
+    { id: 'e_al_box', type: 'echo', tile: [11, 10], radius: 1.2, hidden: true, identitySlot: null,
+      recall: '젖은 종이상자 한 칸. 비 오는 날 길고양이들이 몸을 누이던 자리 — 하루가 슬쩍 수건을 깔아둔 적이 있다.' },
+    { id: 'f_al', type: 'false', tile: [7, 3], radius: 1.3, identitySlot: null,
+      recall: '골목 끝에서 하루가 손짓한다 — 그런데 다가가면, 차가운 벽만 말없이 서 있다. 이건… 진짜가 아니야.' }
+  ],
+  murks: [{ id: 'm_al', patrol: [[5, 5], [8, 5], [8, 8]], speed: 40, sightTiles: 3.4, fovDeg: 90 }],
+  echoes: [
+    { id: 'e_al_1', patrol: [[4, 11], [4, 15]], speed: 34, hearTiles: 3.7 },
+    { id: 'e_al_2', patrol: [[7, 14], [7, 19]], speed: 34, hearTiles: 3.7 }
+  ],
+  identityLabels: LBL, branch: null,
+  epiphany: [
+    '도시의 등 뒤, 둘만 알던 좁은 골목.',
+    '혼자 들어서니, 아는 길이 미로처럼 낯설다.',
+    '그래도 담벼락엔 내 냄새가, 길 끝엔 집으로 가는 불빛이 남아 있다.',
+    '한 칸씩, 나는 그 불빛을 향해 오른다.'
+  ]
+};
+
+// CH12 「병원 가는 길」 — 26행 세로 클라임. 계단참 체크포인트, 위에서 내려보는 murk.
+DATA.chapter_toclinic = {
+  tile: 16, cols: 22, rows: 26, scale: 4, bgKey: 'toclinic',
+  title: '병원 가는 길', music: 'haru', ambient: 'leaves', controls: CTRL,
+  spawn: [11, 24], coresNeeded: 3,
+  collision: [
+    [0, 0, 22, 2], [0, 25, 22, 1], [0, 0, 1, 26], [21, 0, 1, 26],
+    [2, 4, 4, 2], [16, 4, 4, 2], [8, 7, 5, 2], [2, 11, 3, 2], [17, 11, 3, 2],
+    [8, 15, 6, 2], [3, 19, 4, 2], [15, 19, 4, 2]
+  ],
+  safeZones: [[9, 9, 2, 1], [9, 17, 2, 1], [9, 22, 2, 1]],
+  door: { tile: [11, 1], requires: 'cores' },
+  shards: [
+    { id: 'c_cl_path', type: 'core', tile: [11, 21], radius: 1.3, identitySlot: 2,
+      recall: '병원으로 오르던 길. 그날 새벽, 구급차의 붉은 불빛이 이 오르막을 가득 적셨다. 나는 그 빛을 따라, 뒤늦게 오른다.' },
+    { id: 'c_cl_rail', type: 'core', tile: [4, 13], radius: 1.3, identitySlot: 3,
+      recall: '난간에 남은 다급한 손자국. 누군가 숨이 차도록 뛰어 오른 자리. 그 마음을, 나는 알 것 같다.' },
+    { id: 'c_cl_sign', type: 'core', tile: [18, 6], radius: 1.3, identitySlot: 1, obj: 'sign',
+      recall: '표지판: ←병원. 하루가 실려 간 방향을, 나는 작은 발로 한 칸씩 따라간다. 멀어도, 방향만은 안다.' },
+    { id: 'e_cl_petal', type: 'echo', tile: [6, 11], radius: 1.2, identitySlot: null, obj: 'petal',
+      recall: '길에 떨어진 꽃잎 몇 장. 누군가 면회 가며 들고 오른 꽃다발에서 진 것.' },
+    { id: 'e_cl_button', type: 'echo', tile: [16, 15], radius: 1.2, hidden: true, identitySlot: null,
+      recall: '계단참에 떨어진 단추 하나. 급히 오르던 외투에서 떨어진 듯, 아직 그 자리다.' },
+    { id: 'f_cl', type: 'false', tile: [11, 4], radius: 1.3, identitySlot: null,
+      recall: '길 위에서 하루가 멀쩡히 손을 흔든다 — 그런데 그 위로 구급차 소리가 자꾸 겹쳐 들린다. 이건… 진짜가 아니야.' }
+  ],
+  murks: [
+    { id: 'm_cl_1', patrol: [[2, 2], [6, 2], [6, 3], [2, 3]], speed: 40, sightTiles: 3.4, fovDeg: 90 },
+    { id: 'm_cl_2', patrol: [[15, 2], [19, 2], [19, 3], [15, 3]], speed: 40, sightTiles: 3.4, fovDeg: 90 }
+  ],
+  echoes: [{ id: 'e_cl', patrol: [[8, 13], [13, 13], [13, 14], [8, 14]], speed: 34, hearTiles: 3.7 }],
+  identityLabels: LBL, branch: null,
+  epiphany: [
+    '병원으로 오르던 오르막.',
+    '그날 이 길을, 붉은 불빛 하나가 가득 메우며 올라갔다.',
+    '한 칸씩 오를수록, 그 아침이 또렷해진다.',
+    '무서워도 — 나는 그 빛이 간 끝까지, 오른다.'
+  ]
+};
+
+// CH13 「병원 앞」 — 오픈 플라자. 중앙 분수 축 360° 시선. 분기(들어갈지).
+DATA.chapter_clinicfront = {
+  tile: 16, cols: 26, rows: 16, scale: 4, bgKey: 'clinicfront',
+  title: '병원 앞', music: 'haru', ambient: 'leaves', controls: CTRL,
+  spawn: [13, 14], coresNeeded: 3,
+  collision: [
+    [0, 0, 26, 2], [0, 15, 26, 1], [0, 0, 1, 16], [25, 0, 1, 16],
+    [3, 3, 4, 2], [19, 3, 4, 2], [11, 7, 4, 3], [4, 11, 3, 2], [19, 11, 3, 2], [10, 3, 2, 2]
+  ],
+  safeZones: [[5, 8, 2, 1], [20, 8, 2, 1]],
+  door: { tile: [13, 1], requires: 'cores' },
+  shards: [
+    { id: 'c_cf_door', type: 'core', tile: [13, 5], radius: 1.3, identitySlot: 3,
+      recall: '병원 정문. 그 아침, 하루는 이 큰 문 안으로 실려 들어갔다 — 나를 한 번 돌아보며. 유리에 비친 건, 기다리는 작은 나뿐이었다.' },
+    { id: 'c_cf_bench', type: 'core', tile: [7, 12], radius: 1.3, identitySlot: 1,
+      recall: '정문 앞 벤치. 나는 여기서 오래, 문이 다시 열리고 하루가 걸어 나오기를 기다렸다.' },
+    { id: 'c_cf_fount', type: 'core', tile: [14, 10], radius: 1.3, identitySlot: 2,
+      recall: '마른 분수. 물 대신 낙엽이 고였다. 내가 여기서 기다린 시간이, 그만큼 길었다는 뜻이다.' },
+    { id: 'e_cf_card', type: 'echo', tile: [22, 12], radius: 1.2, identitySlot: null, obj: 'card',
+      recall: '바닥에 남은 접수 번호표 한 장. 끝내 호명되지 못한 채.' },
+    { id: 'e_cf_leaf', type: 'echo', tile: [8, 5], radius: 1.2, hidden: true, identitySlot: null,
+      recall: '정문 틈에 낀 마른 잎. 아무도 치우지 않은 채, 계절이 몇 번 바뀌었다.' },
+    { id: 'f_cf', type: 'false', tile: [18, 5], radius: 1.3, identitySlot: null,
+      recall: '정문이 열리고 하루가 환한 빛을 등지고 걸어 나온다 — 그런데 다가갈수록 빛에 녹아, 형체가 남지 않는다. 이건… 진짜가 아니야.' }
+  ],
+  murks: [
+    { id: 'm_cf_1', patrol: [[6, 5], [10, 5], [10, 8], [6, 8]], speed: 40, sightTiles: 3.4, fovDeg: 90 },
+    { id: 'm_cf_2', patrol: [[16, 5], [21, 5], [21, 8], [16, 8]], speed: 40, sightTiles: 3.4, fovDeg: 90 }
+  ],
+  echoes: [
+    { id: 'e_cf_1', patrol: [[7, 10], [11, 10], [11, 12], [7, 12]], speed: 38, hearTiles: 3.7 },
+    { id: 'e_cf_2', patrol: [[15, 9], [18, 9], [18, 12], [15, 12]], speed: 38, hearTiles: 3.7 }
+  ],
+  identityLabels: LBL,
+  branch: { q: '저 문 안에, 차마 알고 싶지 않은 답이 있을지도 모른다.', options: [
+    { label: '문 앞으로 간다', sub: '끝까지 확인하지 않으면, 아무것도 끝나지 않는다.', feedback: '발끝이 차가운 문턱에 닿는다.' },
+    { label: '벤치에서 기다린다', sub: '하루가 나를 찾는다면, 우리가 함께였던 자리로 올 테니까.', feedback: '나는 다시 그 벤치에 몸을 만다 — 열리는 문마다, 눈을 들며.' } ] },
+  epiphany: [
+    '병원 앞 광장. 사방이 트여, 숨을 곳이 없다.',
+    '이 문 안으로 하루가 사라졌고 — 작은 나는, 따라 들어갈 수 없었다.',
+    '여기 답이 없다면, 답은 우리가 함께였던 자리에 있을 것이다.',
+    '나는 문에 코를 한 번 대고, 우리의 자리로 발을 돌린다.'
+  ]
+};
+
+// CH14 「옥상」 — 수직 탈출 + 입체 포위. 가장자리는 막다른 길.
+DATA.chapter_rooftop = {
+  tile: 16, cols: 20, rows: 22, scale: 4, bgKey: 'rooftop',
+  title: '옥상', music: 'park', ambient: 'motes', controls: CTRL,
+  spawn: [10, 20], coresNeeded: 3,
+  collision: [
+    [0, 0, 20, 2], [0, 21, 20, 1], [0, 0, 1, 22], [19, 0, 1, 22],
+    [2, 4, 3, 3], [14, 4, 3, 3], [8, 8, 4, 2], [2, 12, 3, 2], [15, 12, 3, 2], [8, 15, 4, 2]
+  ],
+  safeZones: [[9, 11, 2, 1], [9, 18, 2, 1]],
+  door: { tile: [10, 1], requires: 'cores' },
+  shards: [
+    { id: 'c_rf_sky', type: 'core', tile: [10, 13], radius: 1.3, identitySlot: 1,
+      recall: '옥상에서 올려다본 하늘. 하루가 가끔 나를 안고 올라와 바람을 쐬어주던 곳. "여기선 멀리까지 보여, 지로."' },
+    { id: 'c_rf_edge', type: 'core', tile: [5, 9], radius: 1.3, identitySlot: 3,
+      recall: '난간 너머로 펼쳐진 도시. 하루가 사라진 방향을, 나는 여기서 오래 좇았다. 저 어딘가에, 하루가 있다.' },
+    { id: 'c_rf_door', type: 'core', tile: [15, 9], radius: 1.3, identitySlot: 2,
+      recall: '옥탑 문. 끼익 — 바람에 혼자 여닫힌다. 누군가 올라오기를 기다리는 것처럼, 자꾸만.' },
+    { id: 'e_rf_dish', type: 'echo', tile: [16, 11], radius: 1.2, identitySlot: null, obj: 'dish',
+      recall: '옥상 구석의 작은 밥그릇. 하루가 길 위의 다른 고양이들을 위해 올려둔 것.' },
+    { id: 'e_rf_clip', type: 'echo', tile: [4, 15], radius: 1.2, hidden: true, identitySlot: null,
+      recall: '빨랫줄에 남은 집게 하나. 바람에 오래 흔들리며, 빈 줄을 붙잡고 있다.' },
+    { id: 'f_rf', type: 'false', tile: [10, 5], radius: 1.3, identitySlot: null,
+      recall: '난간 끝에 하루가 서서 도시를 바라본다 — 그런데 바람이 부는데도, 옷자락이 조금도 흔들리지 않는다. 이건… 진짜가 아니야.' }
+  ],
+  murks: [
+    { id: 'm_rf_1', patrol: [[5, 4], [7, 4], [7, 6], [5, 6]], speed: 40, sightTiles: 3.4, fovDeg: 90 },
+    { id: 'm_rf_2', patrol: [[14, 8], [17, 8], [17, 11], [14, 11]], speed: 40, sightTiles: 3.4, fovDeg: 90 }
+  ],
+  echoes: [
+    { id: 'e_rf_1', patrol: [[8, 12], [11, 12], [11, 14]], speed: 34, hearTiles: 3.7 },
+    { id: 'e_rf_2', patrol: [[4, 16], [7, 16], [7, 18]], speed: 34, hearTiles: 3.7 }
+  ],
+  identityLabels: LBL, branch: null,
+  epiphany: [
+    '건물 꼭대기, 바람이 가득한 옥상.',
+    '여기서 하루는 나를 안고, 도시를 함께 내려다봤다.',
+    '이제 나 혼자, 하루가 간 방향을 좇는다.',
+    '바람 끝에 하루의 냄새가, 아주 옅게 — 그래도 분명히, 남아 있다.'
+  ]
+};
+
+// CH16 「분수 광장」 — 중앙 분수 순환 동선. 적이 시계/반시계로 갈려 협공.
+DATA.chapter_plaza = {
+  tile: 16, cols: 26, rows: 18, scale: 4, bgKey: 'plaza',
+  title: '분수 광장', music: 'park', ambient: 'leaves', controls: CTRL,
+  spawn: [13, 16], coresNeeded: 3,
+  collision: [
+    [0, 0, 26, 2], [0, 17, 26, 1], [0, 0, 1, 18], [25, 0, 1, 18],
+    [11, 7, 4, 4], [3, 4, 3, 2], [20, 4, 3, 2], [3, 12, 3, 2], [20, 12, 3, 2], [11, 3, 4, 1], [11, 14, 4, 1]
+  ],
+  safeZones: [[6, 8, 2, 1], [18, 8, 2, 1]],
+  door: { tile: [13, 1], requires: 'cores' },
+  shards: [
+    { id: 'c_pz_fount', type: 'core', tile: [13, 12], radius: 1.3, identitySlot: 2,
+      recall: '광장 분수. 물소리 사이로, 하루가 내 이름을 부르던 메아리가 아직 남아 있다.' },
+    { id: 'c_pz_arch', type: 'core', tile: [13, 5], radius: 1.3, identitySlot: 3,
+      recall: '광장 아치문. 둘이 줄을 나란히 잡고 통과하던 문. 사람들 사이에서도, 우리는 한 쌍이었다.' },
+    { id: 'c_pz_bench', type: 'core', tile: [8, 13], radius: 1.3, identitySlot: 1,
+      recall: '분수 곁 벤치. 비둘기를 쫓다가도, 나는 늘 하루의 무릎으로 돌아왔다.' },
+    { id: 'e_pz_coin', type: 'echo', tile: [18, 9], radius: 1.2, identitySlot: null, obj: 'coin',
+      recall: '분수 바닥에 가라앉은 동전 하나. 하루는 무슨 소원을 빌었을까 — 어쩌면, 늘 같은 소원을.' },
+    { id: 'e_pz_feather', type: 'echo', tile: [6, 6], radius: 1.2, hidden: true, identitySlot: null,
+      recall: '비둘기 깃털 한 장. 내가 신나게 쫓던 그 무리의 것. 하루는 그런 나를 보며 웃었다.' },
+    { id: 'f_pz', type: 'false', tile: [19, 6], radius: 1.3, identitySlot: null,
+      recall: '분수 너머에서 하루가 손짓한다 — 그런데 물보라가 일 때마다, 그 모습이 자꾸 지워진다. 이건… 진짜가 아니야.' }
+  ],
+  murks: [
+    { id: 'm_pz_1', patrol: [[6, 5], [10, 5], [10, 8], [6, 8]], speed: 40, sightTiles: 3.4, fovDeg: 90 },
+    { id: 'm_pz_2', patrol: [[16, 9], [20, 9], [20, 11], [16, 11]], speed: 40, sightTiles: 3.4, fovDeg: 90 }
+  ],
+  echoes: [
+    { id: 'e_pz_1', patrol: [[7, 10], [10, 10], [10, 13], [7, 13]], speed: 38, hearTiles: 3.7 },
+    { id: 'e_pz_2', patrol: [[16, 5], [19, 5], [19, 8], [16, 8]], speed: 38, hearTiles: 3.7 }
+  ],
+  identityLabels: LBL, branch: null,
+  epiphany: [
+    '물소리가 가득한 광장.',
+    '분수를 돌며 우리는 한 바퀴, 또 한 바퀴를 걸었다.',
+    '지금은 그 동선을, 나 혼자 돈다.',
+    '물소리 사이엔 아직, 하루의 목소리가 섞여 있다.'
+  ]
+};
+
+// CH17 「가로등 길」 — 36칸 황혼 장거리. 빛(Q) 자원 트레이드오프.
+DATA.chapter_lamplane = {
+  tile: 16, cols: 36, rows: 14, scale: 4, bgKey: 'lamplane',
+  title: '가로등 길', music: 'dusk', ambient: 'leaves', controls: CTRL,
+  spawn: [2, 7], coresNeeded: 3,
+  collision: [
+    [0, 0, 36, 2], [0, 13, 36, 1], [0, 0, 1, 14], [35, 0, 1, 14],
+    [5, 3, 3, 2], [5, 9, 3, 2], [13, 4, 3, 2], [13, 9, 3, 2],
+    [21, 3, 3, 2], [21, 9, 3, 2], [29, 4, 3, 2], [29, 9, 3, 2]
+  ],
+  safeZones: [[10, 6, 2, 1], [18, 6, 2, 1], [26, 6, 2, 1]],
+  door: { tile: [34, 1], requires: 'cores' },
+  shards: [
+    { id: 'c_ll_lamp', type: 'core', tile: [16, 7], radius: 1.3, identitySlot: 3,
+      recall: '가로등 불빛. 해질녘마다 하루는 이 불빛 아래에서 내 이름을 불렀다. 어딘가에서, 다시 불러주고 있을까.' },
+    { id: 'c_ll_walk', type: 'core', tile: [9, 11], radius: 1.3, identitySlot: 1,
+      recall: '노을에 길어진 두 그림자. 사람의 것과 고양이의 것이, 보도 위에 나란히 누웠다.' },
+    { id: 'c_ll_end', type: 'core', tile: [31, 11], radius: 1.3, identitySlot: 2,
+      recall: '길 끝 모퉁이. 하루가 늘 먼저 돌아 사라지던 곳. 나는 종종거리며 그 모퉁이를 따라 돌았다.' },
+    { id: 'e_ll_glove', type: 'echo', tile: [7, 11], radius: 1.2, identitySlot: null, obj: 'glove',
+      recall: '벤치에 놓인 장갑 한 짝. 해질녘의 온기가 식어, 차게 식어 있다.' },
+    { id: 'e_ll_leaf', type: 'echo', tile: [24, 5], radius: 1.2, hidden: true, identitySlot: null,
+      recall: '가로등에 비친 낙엽 그림자. 바람에 천천히, 한 잎씩 진다.' },
+    { id: 'f_ll', type: 'false', tile: [19, 4], radius: 1.3, identitySlot: null,
+      recall: '가로등 아래 하루가 손짓한다 — 그런데 그 불빛이 하루의 몸을 그냥 통과해 버린다. 이건… 진짜가 아니야.' }
+  ],
+  murks: [
+    { id: 'm_ll_1', patrol: [[8, 6], [15, 6], [15, 8], [8, 8]], speed: 40, sightTiles: 3.4, fovDeg: 90 },
+    { id: 'm_ll_2', patrol: [[23, 6], [31, 6], [31, 8], [23, 8]], speed: 40, sightTiles: 3.4, fovDeg: 90 }
+  ],
+  echoes: [
+    { id: 'e_ll_1', patrol: [[15, 11], [20, 11], [20, 12], [15, 12]], speed: 38, hearTiles: 3.7 },
+    { id: 'e_ll_2', patrol: [[26, 11], [32, 11], [32, 12], [26, 12]], speed: 38, hearTiles: 3.7 }
+  ],
+  identityLabels: LBL, branch: null,
+  epiphany: [
+    '해질녘, 가로등이 하나씩 켜진다.',
+    '불빛 아래마다, 하루가 내 이름을 부르던 자리.',
+    '노을에 길어진 두 그림자가, 이제 하나뿐이다.',
+    '그래도 다음 불빛까지 — 나는, 걷는다.'
+  ]
+};
+
+// CH19 「텅 빈 거리」 — 새벽 최난 피크. 엄폐 최소·murk 3 교차. 직후 ch20 해방.
+DATA.chapter_emptystreet = {
+  tile: 16, cols: 30, rows: 16, scale: 4, bgKey: 'emptystreet',
+  title: '텅 빈 거리', music: 'park', ambient: 'motes', controls: CTRL,
+  spawn: [15, 14], coresNeeded: 3,
+  collision: [
+    [0, 0, 30, 2], [0, 15, 30, 1], [0, 0, 1, 16], [29, 0, 1, 16],
+    [4, 4, 3, 2], [23, 4, 3, 2], [13, 7, 4, 3], [4, 11, 3, 2], [23, 11, 3, 2], [11, 3, 2, 1]
+  ],
+  safeZones: [[7, 8, 2, 1], [15, 12, 2, 1], [21, 8, 2, 1]],
+  door: { tile: [15, 1], requires: 'cores' },
+  shards: [
+    { id: 'c_es_signal', type: 'core', tile: [15, 11], radius: 1.3, identitySlot: 3,
+      recall: '새벽 신호등. 아무도 없는 거리에서 혼자 깜빡인다 — 오지 않는 누군가를, 끝내 기다리듯이.' },
+    { id: 'c_es_walk', type: 'core', tile: [6, 9], radius: 1.3, identitySlot: 2,
+      recall: '텅 빈 횡단보도. 두 줄 발자국이 시작되던 자리. 이제 한 줄을, 내가 다시 긋는다 — 하루의 몫까지.' },
+    { id: 'c_es_dawn', type: 'core', tile: [24, 9], radius: 1.3, identitySlot: 1,
+      recall: '동트는 거리 끝. 그 빛 너머 어딘가에서, 하루도 같은 새벽을 보고 있을까. 같은 하늘 아래라면, 우린 아주 멀어진 게 아니다.' },
+    { id: 'e_es_paper', type: 'echo', tile: [9, 5], radius: 1.2, identitySlot: null, obj: 'paper',
+      recall: '바람에 날리는 신문 한 장. 멈춰버린 내 시간 위로, 새 날짜가 또렷이 적혀 있다.' },
+    { id: 'e_es_bell', type: 'echo', tile: [20, 12], radius: 1.2, hidden: true, identitySlot: null,
+      recall: '어딘가에서 들리는 작은 방울 소리. 내 목걸이의 그 소리를, 꼭 닮았다.' },
+    { id: 'f_es', type: 'false', tile: [16, 5], radius: 1.3, identitySlot: null,
+      recall: '텅 빈 거리 끝에서 하루가 걸어온다 — 그런데 발소리가 새벽 공기에 흩어져, 끝내 닿지 않는다. 이건… 진짜가 아니야.' }
+  ],
+  murks: [
+    { id: 'm_es_1', patrol: [[7, 5], [10, 5], [10, 8], [7, 8]], speed: 42, sightTiles: 3.5, fovDeg: 90 },
+    { id: 'm_es_2', patrol: [[17, 5], [22, 5], [22, 8], [17, 8]], speed: 42, sightTiles: 3.5, fovDeg: 90 },
+    { id: 'm_es_3', patrol: [[9, 10], [16, 10], [16, 12], [9, 12]], speed: 42, sightTiles: 3.5, fovDeg: 90 }
+  ],
+  echoes: [
+    { id: 'e_es_1', patrol: [[7, 11], [11, 11], [11, 13], [7, 13]], speed: 38, hearTiles: 3.8 },
+    { id: 'e_es_2', patrol: [[18, 11], [22, 11], [22, 13], [18, 13]], speed: 38, hearTiles: 3.8 }
+  ],
+  identityLabels: LBLN,
+  branch: { q: '아무도 없는 새벽 거리. 이 끝에서 나는, 무엇을 마주하려는 걸까.', options: [
+    { label: '끝까지 간다', sub: '여기서 멈추면, 아무것도 끝나지 않는다.', feedback: '네 발에 마지막 힘이 모인다.' },
+    { label: '숨을 고른다', sub: '한 박자만, 마음을 가다듬고.', feedback: '새벽 공기를 깊이 들이쉰다 — 그리고, 다시 걷는다.' } ] },
+  epiphany: [
+    '아무도 없는 새벽 거리. 세상이 텅 빈 듯 조용하다.',
+    '이 거리의 끝에, 마지막 빈자리가 나를 기다린다.',
+    '내 이름은 지로. 더는 길 잃은 고양이가 아니다.',
+    '두렵지만 — 나는 그 공백을 마주하러, 한 발을 더 뗀다.'
   ]
 };
 

@@ -32,8 +32,11 @@ Core.collect(st, sealed); assert.equal(Core.chapterClear(st), true, "재획득 �
 }
 console.log("SMOKE OK — 핵심 규칙(수집/후퇴/시야) 정합.");
 
-// ── 전 10스테이지 스키마/좌표/patrol-leg 검증 ──
-const ORDER = ["chapter1","chapter2","chapter3","chapter4","chapter5","chapter6","chapter7","chapter8","chapter9","chapter10"];
+// ── 전 20스테이지 스키마/좌표/patrol-leg 검증 (main.js CHAPTERS 순서) ──
+const ORDER = ["chapter1","chapter2","chapter_entry","chapter3","chapter4",
+  "chapter5","chapter_busstop","chapter_avenue","chapter6","chapter_alley",
+  "chapter7","chapter_toclinic","chapter_clinicfront","chapter_rooftop","chapter8",
+  "chapter_plaza","chapter_lamplane","chapter9","chapter_emptystreet","chapter10"];
 const inRect = (c, r, q) => c >= q[0] && c < q[0]+q[2] && r >= q[1] && r < q[1]+q[3];
 const inAny  = (c, r, qs) => qs.some(q => inRect(c, r, q));
 let totalShards = 0, scrolls = [];
@@ -96,4 +99,4 @@ for (const key of ORDER) {
 
 assert.equal(DATA.chapter10.isFinal, true, "ch10 isFinal");
 assert.ok(!DATA.chapter9.isFinal, "ch9 비최종");
-console.log("SMOKE OK — 전 10스테이지 정합. 조각 합계 " + totalShards + " / 스크롤 맵: " + scrolls.join(", "));
+console.log("SMOKE OK — 전 20스테이지 정합. 조각 합계 " + totalShards + " / 스크롤 맵: " + scrolls.join(", "));
