@@ -796,7 +796,8 @@
       } else if (e.ee) {
         const m = e.ee;                                         // Echo(청각): 시야콘 없음. 추격 시 붉은 고리.
         if (m.chasing) { ctx.save(); ctx.globalAlpha = 0.14; ctx.strokeStyle = "#ff7a7a"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(m.x, m.y, 15, 0, 7); ctx.stroke(); ctx.restore(); }
-        if (IMG.echo) glow(() => ctx.drawImage(IMG.echo, Math.round(m.x - IMG.echo.width/2), Math.round(m.y - IMG.echo.height/2)), m.chasing ? "#ff5a5a" : "#9af6f6", m.chasing ? 5 : 3);
+        const esp = (m.chasing && IMG.echo_chase) ? IMG.echo_chase : IMG.echo;   // 추격 시 파문 적색 스프라이트
+        if (esp) glow(() => ctx.drawImage(esp, Math.round(m.x - esp.width/2), Math.round(m.y - esp.height/2)), m.chasing ? "#ff7a6a" : "#9af6f6", m.chasing ? 4 : 2);
         cbMark(m);
       } else {
         const m = e.m;
@@ -806,7 +807,8 @@
         ctx.save(); ctx.globalAlpha = cAlpha; ctx.fillStyle = m.chasing ? "#ff5a5a" : "#7a5cff";
         ctx.beginPath(); ctx.moveTo(m.x, m.y);
         ctx.arc(m.x, m.y, m.sightPx * (sneaking ? 0.5 : 1), m.faceAngle - hf, m.faceAngle + hf); ctx.closePath(); ctx.fill(); ctx.restore();
-        if (IMG.murk) glow(() => ctx.drawImage(IMG.murk, Math.round(m.x - IMG.murk.width/2), Math.round(m.y - IMG.murk.height/2)), m.chasing ? "#ff5a5a" : "#7a5cff", m.chasing ? 5 : 2);
+        const msp = (m.chasing && IMG.murk_chase) ? IMG.murk_chase : IMG.murk;     // 추격 시 눈 적색 스프라이트
+        if (msp) glow(() => ctx.drawImage(msp, Math.round(m.x - msp.width/2), Math.round(m.y - msp.height/2)), m.chasing ? "#ff5a5a" : "#7a5cff", m.chasing ? 4 : 2);
         cbMark(m);
       }
     }

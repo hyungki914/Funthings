@@ -153,25 +153,21 @@ def draw_cat_side(step=0):
 
 
 # ── 망각 존재 Murk (20x18, 뭉게지는 그림자) ──────────────────────────────────
-def draw_murk():
-    rows = [
-        "......MMMMMM........",
-        "....MMMMMMMMMM......",
-        "...MMMMMMMMMMMM.....",
-        "..MMMMMMMMMMMMMM....",
-        "..MMMMMMMMMMMMMMM...",
-        ".MMMMMMMMMMMMMMMM...",
-        ".MMMMmmMMMMMMmmMM...",
-        ".MMMmmmMMMMMMmmmM...",
-        ".MMMMmMMMMMMMMmMM...",
-        ".MMMMMMMMMMMMMMMM...",
-        "..MMMMMMMMMMMMMMM...",
-        "..MMM.MMMMMM.MMMM...",
-        "...M...MMMM...MM....",
-        "..M.....MM.....M....",
-        "...................",
-    ]
-    return grid_img(rows, PAL)
+def draw_murk(chase=False):
+    W, H = 22, 24
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    base, mid, rim = (28, 22, 48), (48, 36, 82), (78, 60, 128)
+    eye = (255, 96, 96) if chase else (190, 156, 255)
+    ehi = (255, 200, 200) if chase else (224, 210, 255); pup = (24, 18, 34)
+    d.ellipse((4, -3, 10, 4), fill=base); d.ellipse((11, -2, 17, 4), fill=base)     # 피어오르는 연기
+    d.ellipse((1, 1, 21, 19), fill=base); d.ellipse((3, 0, 19, 15), fill=mid)        # 본체
+    d.arc((3, 1, 19, 17), 190, 330, fill=rim, width=1)                               # 좌상 림
+    for wx, sway in [(4, 0), (9, 1), (13, -1), (18, 1)]:                             # 흘러내리는 자락
+        d.polygon([(wx-2, 15), (wx+2, 15), (wx+sway, 24), (wx-1+sway, 24)], fill=base)
+    d.ellipse((8, 6, 14, 14), fill=eye); d.ellipse((9, 7, 13, 12), fill=ehi); d.point((11, 9), fill=pup)   # 눈 무리
+    d.ellipse((4, 10, 8, 14), fill=eye); d.point((6, 12), fill=pup)
+    d.ellipse((15, 10, 19, 14), fill=eye); d.point((17, 12), fill=pup)
+    return im
 
 
 # ── 기억 조각 (12x16, 시안 다이아몬드) ───────────────────────────────────────
@@ -515,18 +511,22 @@ def build_room3(with_entities=False):
     return scene.convert("RGB")
 
 
-# ── Echo (청각 감지 적) — 흩날리는 옅은 잔상 ─────────────────────────────────
-def draw_echo():
-    W, H = 22, 20
+# ── Echo (청각 감지 적) — '속삭이는 잔상' (눈 없음 · 잔상 겹침 · 소리 파문) ──────
+def draw_echo(chase=False):
+    W, H = 28, 24
     im = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
-    d.ellipse((4, 3, 18, 17), fill=(118, 176, 182, 165))       # 반투명 본체
-    d.ellipse((6, 5, 16, 14), fill=(178, 222, 226, 150))
-    for x in (7, 11, 15):                                       # 흩어지는 아래 꼬리
-        d.line((x, 14, x-1, 20), fill=(150, 210, 212, 150), width=2)
-    d.ellipse((8, 8, 11, 12), fill=(52, 226, 226, 220))         # 눈(시안)
-    d.ellipse((13, 8, 16, 12), fill=(52, 226, 226, 220))
-    d.arc((-2, 1, 7, 19), 300, 60, fill=(154, 246, 246, 150), width=1)   # 소리 고리
-    d.arc((-5, -1, 8, 21), 305, 55, fill=(154, 246, 246, 90), width=1)
+    pale, mid, faint = (188, 224, 228, 210), (150, 200, 208, 170), (120, 170, 180, 90)
+    ring = (255, 150, 120) if chase else (158, 246, 246)
+    def ghost(cx, cy, col, s=1.0):                              # 물방울형 유령 실루엣(얼굴 없음)
+        d.ellipse((int(cx-7*s), int(cy-8*s), int(cx+7*s), int(cy+6*s)), fill=col)
+        for wx in (-4, 0, 4):                                  # 아래 흩날리는 자락
+            d.polygon([(int(cx+(wx-2)*s), int(cy+4*s)), (int(cx+(wx+2)*s), int(cy+4*s)), (int(cx+wx*s), int(cy+11*s))], fill=col)
+    ghost(15, 12, faint, 1.05)                                 # 뒤쪽 잔상(어긋남)
+    ghost(13, 11, mid, 1.0)                                    # 중간 잔상
+    ghost(12, 11, pale, 0.95)                                  # 본체
+    d.ellipse((9, 8, 12, 12), fill=(232, 248, 250, 230))       # 윗면 옅은 광택
+    for i, r in enumerate((11, 15, 19)):                       # 소리 파문(좌측으로 퍼짐) — '듣는다'
+        d.arc((12-r, 12-r, 12+r, 12+r), 120+i*4, 240-i*4, fill=(*ring, 200-i*30), width=1)
     return im
 
 
@@ -754,7 +754,8 @@ def export_game_assets():
     assets.update({
         "ziro_d0": _b64(draw_cat(0)), "ziro_d1": _b64(draw_cat(1)), "ziro_d2": _b64(draw_cat(2)),
         "ziro_s0": _b64(draw_cat_side(0)), "ziro_s1": _b64(draw_cat_side(1)),
-        "murk": _b64(draw_murk()), "echo": _b64(draw_echo()), "shard": _b64(draw_shard()),
+        "murk": _b64(draw_murk()), "murk_chase": _b64(draw_murk(True)),
+        "echo": _b64(draw_echo()), "echo_chase": _b64(draw_echo(True)), "shard": _b64(draw_shard()),
     })
     game_dir = os.path.join(HERE, "..", "game"); os.makedirs(game_dir, exist_ok=True)
     lines = ["// 자동 생성 — art/pixelart.py export_game_assets(). 수정 금지.",
