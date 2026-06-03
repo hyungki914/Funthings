@@ -27,6 +27,7 @@ DATA.chapter1 = {
   rows: 14,
   scale: 4,
   bgKey: 'room1',
+  title: '지로의 방',
   music: 'room',                 // BGM 테마 (audio.js Audio2.music)
   controls: [                    // 이 스테이지에서 쓰는 단축키만 표시
     ['이동', 'WASD/←↑↓→'], ['조사', 'E'], ['발자국 추적', 'L'], ['기억 비추기', 'Q'], ['기억 일지', 'Tab']
@@ -198,6 +199,54 @@ DATA.chapter1 = {
     '이름: ? (지로)',
     '왜 잊었나'
   ]
+};
+
+// =============================================================================
+// DATA.chapter2 — 「집」 (거실 + 주방). 배경키 'room2'. 신규 적 Echo(청각 감지).
+//   가구(타일 c,r,w,h): 소파(2,3,4,2) · TV(2,9,3,2) · 주방카운터(15,3,5,2)
+//     · 냉장고(18,9,2,3) · 식탁(9,8,3,2). 러그(장식) cols8~11 rows5~7.
+//   ★ Echo: 소리(이동 소음)로 감지 → 멈추거나 은신하면 안 들림. Murk(시각)와 대비.
+// =============================================================================
+DATA.chapter2 = {
+  tile: 16, cols: 22, rows: 14, scale: 4, bgKey: 'room2',
+  title: '집',
+  music: 'house',
+  controls: [['이동', 'WASD/←↑↓→'], ['조사', 'E'], ['발자국 추적', 'L'], ['기억 비추기', 'Q'], ['기억 일지', 'Tab']],
+  spawn: [6, 12],                 // 좌하단 floor (검산: FREE)
+  coresNeeded: 3,
+  collision: [
+    [0, 0, 22, 2], [0, 13, 22, 1], [0, 0, 1, 14], [21, 0, 1, 14],   // 벽
+    [2, 3, 4, 2],    // 소파
+    [2, 9, 3, 2],    // TV 스탠드
+    [15, 3, 5, 2],   // 주방 카운터
+    [18, 9, 2, 3],   // 냉장고
+    [9, 8, 3, 2]     // 식탁
+  ],
+  safeZones: [[2, 5, 4, 1]],      // 소파 앞 = 회복
+  door: { tile: [10, 1], requires: 'cores' },
+  shards: [
+    { id: 'c2_photo', type: 'core', tile: [6, 5], radius: 1.3, identitySlot: 1,
+      recall: '소파 위에 걸린 액자. 나와 하루가 나란히 앉아 웃고 있다. 이 거실에서 — 우리는 함께였다.' },
+    { id: 'c2_bowls', type: 'core', tile: [16, 6], radius: 1.3, identitySlot: 2,
+      recall: '주방 바닥, 그릇 둘. 하나는 내 것, 하나는 작은 사람용 컵. 하루가 매일 여기서 나를 먹였다.' },
+    { id: 'c2_blanket', type: 'core', tile: [13, 11], radius: 1.3, identitySlot: 0,
+      recall: '리모컨 옆 담요. 저녁이면 하루가 나를 무릎에 올렸고 — 나는 그르렁거렸다. 나는, 고양이다.' },
+    { id: 'c2_button', type: 'echo', tile: [4, 6], radius: 1.2, identitySlot: null,
+      recall: '소파 밑에서 굴러나온 낡은 단추. 하루의 외투에서 떨어진 것.' },
+    { id: 'c2_memo', type: 'echo', tile: [10, 11], radius: 1.2, hidden: true, identitySlot: null,
+      recall: "식탁 밑에 붙은 작은 메모 — '약 먹는 시간'. 누구의 약이었을까." },
+    { id: 'c2_false', type: 'false', tile: [16, 11], radius: 1.3, identitySlot: null,
+      recall: '주방에서 하루가 부르는 목소리 — 그런데 불은 꺼졌고, 그릇엔 먼지가 앉았다. 이건… 진짜가 아니야.' }
+  ],
+  // 시각 감지(Murk) — 거실 좌측 순찰
+  murks: [
+    { id: 'murk_b', patrol: [[4, 6], [7, 6], [7, 8], [4, 8]], speed: 38, sightTiles: 3.3, fovDeg: 90 }
+  ],
+  // 청각 감지(Echo) — 주방/우측 순찰. hearTiles = 소리 들리는 반경(타일)
+  echoes: [
+    { id: 'echo_a', patrol: [[13, 6], [18, 6], [18, 8], [13, 8]], speed: 36, hearTiles: 3.6 }
+  ],
+  identityLabels: ['종: 고양이', '사는 곳: 하루의 집', '주인: 하루', '이름: ? (지로)', '왜 잊었나']
 };
 
 if (typeof window !== 'undefined') window.DATA = DATA;

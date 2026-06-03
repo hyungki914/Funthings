@@ -299,6 +299,76 @@ def build_room(with_entities=True):
     return scene.convert("RGB")
 
 
+# ── 챕터2 「집」 배경 (거실 + 주방) ───────────────────────────────────────────
+def build_room2(with_entities=False):
+    TW = 16; cols, rows = 22, 14
+    scene = Image.new("RGBA", (cols*TW, rows*TW), (*TPAL['5'], 255))
+    floor0, floor1, wall, rug = tile_floor(0), tile_floor(1), tile_wall(), tile_rug()
+    def blit(img, tx, ty): scene.alpha_composite(img, (tx*TW, ty*TW))
+    for ty in range(rows):
+        for tx in range(cols):
+            blit(floor1 if (tx*5 + ty*3) % 6 == 0 else floor0, tx, ty)
+    for tx in range(cols): blit(wall, tx, 0); blit(wall, tx, 1); blit(wall, tx, rows-1)
+    for ty in range(rows): blit(wall, 0, ty); blit(wall, cols-1, ty)
+    d = ImageDraw.Draw(scene)
+    def block(x0, y0, x1, y1, fill, outline, top=None):
+        d.rectangle((x0, y0, x1, y1), fill=fill, outline=outline)
+        if top: d.rectangle((x0, y0, x1, y0+2), fill=top)
+    # 소파(좌상)
+    sx, sy = 2*TW, 3*TW
+    block(sx, sy, sx+4*TW, sy+2*TW, (64, 44, 52), (30, 20, 26))
+    d.rectangle((sx+4, sy+4, sx+4*TW-4, sy+TW+2), fill=(96, 70, 84))
+    for cxx in range(sx+6, sx+4*TW-10, 18): d.rectangle((cxx, sy+5, cxx+12, sy+TW), fill=(120, 92, 108))
+    # TV 스탠드(좌하)
+    tx2, ty2 = 2*TW, 9*TW
+    block(tx2, ty2, tx2+3*TW, ty2+2*TW, (30, 26, 30), (16, 14, 18))
+    d.rectangle((tx2+6, ty2+5, tx2+3*TW-6, ty2+TW+2), fill=(12, 16, 20), outline=(8, 10, 16))
+    d.rectangle((tx2+10, ty2+8, tx2+3*TW-10, ty2+TW-2), fill=(26, 120, 130))
+    # 주방 카운터(우상) + 싱크/수전
+    kx, ky = 15*TW, 3*TW
+    block(kx, ky, kx+5*TW, ky+2*TW, (70, 72, 78), (34, 36, 40), top=(96, 100, 108))
+    d.rectangle((kx+2*TW, ky+6, kx+3*TW, ky+TW+2), fill=(40, 46, 52), outline=(20, 24, 28))
+    d.line((kx+2*TW+8, ky+1, kx+2*TW+8, ky+8), fill=(120, 128, 136), width=2)
+    # 냉장고(우하)
+    fx, fy = 18*TW, 9*TW
+    block(fx, fy, fx+2*TW, fy+3*TW, (150, 156, 162), (70, 74, 80))
+    d.line((fx, fy+int(1.4*TW), fx+2*TW, fy+int(1.4*TW)), fill=(90, 96, 102), width=1)
+    d.rectangle((fx+2*TW-8, fy+6, fx+2*TW-4, fy+int(1.2*TW)), fill=(90, 96, 102))
+    # 식탁(중앙)
+    dxx, dyy = 9*TW, 8*TW
+    block(dxx, dyy, dxx+3*TW, dyy+2*TW, (58, 42, 28), (28, 20, 12), top=(78, 58, 38))
+    # 러그(거실 중앙)
+    for ty in range(5, 8):
+        for txx in range(8, 12): blit(rug, txx, ty)
+    # 화분(우하 모서리)
+    d.ellipse((20*TW-2, 11*TW-6, 20*TW+8, 11*TW+6), fill=(40, 90, 52), outline=(20, 50, 28))
+    # AO 그림자
+    sh = Image.new("RGBA", scene.size, (0, 0, 0, 0)); sd = ImageDraw.Draw(sh)
+    for (x0, y0, x1, y1) in [(sx, sy+2*TW-4, sx+4*TW, sy+2*TW+10), (tx2, ty2+2*TW-4, tx2+3*TW, ty2+2*TW+10),
+                              (kx, ky+2*TW-4, kx+5*TW, ky+2*TW+10), (fx, fy+3*TW-4, fx+2*TW, fy+3*TW+10),
+                              (dxx, dyy+2*TW-4, dxx+3*TW, dyy+2*TW+10)]:
+        sd.ellipse((x0, y0, x1, y1), fill=(0, 0, 0, 90))
+    scene.alpha_composite(sh)
+    if with_entities:
+        scene.alpha_composite(draw_cat(), (10*TW-4, 10*TW)); scene.alpha_composite(draw_echo(), (16*TW, 6*TW))
+    return scene.convert("RGB")
+
+
+# ── Echo (청각 감지 적) — 흩날리는 옅은 잔상 ─────────────────────────────────
+def draw_echo():
+    W, H = 22, 20
+    im = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    d.ellipse((4, 3, 18, 17), fill=(118, 176, 182, 165))       # 반투명 본체
+    d.ellipse((6, 5, 16, 14), fill=(178, 222, 226, 150))
+    for x in (7, 11, 15):                                       # 흩어지는 아래 꼬리
+        d.line((x, 14, x-1, 20), fill=(150, 210, 212, 150), width=2)
+    d.ellipse((8, 8, 11, 12), fill=(52, 226, 226, 220))         # 눈(시안)
+    d.ellipse((13, 8, 16, 12), fill=(52, 226, 226, 220))
+    d.arc((-2, 1, 7, 19), 300, 60, fill=(154, 246, 246, 150), width=1)   # 소리 고리
+    d.arc((-5, -1, 8, 21), 305, 55, fill=(154, 246, 246, 90), width=1)
+    return im
+
+
 def _b64(im):
     buf = io.BytesIO(); im.save(buf, "PNG")
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
@@ -306,13 +376,13 @@ def _b64(im):
 
 def export_game_assets():
     """game/assets.js — 배경+스프라이트를 base64 dataURI로 임베드(무서버 실행)."""
-    bg = build_room(with_entities=False)
-    bg = add_glow(bg); bg = add_vignette(bg)          # 네이티브 352x224 (게임에서 정수배 스케일)
+    bg = add_vignette(add_glow(build_room(with_entities=False)))     # 챕터1 방
+    bg2 = add_vignette(add_glow(build_room2(with_entities=False)))   # 챕터2 집
     assets = {
-        "room1": _b64(bg),
+        "room1": _b64(bg), "room2": _b64(bg2),
         "ziro_d0": _b64(draw_cat(0)), "ziro_d1": _b64(draw_cat(1)), "ziro_d2": _b64(draw_cat(2)),
         "ziro_s0": _b64(draw_cat_side(0)), "ziro_s1": _b64(draw_cat_side(1)),
-        "murk": _b64(draw_murk()), "shard": _b64(draw_shard()),
+        "murk": _b64(draw_murk()), "echo": _b64(draw_echo()), "shard": _b64(draw_shard()),
     }
     game_dir = os.path.join(HERE, "..", "game"); os.makedirs(game_dir, exist_ok=True)
     lines = ["// 자동 생성 — art/pixelart.py export_game_assets(). 수정 금지.",
@@ -416,10 +486,10 @@ if __name__ == "__main__":
     upscale(ts, 8).save(f"{OUT}/tiles.png")
     upscale(palette_strip(), 8).save(f"{OUT}/palette.png")
     char_sheet().save(f"{OUT}/character_sheet.png")
+    upscale(draw_echo(), 10).save(f"{OUT}/echo.png")
     # 방 씬 (글로우+비네팅) → x4
-    room = build_room()
-    room = add_glow(room); room = add_vignette(room)
-    upscale(room, 4).save(f"{OUT}/room_scene.png")
+    upscale(add_vignette(add_glow(build_room(True))), 4).save(f"{OUT}/room_scene.png")
+    upscale(add_vignette(add_glow(build_room2(True))), 4).save(f"{OUT}/room2_scene.png")
     comparison().save(f"{OUT}/comparison.png")
     export_game_assets()
     print("pixel art rendered ->", OUT)

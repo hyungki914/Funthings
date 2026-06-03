@@ -63,3 +63,16 @@ assert.equal(sees(mx + 10, my + 40), false, "측면 약 76° 밖 미감지");   
 assert.equal(sees(mx + sight + 30, my), false, "사거리 밖 미감지");
 
 console.log("SMOKE OK — core+data 통합 정합. 조각", D.shards.length, "/ 코어", cores.length, "/ murk", D.murks.length);
+
+// ── 챕터2 「집」 스키마 + 좌표 검산 ──
+const D2 = DATA.chapter2;
+assert.ok(D2 && D2.bgKey === "room2", "chapter2 존재(room2)");
+assert.equal(D2.shards.filter(s => s.type === "core").length, 3, "ch2 코어 3");
+assert.ok(Array.isArray(D2.echoes) && D2.echoes.length >= 1, "ch2 Echo 존재");
+const st2 = Core.newState(D2);
+assert.equal(st2.coresNeeded, 3, "ch2 coresNeeded");
+const inRect = (c, r, q) => c >= q[0] && c < q[0] + q[2] && r >= q[1] && r < q[1] + q[3];
+for (const s of D2.shards) for (const q of D2.collision) assert.ok(!inRect(s.tile[0], s.tile[1], q), "ch2 조각 충돌밖: " + s.id);
+assert.ok(!D2.collision.some(q => inRect(D2.spawn[0], D2.spawn[1], q)), "ch2 스폰 FREE");
+for (const m of D2.murks.concat(D2.echoes)) for (const p of m.patrol) for (const q of D2.collision.slice(4)) assert.ok(!inRect(p[0], p[1], q), "ch2 순찰점 가구밖: " + m.id);
+console.log("SMOKE2 OK — chapter2 집: 조각", D2.shards.length, "/ Echo", D2.echoes.length, "/ Murk", D2.murks.length);

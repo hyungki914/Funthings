@@ -10,7 +10,7 @@
   // 존재하는 챕터만 순서대로 — data.js에 chapter2/3 추가 시 자동 체이닝
   const CHAPTERS = ["chapter1", "chapter2", "chapter3"].filter(k => DATA[k]);
   let chapterIdx = 0;
-  let D, TILE, NW, NH, S, st, colls, safes, door, murks;   // loadStage()에서 채움
+  let D, TILE, NW, NH, S, st, colls, safes, door, murks, echoes;   // loadStage()에서 채움
   const px = (t) => t * TILE + TILE / 2;
 
   // ── 에셋 로드 ──────────────────────────────────────────────
@@ -32,7 +32,7 @@
   let lowLightTip = 0, auraFx = 0, revealT = 0, projInvuln = 0, hintMsgT = 0, stealthShown = false; let hintMsg = "";
   // 온보딩/피드백 상태
   let elapsed = 0, lTutDone = false, corePulse = 0; let toasts = [];   // toasts: {text,color,t}
-  let sawMurk = false;
+  let sawMurk = false, sawEcho = false, playerNoise = 0;
   // 인트로(콜드 오픈) / 스테이지 전환
   let introT = 0, transT = 0, veil = 0, hasNext = false;
   const INTRO = [
@@ -65,11 +65,14 @@
     door = D.door ? { x: px(D.door.tile[0]), y: px(D.door.tile[1]) } : null;
     murks = (D.murks || []).map(m => ({ id:m.id, wp:0, x:px(m.patrol[0][0]), y:px(m.patrol[0][1]),
       patrol:m.patrol.map(p => ({ x:px(p[0]), y:px(p[1]) })), speed:m.speed||38, sightPx:(m.sightTiles||3.3)*TILE,
-      fov:(m.fovDeg||90), faceAngle:0, chasing:false, lost:0 }));
+      fov:(m.fovDeg||90), faceAngle:0, chasing:false, lost:0, warded:0 }));
+    echoes = (D.echoes || []).map(m => ({ id:m.id, wp:0, x:px(m.patrol[0][0]), y:px(m.patrol[0][1]),
+      patrol:m.patrol.map(p => ({ x:px(p[0]), y:px(p[1]) })), speed:m.speed||34, hearPx:(m.hearTiles||3.5)*TILE,
+      chasing:false, lost:0, tx:0, ty:0, warded:0 }));
     player.x = px(D.spawn[0]); player.y = px(D.spawn[1]); player.vx = player.vy = 0;
     player.facing = "down"; player.flip = false; player.frame = 0; player.step = 0; player.dir = Math.PI/2;
     trail = []; illuminated.clear(); nearShard = null; hintTimer = 0; toasts = [];
-    elapsed = 0; lTutDone = false; sawMurk = false; corePulse = 0; flash = 0; shake = 0;
+    elapsed = 0; lTutDone = false; sawMurk = false; sawEcho = false; playerNoise = 0; corePulse = 0; flash = 0; shake = 0;
   }
   function gotoTitle() { loadStage(0); phase = "title"; if (window.Audio2 && Audio2.music) try { Audio2.music(null); } catch (e) {} }
 
@@ -209,7 +212,7 @@
     if (edge["q"]) {
       if (st.light >= 1) {
         st.light -= 1; auraFx = 0.6; revealT = 3.0; projInvuln = 0.5;
-        for (const m of murks) if (dist(player.x, player.y, m.x, m.y) <= AURA_R + 10) {
+        for (const m of murks.concat(echoes)) if (dist(player.x, player.y, m.x, m.y) <= AURA_R + 10) {
           m.chasing = false; m.warded = 2.0; m.lost = 0;
           const dd = dist(player.x, player.y, m.x, m.y) || 1;
           m.x += (m.x - player.x) / dd * 18; m.y += (m.y - player.y) / dd * 18;   // 한 번 밀어냄
@@ -256,6 +259,28 @@
         if (Core.contact(st)) { flash = 0.18; shake = 4; if (window.Audio2) Audio2.sfx("contact"); }
       }
       if (!warded && dist(m.x, m.y, player.x, player.y) < m.sightPx * 0.55) danger = true;
+    }
+
+    // Echo (청각 감지) — 플레이어 소음(이동)으로 추적. 멈추거나 은신하면 안 들린다.
+    const noiseR = !moving ? 0 : (stealth ? 26 : 74);   // 정지=무소음, 은신=작게, 일반=큼
+    playerNoise = noiseR;
+    for (const m of echoes) {
+      if (m.warded > 0) m.warded -= dt;
+      const warded = m.warded > 0;
+      const heard = !warded && noiseR > 0 && dist(m.x, m.y, player.x, player.y) <= noiseR;
+      if (heard) { m.chasing = true; m.lost = 0; m.tx = player.x; m.ty = player.y;
+        if (!sawEcho) { sawEcho = true; toasts.push({ text: "속삭이는 잔상(Echo) — 소리로 쫓는다 · 멈추거나 은신하면 안 들린다", color: "#9af6f6", t: 3.4 }); } }
+      else if (m.chasing) { m.lost += dt; if (m.lost > 1.8) m.chasing = false; }
+      let ax, ay, spd;
+      if (warded) { const w = nearestWp(m); ax = w.x; ay = w.y; spd = m.speed; }
+      else if (m.chasing) { ax = m.tx; ay = m.ty; spd = m.speed * 1.2; danger = true;
+        if (dist(m.x, m.y, m.tx, m.ty) < 5 && !heard) m.chasing = false; }   // 마지막 소리 지점 도착 + 무음 → 포기
+      else { const w = m.patrol[m.wp]; ax = w.x; ay = w.y; spd = m.speed; if (dist(m.x, m.y, w.x, w.y) < 3) m.wp = (m.wp + 1) % m.patrol.length; }
+      const d = dist(m.x, m.y, ax, ay) || 1, nx = (ax - m.x) / d, ny = (ay - m.y) / d;
+      m.x += nx * spd * dt; m.y += ny * spd * dt;
+      if (dist(m.x, m.y, player.x, player.y) < 11 && !warded && projInvuln <= 0) {
+        if (Core.contact(st)) { flash = 0.18; shake = 4; if (window.Audio2) Audio2.sfx("contact"); }
+      }
     }
 
     // 게이지 tick
@@ -388,8 +413,15 @@
       tag("조사 [E]", c.x, c.y - 14);
     }
 
-    // y정렬: murk/player
-    const ents = [...murks.map(m => ({ y: m.y, m })), { y: player.y, p: true }];
+    // 소음 고리 — 이동 시 소리가 퍼진다(Echo가 듣는 범위). 멈추면 사라짐.
+    if (playerNoise > 0 && echoes.length) {
+      const pr = playerNoise * (0.75 + 0.25 * Math.sin(performance.now() / 200));
+      ctx.save(); ctx.globalAlpha = 0.16; ctx.strokeStyle = "#9af6f6"; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.arc(player.x, player.y, pr, 0, 7); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+    }
+
+    // y정렬: murk/echo/player
+    const ents = [...murks.map(m => ({ y: m.y, m })), ...echoes.map(m => ({ y: m.y, ee: m })), { y: player.y, p: true }];
     ents.sort((a, b) => a.y - b.y);
     for (const e of ents) {
       if (e.p) {
@@ -401,6 +433,10 @@
           glow(() => ctx.drawImage(sp, Math.round(player.x - sp.width/2), Math.round(player.y - sp.height + 6)), sneak ? "#2a3d2a" : "#8ef548", sneak ? 1 : 3);
           ctx.restore();
         }
+      } else if (e.ee) {
+        const m = e.ee;                                         // Echo(청각): 시야콘 없음. 추격 시 붉은 고리.
+        if (m.chasing) { ctx.save(); ctx.globalAlpha = 0.14; ctx.strokeStyle = "#ff7a7a"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(m.x, m.y, 15, 0, 7); ctx.stroke(); ctx.restore(); }
+        if (IMG.echo) glow(() => ctx.drawImage(IMG.echo, Math.round(m.x - IMG.echo.width/2), Math.round(m.y - IMG.echo.height/2)), m.chasing ? "#ff5a5a" : "#9af6f6", m.chasing ? 5 : 3);
       } else {
         const m = e.m;
         // 시야콘 (감지 범위 — 평시 보라/추격 빨강/물러남 약하게). 은신 중이면 흐려져 '덜 보임'을 전달.
@@ -493,9 +529,9 @@
     if (transT > 1.0) {
       ctx.globalAlpha = Math.min(1, (transT - 1.0) / 0.7); ctx.textAlign = "center";
       ctx.fillStyle = "#8ef548"; ctx.font = "bold 30px 'Noto Sans KR',sans-serif";
-      ctx.fillText("CHAPTER 1 · 클리어", cv.width / 2, cv.height / 2 - 12);
+      ctx.fillText("CHAPTER " + (chapterIdx + 1) + " · 클리어", cv.width / 2, cv.height / 2 - 12);
       ctx.fillStyle = "#eafaff"; ctx.font = "20px 'Noto Sans KR',sans-serif";
-      ctx.fillText("「지로의 방」", cv.width / 2, cv.height / 2 + 22);
+      ctx.fillText("「" + (D.title || "") + "」", cv.width / 2, cv.height / 2 + 22);
       ctx.fillStyle = "#9fb6b6"; ctx.font = "14px 'Noto Sans KR',sans-serif";
       ctx.fillText(hasNext ? "지로가 첫 기억들을 되찾았다 — 다음 이야기로…" : "지로가 첫 기억들을 되찾았다.", cv.width / 2, cv.height / 2 + 54);
       if (!hasNext) { ctx.fillStyle = "#8ef548"; ctx.font = "13px 'Noto Sans KR',sans-serif"; ctx.fillText("[Space] 처음으로", cv.width / 2, cv.height / 2 + 86); }
@@ -662,7 +698,7 @@
     try { update(dt); } catch (e) { console.error(e); }
     draw(); requestAnimationFrame(frame); }
   // 디버그 스냅샷(테스트용, 무해): 상태 읽기 전용
-  if (typeof window !== 'undefined') window.__ziro = () => ({ phase, px: player.x, py: player.y, mem: st ? st.mem : 0, ch: chapterIdx });
+  if (typeof window !== 'undefined') { window.__ziro = () => ({ phase, px: player.x, py: player.y, mem: st ? st.mem : 0, ch: chapterIdx }); window.__loadStage = (i) => { loadStage(i); phase = "play"; }; }
   loadStage(0);                 // 첫 챕터 초기화(맵·엔티티·상태)
   requestAnimationFrame(frame);
 })();

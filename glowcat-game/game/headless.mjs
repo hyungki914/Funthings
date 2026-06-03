@@ -70,6 +70,20 @@ const tAfter = window.__ziro().px;
 fireP("pointerup", pev(180, 552, 1, "touch"));
 if (!(tAfter > tBefore + 1)) { console.log("FAIL: 가상 조이스틱 이동 안 됨 (px " + tBefore.toFixed(0) + "→" + tAfter.toFixed(0) + ")"); process.exit(1); }
 console.log("TOUCH OK — 토글 + 가상 조이스틱 이동 (px " + tBefore.toFixed(0) + "→" + tAfter.toFixed(0) + ")");
+
+// ── 챕터2(집·Echo) 구동: loadStage(1) 후 이동(소음) → Echo 로직 무예외 + 이동 확인 ──
+if (window.__loadStage) {
+  window.__loadStage(1);
+  const c2b = window.__ziro();
+  if (c2b.ch !== 1) { console.log("FAIL: 챕터2 로드 안 됨 (ch=" + c2b.ch + ")"); process.exit(1); }
+  fire("keydown", ev("ㅁ", "KeyD"));
+  for (let i = 0; i < 40; i++) { clock += 16; if (theFrame) theFrame(clock); }
+  fire("keyup", ev("ㅁ", "KeyD"));
+  const c2a = window.__ziro();
+  if (!(c2a.px > c2b.px + 1)) { console.log("FAIL: 챕터2 이동 안 됨 (px " + c2b.px.toFixed(0) + "→" + c2a.px.toFixed(0) + ")"); process.exit(1); }
+  console.log("CHAPTER2 OK — 집 로드 + Echo 로직 무예외 이동 (px " + c2b.px.toFixed(0) + "→" + c2a.px.toFixed(0) + ")");
+  window.__loadStage(0);   // 본 루프는 챕터1로 복귀
+}
 const walk = ["d", "d", "s", "s", "a", "w", "d", "s"];
 try {
   for (let i = 0; i < 700; i++) {
