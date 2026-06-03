@@ -29,7 +29,7 @@
   let recall = null, hintTimer = 0, hintTarget = null, setbackT = 0, flash = 0, muted = false, shake = 0;
   let trail = [], trailCD = 0, projecting = false; const illuminated = new Set();
   const AURA_R = 54;              // 기억 비추기 펄스 반경
-  let lowLightTip = 0, auraFx = 0, revealT = 0, projInvuln = 0, insightT = 0, stealthShown = false;
+  let lowLightTip = 0, auraFx = 0, revealT = 0, projInvuln = 0, hintMsgT = 0, stealthShown = false; let hintMsg = "";
   // 온보딩/피드백 상태
   let elapsed = 0, lTutDone = false, corePulse = 0; let toasts = [];   // toasts: {text,color,t}
   let sawMurk = false;
@@ -108,7 +108,7 @@
       { id: "l",     label: "추적",   x: bx - 74,   y: by - 84,   r: R,  hold: false },
       { id: "shift", label: "은신",   x: bx + 2,    y: by - 100,  r: R,  hold: "toggle" },
       { id: "tab",   label: "일지",   x: bx - 156,  y: by - 66,   r: R,  hold: false },
-      { id: "h",     label: "힌트",   x: bx - 156,  y: by + 4,    r: R,  hold: false },
+      { id: "h",     label: "직감",   x: bx - 156,  y: by + 4,    r: R,  hold: false },
     ];
   }
   const touchToggleRect = () => ({ x: cv.width - 150, y: 78, w: 136, h: 26 });
@@ -278,12 +278,13 @@
     }
     if (edge["e"] && nearShard) doCollect(nearShard);
 
-    // 통찰(H) — 빛 1 소모. 주변의 모든 미발견 기억을 드러내고 거짓을 ✗로 표시(추적 L과 차별화).
+    // 직감(H) — 빛 소모 없이, 지금 무엇을 해야 하는지 한 줄만 알려준다(목표 알림). 위치는 안 보여줌.
     if (edge["h"]) {
-      if (Core.useHint(st).ok) { insightT = 5.0; toasts.push({ text: "통찰 — 숨은 기억까지 드러난다 (✗ = 거짓)", color: "#8ef548", t: 2.2 }); }
-      else toasts.push({ text: "빛이 부족하다 — 안전지대에서 회복", color: "#9fc5c5", t: 2.0 });
+      const got = st.coreOrder ? st.coreOrder.length : 0;
+      hintMsg = (got >= st.coresNeeded) ? "충분해… 이제 출구를 찾자." : "아직 찾아야 할 기억이 남아있는 것 같다…";
+      hintMsgT = 3.4;
     }
-    if (insightT > 0) insightT -= dt;
+    if (hintMsgT > 0) hintMsgT -= dt;
 
     // 음소거
     if (edge["m"] && window.Audio2) { muted = !muted; Audio2.setMuted(muted); }
@@ -412,25 +413,7 @@
       }
     }
 
-    // 통찰(H) — 미발견 기억을 드러냄: 코어/에코는 ●(코어 더 큼), 거짓은 ✗
-    if (insightT > 0) {
-      const a = Math.min(1, insightT) * (0.65 + 0.35 * Math.sin(performance.now() / 150));
-      for (const s of D.shards) {
-        if (isDone(s)) continue;
-        const c = shardCenter(s);
-        ctx.save(); ctx.globalAlpha = a;
-        if (s.type === "false") {
-          ctx.strokeStyle = "#caa15a"; ctx.lineWidth = 2; ctx.shadowColor = "#caa15a"; ctx.shadowBlur = 4;
-          ctx.beginPath(); ctx.moveTo(c.x - 4, c.y - 5); ctx.lineTo(c.x + 4, c.y + 3);
-          ctx.moveTo(c.x + 4, c.y - 5); ctx.lineTo(c.x - 4, c.y + 3); ctx.stroke();
-        } else {
-          const col = s.type === "core" ? "#34e2e2" : "#9fc5c5";
-          ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 6;
-          ctx.beginPath(); ctx.arc(c.x, c.y - 1, s.type === "core" ? 3.4 : 2.4, 0, 7); ctx.fill();
-        }
-        ctx.restore();
-      }
-    }
+    // (직감 H의 메시지는 HUD 단계에서 캔버스 px로 그린다 — drawGuide)
 
     // 피격 플래시
     if (flash > 0) { ctx.fillStyle = `rgba(255,90,90,${Math.min(0.5, flash)})`; ctx.fillRect(0, 0, NW, NH); }
@@ -466,7 +449,7 @@
     ctx.fillText("드래그하여 이동", jcx, jcy + 78); ctx.restore();
     // 스킬 버튼(우하단)
     for (const b of touchButtons()) {
-      const usesLight = (b.id === "q" || b.id === "h");
+      const usesLight = (b.id === "q");          // 비추기만 빛 소모. 직감(H)은 무료.
       const noLight = usesLight && st.light < 1;
       const on = (b.id === "shift" && touch.sneak) || (b.id === "q" && auraFx > 0);
       ctx.save(); ctx.globalAlpha = noLight ? 0.5 : 1;
@@ -564,7 +547,7 @@
     ctx.fillStyle = "#16262a"; ctx.fillRect(26, 50, 100, 6);
     ctx.fillStyle = "#34e2e2"; ctx.fillRect(26, 50, 100 * (st.light / C.LIGHT_MAX), 6);
     ctx.fillStyle = "#9fc5c5"; ctx.font = "11px 'Noto Sans KR',sans-serif";
-    ctx.fillText("빛 " + Math.floor(st.light||0) + "   [Q]비추기 · [H]통찰", 132, 56);
+    ctx.fillText("빛 " + Math.floor(st.light||0) + "   [Q]비추기 · [H]직감", 132, 56);
     ctx.fillStyle = trailCD > 0 ? "#8aa7a9" : "#8ef548";
     ctx.fillText(trailCD > 0 ? "[L] 발자국 추적  " + trailCD.toFixed(0) + "s" : "[L] 발자국 추적 (사용가능)", 26, 70);
     ctx.fillStyle = "#9fc5c5"; ctx.fillText("[Tab] 기억 일지", 26, 86);
@@ -615,6 +598,15 @@
       const tw = ctx.measureText(txt).width + 20;
       ctx.fillStyle = "rgba(8,14,18,.92)"; rrect(spx - tw / 2, spy - 74, tw, 26, 8); ctx.fill();
       ctx.fillStyle = "#8ef548"; ctx.fillText(txt, spx, spy - 56); ctx.restore();
+    }
+    // 직감(H) 목표 메시지 — 텍스트 창(위치는 안 알려주고 '무엇을 할지'만)
+    if (hintMsgT > 0) {
+      ctx.save(); ctx.textAlign = "center"; ctx.font = "16px 'Noto Sans KR',sans-serif";
+      const bw = Math.max(280, ctx.measureText(hintMsg).width + 44), bx = (W - bw) / 2, by = Math.round(cv.height * 0.6);
+      ctx.globalAlpha = Math.min(1, hintMsgT / 0.6);
+      ctx.fillStyle = "rgba(6,12,16,.9)"; rrect(bx, by, bw, 42, 10); ctx.fill();
+      ctx.strokeStyle = "#34e2e2"; ctx.lineWidth = 1.5; rrect(bx, by, bw, 42, 10); ctx.stroke();
+      ctx.fillStyle = "#cfe6e6"; ctx.fillText(hintMsg, W / 2, by + 26); ctx.restore();
     }
     // 조작 힌트(하단) — 이 스테이지에서 쓰는 단축키만(data의 controls). 터치 모드에선 숨김(버튼이 대신).
     if (!touchUI && (cores === 0 || elapsed < 16)) {
