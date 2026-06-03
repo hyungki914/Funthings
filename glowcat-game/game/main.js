@@ -531,13 +531,22 @@
     // 노출 창(revealT) 동안 근처 숨은 기억 표시
     if (revealT > 0) for (const s of shards) if (s.hidden && !isDone(s) && dist(player.x, player.y, shardCenter(s).x, shardCenter(s).y) <= 76) illuminated.add(s.id);
 
-    // 발자국 추적(L) — 가장 가까운 미발견 코어로 시안 발자국 흔적(무료, 쿨다운)
+    // 발자국 추적(L) — 가장 가까운 '미발견 조각'(종류 무관) 방향으로 짧고 모호한
+    //   시안 발자국 몇 개만(무료, 쿨다운). 정확한 위치·정체는 알려주지 않는다 — 대략 방향만.
     if (edge["l"]) lTutDone = true;
     if (trailCD > 0) trailCD -= dt;
     if (edge["l"] && trailCD <= 0) {
       let best = null, bd = 1e9;
-      for (const s of shards) if (s.type === "core" && !isDone(s)) { const c = shardCenter(s), dd = dist(player.x, player.y, c.x, c.y); if (dd < bd) { bd = dd; best = c; } }
-      if (best) { trail = []; const n = 7; for (let i = 1; i <= n; i++) trail.push({ x: player.x + (best.x - player.x) * i / n, y: player.y + (best.y - player.y) * i / n, age: 0 }); trailCD = C.TRAIL_CD; }
+      for (const s of shards) if (!isDone(s) && !s.hidden) { const c = shardCenter(s), dd = dist(player.x, player.y, c.x, c.y); if (dd < bd) { bd = dd; best = c; } }
+      if (best) {
+        trail = [];
+        const ang = Math.atan2(best.y - player.y, best.x - player.x), n = 3, reach = Math.min(42, bd * 0.45);
+        for (let i = 1; i <= n; i++) {
+          const r = reach * i / n, j = (Math.random() - 0.5) * 9;      // 흔들림 — 길 끝이 목표에 닿지 않게
+          trail.push({ x: player.x + Math.cos(ang) * r + j, y: player.y + Math.sin(ang) * r + (Math.random() - 0.5) * 9, age: 0 });
+        }
+        trailCD = C.TRAIL_CD;
+      }
     }
     for (const p of trail) p.age += dt; trail = trail.filter(p => p.age < C.TRAIL_LIFE);
 
