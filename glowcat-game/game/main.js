@@ -12,6 +12,8 @@
                     "chapter6", "chapter7", "chapter8", "chapter9", "chapter10"].filter(k => DATA[k]);
   let chapterIdx = 0;
   let D, TILE, NW, NH, S, st, colls, safes, door, murks, echoes;   // loadStage()에서 채움
+  let shards = [];                                                   // 이번 진행의 조각(랜덤 배치된 사본)
+  let RANDOMIZE = true;                                              // 매 진행마다 조각·적 위치 랜덤
   let camX = 0, camY = 0, VIEWW = 0, VIEWH = 0;                      // 카메라(스크롤) — 큰 맵은 추적, 작은 맵은 중앙
   const px = (t) => t * TILE + TILE / 2;
   const toSX = (wx) => (wx - camX) * S;                              // 월드→화면 px (HUD 오버레이용)
@@ -46,14 +48,15 @@
   // 온보딩/피드백 상태
   let elapsed = 0, lTutDone = false, corePulse = 0; let toasts = [];   // toasts: {text,color,t}
   let sawMurk = false, sawEcho = false, playerNoise = 0;
-  // 인트로(콜드 오픈) / 스테이지 전환
-  let introT = 0, transT = 0, veil = 0, hasNext = false;
+  // 인트로(콜드 오픈) / 스테이지 전환 / 스테이지 진입 장소 카드
+  let introT = 0, transT = 0, veil = 0, hasNext = false, stageCardT = 0;
+  function showStageCard() { stageCardT = 2.6; }
   // 깨달음(회상 몽타주) / 최종 선택 / 엔딩
   let realizeT = 0, realizeI = 0, realizeLines = [], choiceSel = 0, endingType = null;
   // 마음(희망↔체념) 미터 — 중간 분기 선택 누적 → 엔딩 분기. 보스(공백) 상태.
   let hope = 0, branchSel = 0, boss = null;
   // 진행 저장(클리어 스테이지) + 스테이지 선택/시퀀스 재생
-  let clearedMax = -1, selIdx = 0, realizeReview = false, realizeIllKey = null;
+  let clearedMax = -1, selIdx = 0, realizeReview = false, realizeIllKey = null, hoverKey = null;
   const SAVE_KEY = "ziro_progress_v1";
   function loadProgress() { try { const v = JSON.parse(localStorage.getItem(SAVE_KEY) || "{}"); if (typeof v.clearedMax === "number") clearedMax = v.clearedMax; } catch (e) {} }
   function saveProgress() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ clearedMax })); } catch (e) {} }
@@ -73,7 +76,7 @@
   }
   function skipIntro() { if (introT < 0.5) return; endIntro(); }
   function endIntro() {                       // 검정→방 페이드인(veil) + 스킵키 누수 방지(clearEdges)
-    phase = "play"; veil = 0.8; clearEdges();
+    phase = "play"; veil = 0.8; showStageCard(); clearEdges();
     if (window.Audio2 && Audio2.music) try { Audio2.music(D.music || "room"); } catch (e) {}
   }
   function beginTransition() {
@@ -86,15 +89,58 @@
     realizeReview = false; realizeIllKey = null; markCleared(chapterIdx);   // 클리어 저장
     realizeLines = [];
     for (const id of (st.coreOrder || [])) {            // 획득 순서대로 코어 회상 회고
-      const s = D.shards.find(x => x.id === id);
+      const s = shards.find(x => x.id === id);
       if (s && s.recall) realizeLines.push({ kind: "memory", text: s.recall });
     }
     for (const line of (D.epiphany || [])) realizeLines.push({ kind: "epiphany", text: line });
     if (!realizeLines.length) { beginTransition(); return; }   // 데이터 없으면 곧장 전환(폴백)
     realizeI = 0; realizeT = 0; phase = "realize";
-    if (window.Audio2) try { if (Audio2.music) Audio2.music(null); Audio2.drone(0); Audio2.heartbeat(0); if (Audio2.chime) Audio2.chime(); } catch (e) {}
+    if (window.Audio2) try { Audio2.drone(0); Audio2.heartbeat(0); if (Audio2.music) Audio2.music("memory"); if (Audio2.chime) Audio2.chime(); } catch (e) {}  // 깨달음 BGM
   }
   // 챕터 매니저 — 맵/엔티티를 idx 챕터로 (재)초기화 (data에 chapter2/3 추가 시 체이닝)
+  // ── 랜덤 레이아웃: 도달 가능한 빈 타일 위에 조각·적 patrol을 재배치(리플레이성) ──
+  function tileFree(D, c, r) {
+    if (c < 1 || c >= D.cols - 1 || r < 2 || r >= D.rows - 1) return false;
+    return !D.collision.some(q => c >= q[0] && c < q[0] + q[2] && r >= q[1] && r < q[1] + q[3]);
+  }
+  function reachableTiles(D) {                          // 스폰에서 4방향 플러드필(빈 타일만)
+    const seen = new Set(), key = (c, r) => c + "," + r, sp = D.spawn, stack = [[sp[0], sp[1]]];
+    seen.add(key(sp[0], sp[1]));
+    while (stack.length) { const [c, r] = stack.pop();
+      for (const [dc, dr] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nc = c+dc, nr = r+dr;
+        if (tileFree(D, nc, nr) && !seen.has(key(nc, nr))) { seen.add(key(nc, nr)); stack.push([nc, nr]); } } }
+    return [...seen].map(s => s.split(",").map(Number));
+  }
+  function makeLayout(D) {
+    const orig = { shards: D.shards.map(s => ({ ...s })), murkP: (D.murks||[]).map(m => m.patrol), echoP: (D.echoes||[]).map(m => m.patrol) };
+    if (!RANDOMIZE) return orig;
+    const reach = reachableTiles(D);
+    if (reach.length < D.shards.length + 8) return orig;            // 너무 좁으면 원본
+    const sp = D.spawn, d2 = (a, b) => (a[0]-b[0])**2 + (a[1]-b[1])**2;
+    const shuffle = a => { for (let i = a.length-1; i > 0; i--) { const j = (Math.random()*(i+1))|0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    const pool = shuffle(reach.filter(t => d2(t, sp) >= 9));        // 스폰서 ≥3타일
+    const placed = [], shardsOut = [];
+    for (const s of D.shards) {
+      let tile = null, pi = -1;
+      for (let i = 0; i < pool.length; i++) { if (placed.every(p => d2(p, pool[i]) >= 4)) { tile = pool[i]; pi = i; break; } }  // 서로 ≥2타일
+      if (!tile) return orig;
+      pool.splice(pi, 1); placed.push(tile); shardsOut.push({ ...s, tile: [tile[0], tile[1]] });
+    }
+    const genPatrol = () => {                                       // 빈 타일 사각 루프(모서리·변 모두 빈칸)
+      for (let tn = 0; tn < 50; tn++) {
+        const a = reach[(Math.random()*reach.length)|0], w = 2 + ((Math.random()*3)|0), h = 2 + ((Math.random()*2)|0);
+        const pts = [];
+        for (let x = a[0]; x <= a[0]+w; x++) { pts.push([x, a[1]]); pts.push([x, a[1]+h]); }
+        for (let y = a[1]; y <= a[1]+h; y++) { pts.push([a[0], y]); pts.push([a[0]+w, y]); }
+        if (pts.every(p => tileFree(D, p[0], p[1]))) return [[a[0],a[1]],[a[0]+w,a[1]],[a[0]+w,a[1]+h],[a[0],a[1]+h]];
+      }
+      return null;
+    };
+    const murkP = (D.murks||[]).map((m, i) => genPatrol() || orig.murkP[i]);
+    const echoP = (D.echoes||[]).map((m, i) => genPatrol() || orig.echoP[i]);
+    return { shards: shardsOut, murkP, echoP };
+  }
+
   function loadStage(idx) {
     chapterIdx = idx; D = DATA[CHAPTERS[idx]];
     TILE = D.tile; NW = D.cols * TILE; NH = D.rows * TILE;
@@ -103,12 +149,14 @@
     colls = D.collision.map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
     safes = (D.safeZones || []).map(([c, r, w, h]) => ({ x: c*TILE, y: r*TILE, w: w*TILE, h: h*TILE }));
     door = D.door ? { x: px(D.door.tile[0]), y: px(D.door.tile[1]) } : null;
-    murks = (D.murks || []).map(m => ({ id:m.id, wp:0, x:px(m.patrol[0][0]), y:px(m.patrol[0][1]),
-      patrol:m.patrol.map(p => ({ x:px(p[0]), y:px(p[1]) })), speed:m.speed||38, sightPx:(m.sightTiles||3.3)*TILE,
-      fov:(m.fovDeg||90), faceAngle:0, chasing:false, lost:0, warded:0 }));
-    echoes = (D.echoes || []).map(m => ({ id:m.id, wp:0, x:px(m.patrol[0][0]), y:px(m.patrol[0][1]),
-      patrol:m.patrol.map(p => ({ x:px(p[0]), y:px(p[1]) })), speed:m.speed||34, hearPx:(m.hearTiles||3.5)*TILE,
-      chasing:false, lost:0, tx:0, ty:0, warded:0 }));
+    const L = makeLayout(D);                              // 매 진행마다 조각·적 위치 랜덤 배치(리플레이성)
+    shards = L.shards;
+    murks = (D.murks || []).map((m, i) => { const pt = L.murkP[i]; return { id:m.id, wp:0, x:px(pt[0][0]), y:px(pt[0][1]),
+      patrol:pt.map(p => ({ x:px(p[0]), y:px(p[1]) })), speed:m.speed||38, sightPx:(m.sightTiles||3.3)*TILE,
+      fov:(m.fovDeg||90), faceAngle:0, chasing:false, lost:0, warded:0 }; });
+    echoes = (D.echoes || []).map((m, i) => { const pt = L.echoP[i]; return { id:m.id, wp:0, x:px(pt[0][0]), y:px(pt[0][1]),
+      patrol:pt.map(p => ({ x:px(p[0]), y:px(p[1]) })), speed:m.speed||34, hearPx:(m.hearTiles||3.5)*TILE,
+      chasing:false, lost:0, tx:0, ty:0, warded:0 }; });
     player.x = px(D.spawn[0]); player.y = px(D.spawn[1]); player.vx = player.vy = 0;
     player.facing = "down"; player.flip = false; player.frame = 0; player.step = 0; player.dir = Math.PI/2;
     trail = []; illuminated.clear(); nearShard = null; hintTimer = 0; toasts = [];
@@ -149,14 +197,14 @@
     for (const p of particles) { ctx.globalAlpha = p.a; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); }
     ctx.restore();
   }
-  function gotoTitle() { hope = 0; loadStage(0); phase = "title"; if (window.Audio2 && Audio2.music) try { Audio2.music(null); } catch (e) {} }
+  function gotoTitle() { hope = 0; loadStage(0); phase = "title"; if (window.Audio2 && Audio2.music) try { Audio2.music("title"); } catch (e) {} }
   // 스테이지 선택 메뉴 / 선택 시작 / 시퀀스(깨달음) 재생
   function openSelect() { selIdx = Math.max(0, Math.min(CHAPTERS.length - 1, clearedMax + 1)); phase = "select"; clearEdges();
-    if (window.Audio2 && Audio2.music) try { Audio2.music(null); } catch (e) {} }
+    if (window.Audio2) try { if (Audio2.music) Audio2.music("title"); if (Audio2.sfx) Audio2.sfx("select"); } catch (e) {} }
   function startStage(idx) {
     if (idx < 0 || idx > clearedMax + 1 || idx >= CHAPTERS.length) return;
-    loadStage(idx); phase = "play"; veil = 0.8; clearEdges();
-    if (window.Audio2 && Audio2.music) try { Audio2.music(D.music || "room"); } catch (e) {}
+    loadStage(idx); phase = "play"; veil = 0.8; showStageCard(); clearEdges();
+    if (window.Audio2) try { if (Audio2.sfx) Audio2.sfx("select"); if (Audio2.music) Audio2.music(D.music || "room"); } catch (e) {}
   }
   function startReview(idx) {                                   // 클리어한 스테이지의 깨달음 시퀀스 다시 보기
     if (idx < 0 || idx > clearedMax || idx >= CHAPTERS.length) return;
@@ -164,7 +212,7 @@
     for (const s of Dr.shards) if (s.type === "core" && s.recall) realizeLines.push({ kind: "memory", text: s.recall });
     for (const line of (Dr.epiphany || [])) realizeLines.push({ kind: "epiphany", text: line });
     realizeIllKey = "s" + (idx + 1); realizeReview = true; realizeI = 0; realizeT = 0; phase = "realize"; clearEdges();
-    if (window.Audio2) try { if (Audio2.music) Audio2.music(null); if (Audio2.chime) Audio2.chime(); } catch (e) {}
+    if (window.Audio2) try { if (Audio2.music) Audio2.music("memory"); if (Audio2.sfx) Audio2.sfx("select"); } catch (e) {}
   }
 
   // ── 입력 ──────────────────────────────────────────────────
@@ -186,7 +234,7 @@
   }
   addEventListener("keydown", e => setKey(e, true));
   addEventListener("keyup", e => setKey(e, false));
-  function firstGesture() { try { if (window.Audio2) Audio2.init(); } catch (e) {} }  // BGM은 music()이 담당
+  function firstGesture() { try { if (window.Audio2) { Audio2.init(); if ((phase === "title" || phase === "select") && Audio2.music) Audio2.music("title"); } } catch (e) {} }  // 첫 제스처로 오디오 활성 + 타이틀 BGM
   addEventListener("keydown", firstGesture, { once: true });
   function clearEdges() { for (const k in edge) edge[k] = false; }
 
@@ -207,8 +255,10 @@
   }
   const touchToggleRect = () => ({ x: cv.width - 150, y: 78, w: 136, h: 26 });
   function hitBtn(x, y) { for (const b of touchButtons()) if ((x - b.x) ** 2 + (y - b.y) ** 2 <= b.r * b.r) return b; return null; }
-  // 스테이지 선택 화면 지오메트리(렌더·포인터 공용)
-  const titleSelectRect = () => ({ x: cv.width/2 - 96, y: cv.height/2 + 92, w: 192, h: 34 });
+  // 타이틀 메뉴 + 스테이지 선택 화면 지오메트리(렌더·포인터 공용)
+  const titleStartRect = () => ({ x: cv.width/2 - 130, y: cv.height/2 + 36, w: 260, h: 42 });
+  const titleContinueRect = () => ({ x: cv.width/2 - 130, y: cv.height/2 + 86, w: 260, h: 36 });
+  const titleSelectRect = () => ({ x: cv.width/2 - 130, y: cv.height/2 + 130, w: 260, h: 36 });
   function selGrid() { const M = 60, G = 18, cols = 5; const cw = (cv.width - 2*M - (cols-1)*G) / cols; return { M, G, cols, cw, ch: cw*9/16 }; }
   function selCardRect(i) { const g = selGrid(); const r = Math.floor(i/g.cols), c = i % g.cols;
     return { x: g.M + c*(g.cw + g.G), y: 150 + r*(g.ch + 64), w: g.cw, h: g.ch }; }
@@ -223,7 +273,11 @@
     const p = canvasXY(e);
     const tr = touchToggleRect();                                   // 터치 조작 토글 (어느 페이즈든)
     if (p.x >= tr.x && p.x <= tr.x + tr.w && p.y >= tr.y && p.y <= tr.y + tr.h) { touchUI = !touchUI; return; }
-    if (phase === "title") { const m = titleSelectRect(); if (p.x>=m.x && p.x<=m.x+m.w && p.y>=m.y && p.y<=m.y+m.h) openSelect(); else startIntro(); return; }
+    if (phase === "title") {
+      if (clearedMax >= 0 && inRect(p, titleContinueRect())) { startStage(Math.min(clearedMax + 1, CHAPTERS.length - 1)); return; }
+      if (inRect(p, titleSelectRect())) { openSelect(); return; }
+      startIntro(); return;        // 시작 버튼 또는 빈 공간 → 처음부터
+    }
     if (phase === "select") {
       if (inRect(p, selBackRect())) { phase = "title"; return; }
       if (selIdx <= clearedMax + 1 && inRect(p, selStartBtn())) { startStage(selIdx); return; }
@@ -258,6 +312,13 @@
     if (p.x < cv.width * 0.5) { touch.joyId = e.pointerId; touch.joyCx = p.x; touch.joyCy = p.y; touch.jx = 0; touch.jy = 0; }  // 좌측 = 가상 조이스틱
   }
   function onPointerMove(e) {
+    if (phase === "title" || phase === "select") {       // 메뉴 호버 효과음
+      const p = canvasXY(e); let hk = null;
+      if (phase === "title") { if (inRect(p, titleStartRect())) hk = "t:start"; else if (clearedMax >= 0 && inRect(p, titleContinueRect())) hk = "t:cont"; else if (inRect(p, titleSelectRect())) hk = "t:sel"; }
+      else { if (inRect(p, selBackRect())) hk = "s:back"; else if (inRect(p, selStartBtn())) hk = "s:start";
+        else if (inRect(p, selReviewBtn())) hk = "s:rev"; else for (let i = 0; i < CHAPTERS.length; i++) { const r = selCardRect(i); if (p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h) { hk = "s:" + i; break; } } }
+      if (hk !== hoverKey) { hoverKey = hk; if (hk && window.Audio2 && Audio2.sfx) try { Audio2.sfx("hover"); } catch (er) {} }
+    }
     if (touch.joyId !== e.pointerId) return;
     const p = canvasXY(e), dx = p.x - touch.joyCx, dy = p.y - touch.joyCy, mag = Math.hypot(dx, dy);
     if (mag < 8) { touch.jx = 0; touch.jy = 0; } else { const m = Math.min(1, mag / 60); touch.jx = (dx / mag) * m; touch.jy = (dy / mag) * m; }
@@ -283,12 +344,13 @@
   function update(dt) {
     if (phase === "title" || phase === "cleared") return;
     if (phase === "select") {                                   // 스테이지 선택 메뉴
-      const cols = 5, n = CHAPTERS.length;
+      const cols = 5, n = CHAPTERS.length, pre = selIdx;
       if (edge["arrowleft"] || edge["a"]) selIdx = (selIdx + n - 1) % n;
       if (edge["arrowright"] || edge["d"]) selIdx = (selIdx + 1) % n;
       if (edge["arrowup"] || edge["w"]) selIdx = (selIdx - cols + n) % n;
       if (edge["arrowdown"] || edge["s"]) selIdx = (selIdx + cols) % n;
-      if (edge["escape"] || edge["tab"]) { phase = "title"; clearEdges(); return; }
+      if (selIdx !== pre && window.Audio2 && Audio2.sfx) try { Audio2.sfx("hover"); } catch (e) {}
+      if (edge["escape"] || edge["tab"]) { if (window.Audio2 && Audio2.sfx) Audio2.sfx("select"); phase = "title"; clearEdges(); return; }
       if (edge[" "] || edge["enter"]) { if (selIdx <= clearedMax + 1) startStage(selIdx); }
       if (edge["r"] && selIdx <= clearedMax) startReview(selIdx);
       clearEdges(); return;
@@ -297,7 +359,7 @@
     if (phase === "transition") {
       transT += dt;
       if (hasNext && transT > 2.6) {                          // 다음 챕터 자동 로드(체이닝)
-        loadStage(chapterIdx + 1); phase = "play"; veil = 0.8;
+        loadStage(chapterIdx + 1); phase = "play"; veil = 0.8; showStageCard();
         if (window.Audio2 && Audio2.music) try { Audio2.music(D.music || "room"); } catch (e) {}
       } else if (!hasNext && transT > 1.2 && (edge[" "] || edge["enter"])) { gotoTitle(); }
       clearEdges(); return;
@@ -317,23 +379,31 @@
       clearEdges(); return;
     }
     if (phase === "branch") {                            // 중간 분기: 희망(0,+1) / 체념(1,−1)
+      const pb2 = branchSel;
       if (edge["w"] || edge["s"] || edge["arrowup"] || edge["arrowdown"]) branchSel ^= 1;
+      if (branchSel !== pb2 && window.Audio2 && Audio2.sfx) try { Audio2.sfx("hover"); } catch (e) {}
       if (edge[" "] || edge["enter"]) {
         hope += branchSel === 0 ? 1 : -1;
         const fb = (D.branch.options[branchSel] || {}).feedback;
+        if (window.Audio2 && Audio2.sfx) Audio2.sfx("select");
         beginTransition(); if (fb) toasts.push({ text: fb, color: branchSel === 0 ? "#8ef548" : "#9fc5c5", t: 3.2 });
       }
       clearEdges(); return;
     }
     if (phase === "choice") {                            // 최종 선택: 찾아 나선다=재회(0) / 받아들인다=길고양이(1)
+      const pc = choiceSel;
       if (edge["w"] || edge["s"] || edge["arrowup"] || edge["arrowdown"]) choiceSel ^= 1;
+      if (choiceSel !== pc && window.Audio2 && Audio2.sfx) try { Audio2.sfx("hover"); } catch (e) {}
       if (edge[" "] || edge["enter"]) {
         endingType = choiceSel === 0 ? "reunite" : "stray"; phase = "ending"; transT = 0;
-        if (window.Audio2) try { Audio2.drone(0); Audio2.heartbeat(0); if (Audio2.chime) Audio2.chime(); } catch (e) {}
+        if (window.Audio2) try { Audio2.drone(0); Audio2.heartbeat(0); if (Audio2.sfx) Audio2.sfx("select");
+          if (Audio2.music) Audio2.music(endingType === "reunite" ? "ending_reunite" : "ending_stray"); } catch (e) {}
       }
       clearEdges(); return;
     }
-    if (phase === "ending") { transT += dt; if (transT > 2.4 && (edge[" "] || edge["enter"])) gotoTitle(); clearEdges(); return; }
+    if (phase === "ending") { transT += dt;
+      if (transT > 3.0) { if (edge["tab"]) { openSelect(); } else if (edge[" "] || edge["enter"]) { gotoTitle(); } }
+      clearEdges(); return; }
     if (phase === "recall") { if (edge[" "] || edge["enter"]) closeRecall(); clearEdges(); return; }
     if (phase === "setback") { setbackT -= dt; if (setbackT <= 0) phase = "play"; clearEdges(); return; }
     if (phase === "journal") { if (edge["tab"] || edge["escape"]) phase = "play"; clearEdges(); return; }
@@ -390,14 +460,14 @@
       } else if (lowLightTip <= 0) { toasts.push({ text: "빛이 부족하다 — 기억을 모으거나 안전지대에서 회복", color: "#9fc5c5", t: 2.0 }); lowLightTip = 2.0; }
     }
     // 노출 창(revealT) 동안 근처 숨은 기억 표시
-    if (revealT > 0) for (const s of D.shards) if (s.hidden && !isDone(s) && dist(player.x, player.y, shardCenter(s).x, shardCenter(s).y) <= 76) illuminated.add(s.id);
+    if (revealT > 0) for (const s of shards) if (s.hidden && !isDone(s) && dist(player.x, player.y, shardCenter(s).x, shardCenter(s).y) <= 76) illuminated.add(s.id);
 
     // 발자국 추적(L) — 가장 가까운 미발견 코어로 시안 발자국 흔적(무료, 쿨다운)
     if (edge["l"]) lTutDone = true;
     if (trailCD > 0) trailCD -= dt;
     if (edge["l"] && trailCD <= 0) {
       let best = null, bd = 1e9;
-      for (const s of D.shards) if (s.type === "core" && !isDone(s)) { const c = shardCenter(s), dd = dist(player.x, player.y, c.x, c.y); if (dd < bd) { bd = dd; best = c; } }
+      for (const s of shards) if (s.type === "core" && !isDone(s)) { const c = shardCenter(s), dd = dist(player.x, player.y, c.x, c.y); if (dd < bd) { bd = dd; best = c; } }
       if (best) { trail = []; const n = 7; for (let i = 1; i <= n; i++) trail.push({ x: player.x + (best.x - player.x) * i / n, y: player.y + (best.y - player.y) * i / n, age: 0 }); trailCD = C.TRAIL_CD; }
     }
     for (const p of trail) p.age += dt; trail = trail.filter(p => p.age < C.TRAIL_LIFE);
@@ -464,7 +534,7 @@
 
     // 근처 조각 & 상호작용
     nearShard = null;
-    for (const s of D.shards) {
+    for (const s of shards) {
       if (isDone(s)) continue;
       if (s.hidden && !illuminated.has(s.id)) continue;   // 숨은 조각은 비출 때만
       if (dist(player.x, player.y, shardCenter(s).x, shardCenter(s).y) < (s.radius||1.3) * TILE) { nearShard = s; break; }
@@ -495,6 +565,7 @@
 
     updateCamera();   // 플레이어 이동 후 카메라 추적
     updateAmbient(dt);
+    if (stageCardT > 0) stageCardT -= dt;
     if (collectFx) { collectFx.t -= dt; if (collectFx.t <= 0) collectFx = null; }
     if (flash > 0) flash -= dt; if (shake > 0) shake -= dt * 24;
     if (veil > 0) veil = Math.max(0, veil - dt);   // 방 진입 페이드인
@@ -574,7 +645,7 @@
 
     // 환경 단서: 미발견 조각을 거리 비례로 흐릿하게(글로우 OFF 보완 — '여기 뭔가 있다').
     //   숨은 조각은 제외(Q로만). 거짓은 차갑게 깜빡여 미묘한 '어긋남' 신호.
-    for (const s of D.shards) {
+    for (const s of shards) {
       if (isDone(s) || s.hidden) continue;
       const c = shardCenter(s), d = dist(player.x, player.y, c.x, c.y);
       if (d > 120) continue;
@@ -662,7 +733,7 @@
     ctx.restore();
     if (phase === "play" || phase === "recall") drawAmbient();
     drawHUD();
-    if (phase === "play") drawGuide();
+    if (phase === "play") { drawGuide(); if (stageCardT > 0) overlayStageCard(); }
     if (phase === "title") overlayTitle();
     if (phase === "select") overlaySelect();
     if (phase === "recall" && recall) overlayRecall();
@@ -751,6 +822,25 @@
       ctx.fillText(hasNext ? "지로가 첫 기억들을 되찾았다 — 다음 이야기로…" : "지로가 첫 기억들을 되찾았다.", cv.width / 2, cv.height / 2 + 54);
       if (!hasNext) { ctx.fillStyle = "#8ef548"; ctx.font = "13px 'Noto Sans KR',sans-serif"; ctx.fillText("[Space] 처음으로", cv.width / 2, cv.height / 2 + 86); }
     }
+    ctx.restore();
+  }
+
+  // 스테이지 진입 장소 카드 — 화면 정중앙 대형 타이포(페이드 인/아웃)
+  function overlayStageCard() {
+    const total = 2.6, t = stageCardT;
+    const a = t > total - 0.4 ? (total - t) / 0.4 : t < 0.7 ? t / 0.7 : 1;
+    ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, a)); ctx.textAlign = "center";
+    const cy = cv.height / 2;
+    const g = ctx.createLinearGradient(0, cy - 78, 0, cy + 78);
+    g.addColorStop(0, "rgba(4,7,11,0)"); g.addColorStop(0.5, "rgba(4,7,11,0.6)"); g.addColorStop(1, "rgba(4,7,11,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, cy - 78, cv.width, 156);
+    ctx.fillStyle = "#34e2e2"; ctx.font = "bold 19px 'Noto Sans KR',sans-serif";
+    ctx.fillText("STAGE " + (chapterIdx + 1), cv.width / 2, cy - 20);
+    ctx.shadowColor = "rgba(52,226,226,0.5)"; ctx.shadowBlur = 16;
+    ctx.fillStyle = "#eafaff"; ctx.font = "bold 46px 'Noto Sans KR',sans-serif";
+    ctx.fillText(D.title || "", cv.width / 2, cy + 28); ctx.shadowBlur = 0;
+    ctx.globalAlpha *= 0.6; ctx.strokeStyle = "#34e2e2"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cv.width/2 - 80, cy + 46); ctx.lineTo(cv.width/2 + 80, cy + 46); ctx.stroke();
     ctx.restore();
   }
 
@@ -877,14 +967,21 @@
     const np = Math.min(1, (transT - 2.4) / 1.0);
     if (np > 0) {
       ctx.globalAlpha = np; ctx.shadowColor = "#34e2e2"; ctx.shadowBlur = 24;
-      ctx.fillStyle = "#9bf24a"; ctx.font = "bold 40px 'Noto Sans KR',sans-serif";
-      ctx.fillText("지로  ·  Ziro", cv.width/2, ty + 104); ctx.shadowBlur = 0;
+      ctx.fillStyle = "#9bf24a"; ctx.font = "bold 38px 'Noto Sans KR',sans-serif";
+      ctx.fillText("지로  ·  Ziro", cv.width/2, ty + 100); ctx.shadowBlur = 0;
       ctx.fillStyle = "#cfe6e6"; ctx.font = "14px 'Noto Sans KR',sans-serif";
-      ctx.fillText(re ? "하루가 다시, 내 이름을 부른다." : "어디에 있든 — 나는, 나다.", cv.width/2, ty + 132);
+      ctx.fillText(re ? "하루가 다시, 내 이름을 부른다." : "어디에 있든 — 나는, 나다.", cv.width/2, ty + 126);
     }
-    if (transT > 2.4) { ctx.globalAlpha = 0.5 + 0.3 * Math.sin(performance.now() / 400);
-      ctx.fillStyle = re ? "#8ef548" : "#34e2e2"; ctx.font = "13px 'Noto Sans KR',sans-serif";
-      ctx.fillText("[Space] 처음으로", cv.width/2, cv.height - 36); }
+    // 명확한 종료 표식 — '엔딩'임을 분명히(다음 스테이지 없음)
+    const fin = Math.min(1, (transT - 3.0) / 0.8);
+    if (fin > 0) {
+      ctx.globalAlpha = fin; ctx.letterSpacing = "6px";
+      ctx.fillStyle = re ? "#8ef548" : "#34e2e2"; ctx.font = "bold 22px 'Noto Sans KR',sans-serif";
+      ctx.fillText("막 — THE END", cv.width/2, 64); ctx.letterSpacing = "0px";
+      ctx.globalAlpha = fin * (0.6 + 0.4 * Math.sin(performance.now() / 420));
+      ctx.fillStyle = "#cfe6e6"; ctx.font = "14px 'Noto Sans KR',sans-serif";
+      ctx.fillText("플레이해 주셔서 고맙습니다.   [Space] 처음 화면으로     ·     [Tab] 스테이지 선택", cv.width/2, cv.height - 26);
+    }
     ctx.restore();
   }
 
@@ -952,9 +1049,15 @@
     const W = cv.width, cores = (st.coreOrder ? st.coreOrder.length : 0), need = st.coresNeeded;
     const done = cores >= need;
     if (keys["shift"]) { ctx.save(); ctx.textAlign = "center"; ctx.font = "bold 12px 'Noto Sans KR',sans-serif"; ctx.fillStyle = "#7fb0b3"; ctx.fillText("은신 중", toSX(player.x), toSY(player.y) - 42); ctx.restore(); }
+    // 상단 중앙: STAGE N. 장소명 (상시 표시)
+    ctx.save(); ctx.textAlign = "center";
+    const sLabel = "STAGE " + (chapterIdx + 1) + ".  " + (D.title || "");
+    ctx.font = "bold 13px 'Noto Sans KR',sans-serif"; const slw = ctx.measureText(sLabel).width + 28;
+    ctx.fillStyle = "rgba(8,14,18,.7)"; rrect((W - slw)/2, 8, slw, 22, 7); ctx.fill();
+    ctx.fillStyle = "#9af6f6"; ctx.fillText(sLabel, W/2, 23); ctx.restore();
     // 목표 배너(상단 중앙)
     ctx.save();
-    const bw = 380, bx = (W - bw) / 2, by = 12;
+    const bw = 380, bx = (W - bw) / 2, by = 38;
     ctx.fillStyle = "rgba(8,14,18,.82)"; rrect(bx, by, bw, 34, 10); ctx.fill();
     ctx.textAlign = "left"; ctx.font = "bold 14px 'Noto Sans KR',sans-serif";
     if (done && boss) { ctx.fillStyle = "#9af6f6"; ctx.textAlign = "center"; ctx.fillText("[Q] 모은 기억의 빛으로 공백을 비춰라", W / 2, by + 22); }
@@ -1006,24 +1109,32 @@
     }
   }
 
+  function menuButton(r, label, sub, hovered, enabled, accent) {
+    ctx.save(); ctx.globalAlpha = enabled ? 1 : 0.4;
+    ctx.fillStyle = hovered ? "rgba(52,226,226,.20)" : "rgba(8,14,20,.74)"; rrect(r.x, r.y, r.w, r.h, 10); ctx.fill();
+    ctx.strokeStyle = hovered ? "#9af6f6" : (accent || "#2a6e72"); ctx.lineWidth = hovered ? 2.5 : 1.5; rrect(r.x, r.y, r.w, r.h, 10); ctx.stroke();
+    ctx.textAlign = "center"; ctx.fillStyle = hovered ? "#eafaff" : "#cfe6e6"; ctx.font = "bold 17px 'Noto Sans KR',sans-serif";
+    ctx.fillText(label, r.x + r.w/2, r.y + (sub ? r.h/2 : r.h/2 + 6));
+    if (sub) { ctx.fillStyle = "#7f9b9b"; ctx.font = "11px 'Noto Sans KR',sans-serif"; ctx.fillText(sub, r.x + r.w/2, r.y + r.h - 7); }
+    ctx.restore();
+  }
   function overlayTitle() {
-    ctx.save(); ctx.fillStyle = "rgba(4,6,10,.72)"; ctx.fillRect(0, 0, cv.width, cv.height);
-    ctx.textAlign = "center"; ctx.fillStyle = "#eafaff"; ctx.font = "bold 44px 'Noto Sans KR',sans-serif";
-    ctx.fillText("잊혀진 발자국", cv.width/2, cv.height/2 - 40);
-    ctx.fillStyle = "#34e2e2"; ctx.font = "18px 'Noto Sans KR',sans-serif";
-    ctx.fillText("LOST PAWPRINT — 지로 · 챕터 1 「지로의 방」", cv.width/2, cv.height/2 - 6);
-    ctx.fillStyle = "#cfe6e6"; ctx.font = "16px 'Noto Sans KR',sans-serif";
-    ctx.fillText("코어 기억 3개를 찾아 문을 열어라.  닿으면 기억이 흐려진다.", cv.width/2, cv.height/2 + 30);
-    ctx.fillStyle = "#8ef548"; ctx.font = "bold 18px 'Noto Sans KR',sans-serif";
-    ctx.fillText("▶ 클릭 / 아무 키로 시작", cv.width/2, cv.height/2 + 66);
-    // 스테이지 선택 버튼(진행 있으면 강조)
-    const m = titleSelectRect(), has = clearedMax >= 0;
-    ctx.fillStyle = has ? "rgba(52,226,226,.16)" : "rgba(10,16,20,.7)"; rrect(m.x, m.y, m.w, m.h, 9); ctx.fill();
-    ctx.strokeStyle = has ? "#34e2e2" : "#2a4a4e"; ctx.lineWidth = 1.5; rrect(m.x, m.y, m.w, m.h, 9); ctx.stroke();
-    ctx.fillStyle = has ? "#9af6f6" : "#8aa7a9"; ctx.font = "14px 'Noto Sans KR',sans-serif";
-    ctx.fillText("스테이지 선택  [Tab]", m.x + m.w/2, m.y + 22);
-    if (has) { ctx.fillStyle = "#6b8a8c"; ctx.font = "12px 'Noto Sans KR',sans-serif";
-      ctx.fillText("이어하기 · 클리어한 장면 다시 보기 (" + (clearedMax + 1) + "/" + CHAPTERS.length + ")", cv.width/2, m.y + m.h + 22); }
+    ctx.save();
+    drawIllCover(ILLIMG.title, 1);                                       // 서정적 타이틀 일러스트(풀스크린)
+    scrim(0, cv.height, 0.25, 0.55); scrim(cv.height - 240, cv.height, 0, 0.5);
+    ctx.textAlign = "center";
+    ctx.shadowColor = "rgba(52,226,226,0.55)"; ctx.shadowBlur = 26;
+    ctx.fillStyle = "#eafaff"; ctx.font = "bold 52px 'Noto Sans KR',sans-serif";
+    ctx.fillText("잊혀진 발자국", cv.width/2, cv.height/2 - 60); ctx.shadowBlur = 0;
+    ctx.fillStyle = "#9af6f6"; ctx.font = "16px 'Noto Sans KR',sans-serif"; ctx.letterSpacing = "3px";
+    ctx.fillText("L O S T   P A W P R I N T", cv.width/2, cv.height/2 - 30); ctx.letterSpacing = "0px";
+    ctx.fillStyle = "#bcd6d6"; ctx.font = "14px 'Noto Sans KR',sans-serif";
+    ctx.fillText("기억을 잃은 검은 고양이 지로, 흐려진 발자국을 따라 하루를 찾아서", cv.width/2, cv.height/2 - 2);
+    // 메뉴 버튼들
+    const has = clearedMax >= 0;
+    menuButton(titleStartRect(), "▶  처음부터", "아무 키로도 시작", hoverKey === "t:start", true, "#8ef548");
+    menuButton(titleContinueRect(), has ? "이어하기 — STAGE " + (Math.min(clearedMax + 1, CHAPTERS.length - 1) + 1) : "이어하기", has ? null : "아직 진행 없음", hoverKey === "t:cont", has, "#34e2e2");
+    menuButton(titleSelectRect(), "스테이지 선택  ·  [Tab]", "클리어한 장면 다시 보기 (" + Math.max(0, clearedMax + 1) + "/" + CHAPTERS.length + ")", hoverKey === "t:sel", true, "#34e2e2");
     ctx.restore();
   }
 
@@ -1117,9 +1228,13 @@
     window.__ziro = () => ({ phase, px: player.x, py: player.y, mem: st ? st.mem : 0, ch: chapterIdx,
                              camX, camY, nw: NW, nh: NH, realizeI, realizeLen: realizeLines.length, choiceSel, endingType });
     window.__loadStage = (i) => { loadStage(i); phase = "play"; };
-    window.__debugClear = () => { for (const s of D.shards) if (s.type === "core") Core.collect(st, s); if (boss) boss.dispelled = true; beginRealize(); };  // 테스트용
+    window.__debugClear = () => { for (const s of shards) if (s.type === "core") Core.collect(st, s); if (boss) boss.dispelled = true; beginRealize(); };  // 테스트용
     window.__hope = (v) => { if (typeof v === "number") hope = v; return hope; };
-    window.__collectCores = () => { for (const s of D.shards) if (s.type === "core") Core.collect(st, s); };  // 보스 테스트용(해소 안 함)
+    window.__collectCores = () => { for (const s of shards) if (s.type === "core") Core.collect(st, s); };  // 보스 테스트용(해소 안 함)
+    window.__layoutCheck = () => { const occ = (c,r) => D.collision.some(q => c>=q[0]&&c<q[0]+q[2]&&r>=q[1]&&r<q[1]+q[3]); let bad = 0;
+      for (const s of shards) if (occ(s.tile[0], s.tile[1])) bad++;
+      for (const m of murks.concat(echoes)) for (const p of m.patrol) if (occ(Math.round((p.x-TILE/2)/TILE), Math.round((p.y-TILE/2)/TILE))) bad++;
+      return { bad, shards: shards.length, idx: chapterIdx }; };
     window.__boss = () => boss ? { hp: boss.hp, dispelled: boss.dispelled } : null;
     window.__title = () => gotoTitle();
     window.__sel = () => ({ phase, selIdx, clearedMax });

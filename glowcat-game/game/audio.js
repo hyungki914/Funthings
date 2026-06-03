@@ -436,6 +436,34 @@ function sfx(name) {
         n.start(t);
         n.stop(t + 0.06);
       }
+
+    } else if (name === 'hover') {
+      // UI 호버: 짧고 맑은 고음 핑(triangle).
+      const o = S.ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(880, t);
+      o.frequency.exponentialRampToValueAtTime(1320, t + 0.05);
+      const g = S.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.06, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+      o.connect(g); g.connect(S.master);
+      o.start(t); o.stop(t + 0.1);
+
+    } else if (name === 'select') {
+      // UI 결정: 두 음 상행(확정감). sine, 부드럽게.
+      const freqs = [660, 990];
+      freqs.forEach((f, i) => {
+        const o = S.ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(f, t + i * 0.06);
+        const g = S.ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t + i * 0.06);
+        g.gain.exponentialRampToValueAtTime(0.09, t + i * 0.06 + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.06 + 0.16);
+        o.connect(g); g.connect(S.master);
+        o.start(t + i * 0.06); o.stop(t + i * 0.06 + 0.18);
+      });
     }
     // 알 수 없는 name → 무음(throw 금지).
   } catch (e) { /* 무음 폴백 */ }
@@ -534,6 +562,9 @@ const MUSIC_THEMES = {
       { t: 24, note: -26, dur: 2.8, vol: 0.5, voice: 'pad', type: 'sine' },      // G2
       // 아주 낮은 서브 드론(전체 깔개)
       { t: 0,  note: -36, dur: 11.0, vol: 0.45, voice: 'bass', type: 'sine' },   // A1
+      // [B변주] 마디2·4 끝 옥타브 응답(여리게) — 단조로움 완화, 그리움 강조
+      { t: 14, note: 8,  dur: 0.5, vol: 0.35, voice: 'mel', type: 'triangle' },  // F5
+      { t: 31, note: 7,  dur: 0.6, vol: 0.30, voice: 'mel', type: 'triangle' },  // E5
     ],
   },
 
@@ -575,6 +606,10 @@ const MUSIC_THEMES = {
       { t: 8,  note: -34, dur: 2.6, vol: 0.5, voice: 'pad', type: 'sine' },      // Bb1
       { t: 16, note: -38, dur: 2.6, vol: 0.5, voice: 'pad', type: 'sine' },      // G1
       { t: 24, note: -36, dur: 2.6, vol: 0.5, voice: 'pad', type: 'sine' },      // A1
+      // [B변주] 불안 가속 16분 2연타 + 이끔음 선행
+      { t: 22, note: 5,  dur: 0.18, vol: 0.5, voice: 'mel', type: 'triangle' },  // D5
+      { t: 23, note: 7,  dur: 0.22, vol: 0.5, voice: 'mel', type: 'triangle' },  // E5
+      { t: 26, note: 4,  dur: 0.3,  vol: 0.5, voice: 'mel', type: 'triangle' },  // C#5 이끔음
     ],
   },
 
@@ -607,6 +642,9 @@ const MUSIC_THEMES = {
       { t: 16, note: -8,  dur: 6.5, vol: 0.35, voice: 'pad', type: 'triangle' }, // C#4
       // 아주 낮은 서브
       { t: 0,  note: -29, dur: 14.0, vol: 0.4, voice: 'bass', type: 'sine' },    // E1
+      // [B변주] 메아리 모티프(주제 음 4스텝 뒤 옥타브 아래 반향, 공간감)
+      { t: 4,  note: -5, dur: 1.2, vol: 0.28, voice: 'mel', type: 'sine' },      // E4
+      { t: 24, note: 0,  dur: 1.4, vol: 0.26, voice: 'mel', type: 'sine' },      // A4
     ],
   },
 
@@ -629,6 +667,8 @@ const MUSIC_THEMES = {
       { t: 12, note: -21, dur: 6.5, vol: 0.5,  voice: 'pad', type: 'sine' },     // C3
       // 아주 낮은 서브 드론
       { t: 0,  note: -31, dur: 15.0, vol: 0.45, voice: 'bass', type: 'sine' },   // D2
+      // [B변주] 멈춘 오르골 파편 한 점(더 멀리·여리게) — 잔향 강화
+      { t: 15, note: 19, dur: 0.5, vol: 0.18, voice: 'mel', type: 'triangle' },  // F6
     ],
   },
 
@@ -660,6 +700,11 @@ const MUSIC_THEMES = {
       { t: 24, note: -26, dur: 2.6, vol: 0.45, voice: 'pad', type: 'sine' },     // G2
       // 낮은 서브
       { t: 0,  note: -33, dur: 11.0, vol: 0.4, voice: 'bass', type: 'sine' },    // C2
+      // [B변주] 후반 3도 하모니(동행감) + 베이스 워킹 디딤
+      { t: 24, note: -7, dur: 0.5, vol: 0.32, voice: 'mel', type: 'triangle' },  // D4
+      { t: 28, note: 3,  dur: 0.6, vol: 0.32, voice: 'mel', type: 'triangle' },  // C5
+      { t: 4,  note: -28, dur: 0.4, vol: 0.35, voice: 'bass', type: 'sine' },    // F2 디딤
+      { t: 20, note: -26, dur: 0.4, vol: 0.35, voice: 'bass', type: 'sine' },    // G2 디딤
     ],
   },
 
@@ -674,6 +719,161 @@ const MUSIC_THEMES = {
       // 멀리서 들리는 단 하나의 부름(아주 여리게)
       { t: 5,  note: 0,   dur: 3.0, vol: 0.4,  voice: 'mel', type: 'sine' },     // A4
       { t: 12, note: -5,  dur: 3.4, vol: 0.32, voice: 'mel', type: 'sine' },     // E4(가라앉음)
+    ],
+  },
+
+  // title: 서정적·기대감. 부드러운 아르페지오(triangle) + 노래하는 메인 훅(sine). C/Am 교차. 12.8s 루프.
+  title: {
+    stepDur: 0.40, steps: 32, melType: 'sine', padType: 'triangle', bassType: 'sine', melVol: 0.95, padVol: 0.65,
+    patterns: [
+      { t: 0,  note: 0,  dur: 0.45, vol: 0.34, voice: 'mel', type: 'triangle' },
+      { t: 1,  note: 3,  dur: 0.45, vol: 0.30, voice: 'mel', type: 'triangle' },
+      { t: 2,  note: 7,  dur: 0.45, vol: 0.30, voice: 'mel', type: 'triangle' },
+      { t: 3,  note: 12, dur: 0.45, vol: 0.28, voice: 'mel', type: 'triangle' },
+      { t: 8,  note: -4, dur: 0.45, vol: 0.32, voice: 'mel', type: 'triangle' },
+      { t: 9,  note: 0,  dur: 0.45, vol: 0.30, voice: 'mel', type: 'triangle' },
+      { t: 10, note: 3,  dur: 0.45, vol: 0.30, voice: 'mel', type: 'triangle' },
+      { t: 11, note: 8,  dur: 0.45, vol: 0.28, voice: 'mel', type: 'triangle' },
+      { t: 16, note: 3,  dur: 0.45, vol: 0.32, voice: 'mel', type: 'triangle' },
+      { t: 17, note: 7,  dur: 0.45, vol: 0.30, voice: 'mel', type: 'triangle' },
+      { t: 18, note: 10, dur: 0.45, vol: 0.30, voice: 'mel', type: 'triangle' },
+      { t: 19, note: 15, dur: 0.45, vol: 0.28, voice: 'mel', type: 'triangle' },
+      { t: 24, note: 2,  dur: 0.45, vol: 0.32, voice: 'mel', type: 'triangle' },
+      { t: 25, note: 5,  dur: 0.45, vol: 0.30, voice: 'mel', type: 'triangle' },
+      { t: 26, note: 10, dur: 0.45, vol: 0.30, voice: 'mel', type: 'triangle' },
+      { t: 27, note: 14, dur: 0.45, vol: 0.28, voice: 'mel', type: 'triangle' },
+      { t: 4,  note: 7,  dur: 1.1, vol: 0.62, voice: 'mel', type: 'sine' },
+      { t: 6,  note: 10, dur: 0.9, vol: 0.60, voice: 'mel', type: 'sine' },
+      { t: 12, note: 12, dur: 1.4, vol: 0.64, voice: 'mel', type: 'sine' },
+      { t: 20, note: 15, dur: 1.0, vol: 0.60, voice: 'mel', type: 'sine' },
+      { t: 22, note: 14, dur: 0.9, vol: 0.55, voice: 'mel', type: 'sine' },
+      { t: 28, note: 10, dur: 0.7, vol: 0.55, voice: 'mel', type: 'sine' },
+      { t: 30, note: 7,  dur: 1.6, vol: 0.52, voice: 'mel', type: 'sine' },
+      { t: 0,  note: -9,  dur: 3.0, vol: 0.42, voice: 'pad', type: 'triangle' },
+      { t: 0,  note: -5,  dur: 3.0, vol: 0.38, voice: 'pad', type: 'triangle' },
+      { t: 8,  note: -4,  dur: 3.0, vol: 0.42, voice: 'pad', type: 'triangle' },
+      { t: 8,  note: 0,   dur: 3.0, vol: 0.38, voice: 'pad', type: 'triangle' },
+      { t: 16, note: -5,  dur: 3.0, vol: 0.42, voice: 'pad', type: 'triangle' },
+      { t: 16, note: -2,  dur: 3.0, vol: 0.38, voice: 'pad', type: 'triangle' },
+      { t: 24, note: -7,  dur: 3.0, vol: 0.42, voice: 'pad', type: 'triangle' },
+      { t: 24, note: 2,   dur: 3.0, vol: 0.36, voice: 'pad', type: 'triangle' },
+      { t: 0,  note: -24, dur: 1.5, vol: 0.6, voice: 'bass', type: 'sine' },
+      { t: 4,  note: -29, dur: 1.5, vol: 0.5, voice: 'bass', type: 'sine' },
+      { t: 8,  note: -28, dur: 1.5, vol: 0.6, voice: 'bass', type: 'sine' },
+      { t: 12, note: -33, dur: 1.5, vol: 0.5, voice: 'bass', type: 'sine' },
+      { t: 16, note: -33, dur: 1.5, vol: 0.6, voice: 'bass', type: 'sine' },
+      { t: 20, note: -26, dur: 1.5, vol: 0.5, voice: 'bass', type: 'sine' },
+      { t: 24, note: -26, dur: 1.5, vol: 0.6, voice: 'bass', type: 'sine' },
+      { t: 28, note: -31, dur: 1.7, vol: 0.5, voice: 'bass', type: 'sine' },
+    ],
+  },
+
+  // memory: 깨달음(회상 몽타주). 잔잔→점층 차오름. F major 상승 모티프. 14.72s 루프.
+  memory: {
+    stepDur: 0.46, steps: 32, melType: 'triangle', padType: 'sine', bassType: 'sine', melVol: 0.95, padVol: 0.7,
+    patterns: [
+      { t: 0,  note: 0,  dur: 1.1, vol: 0.48, voice: 'mel', type: 'triangle' },
+      { t: 3,  note: 3,  dur: 1.1, vol: 0.50, voice: 'mel', type: 'triangle' },
+      { t: 6,  note: 8,  dur: 1.4, vol: 0.55, voice: 'mel', type: 'triangle' },
+      { t: 8,  note: 7,  dur: 1.0, vol: 0.55, voice: 'mel', type: 'triangle' },
+      { t: 11, note: 10, dur: 1.2, vol: 0.60, voice: 'mel', type: 'triangle' },
+      { t: 14, note: 12, dur: 1.4, vol: 0.62, voice: 'mel', type: 'triangle' },
+      { t: 16, note: 8,  dur: 1.0, vol: 0.58, voice: 'mel', type: 'triangle' },
+      { t: 19, note: 12, dur: 1.1, vol: 0.62, voice: 'mel', type: 'triangle' },
+      { t: 22, note: 15, dur: 1.5, vol: 0.68, voice: 'mel', type: 'triangle' },
+      { t: 24, note: 12, dur: 1.0, vol: 0.60, voice: 'mel', type: 'triangle' },
+      { t: 27, note: 10, dur: 1.0, vol: 0.56, voice: 'mel', type: 'triangle' },
+      { t: 29, note: 8,  dur: 1.8, vol: 0.54, voice: 'mel', type: 'triangle' },
+      { t: 0,  note: -4, dur: 3.4, vol: 0.40, voice: 'pad', type: 'sine' },
+      { t: 0,  note: 0,  dur: 3.4, vol: 0.34, voice: 'pad', type: 'sine' },
+      { t: 0,  note: -9, dur: 3.4, vol: 0.30, voice: 'pad', type: 'sine' },
+      { t: 8,  note: -5, dur: 3.4, vol: 0.40, voice: 'pad', type: 'sine' },
+      { t: 8,  note: -2, dur: 3.4, vol: 0.34, voice: 'pad', type: 'sine' },
+      { t: 16, note: -4, dur: 3.4, vol: 0.40, voice: 'pad', type: 'sine' },
+      { t: 16, note: 0,  dur: 3.4, vol: 0.34, voice: 'pad', type: 'sine' },
+      { t: 24, note: -7, dur: 3.4, vol: 0.40, voice: 'pad', type: 'sine' },
+      { t: 24, note: -4, dur: 3.4, vol: 0.34, voice: 'pad', type: 'sine' },
+      { t: 0,  note: -28, dur: 2.6, vol: 0.55, voice: 'bass', type: 'sine' },
+      { t: 6,  note: -33, dur: 1.2, vol: 0.40, voice: 'bass', type: 'sine' },
+      { t: 8,  note: -33, dur: 2.6, vol: 0.55, voice: 'bass', type: 'sine' },
+      { t: 16, note: -31, dur: 2.6, vol: 0.55, voice: 'bass', type: 'sine' },
+      { t: 24, note: -34, dur: 3.0, vol: 0.55, voice: 'bass', type: 'sine' },
+      { t: 0,  note: -40, dur: 15.0, vol: 0.34, voice: 'bass', type: 'sine' },
+    ],
+  },
+
+  // ending_reunite: 재회 엔딩. 감격·따뜻한 클라이맥스. D major, 루트 D 종지. 14.08s 루프.
+  ending_reunite: {
+    stepDur: 0.44, steps: 32, melType: 'sine', padType: 'triangle', bassType: 'sine', melVol: 1.0, padVol: 0.72,
+    patterns: [
+      { t: 0,  note: 9,  dur: 1.0, vol: 0.66, voice: 'mel', type: 'sine' },
+      { t: 2,  note: 12, dur: 1.0, vol: 0.68, voice: 'mel', type: 'sine' },
+      { t: 4,  note: 17, dur: 1.6, vol: 0.74, voice: 'mel', type: 'sine' },
+      { t: 8,  note: 14, dur: 1.0, vol: 0.66, voice: 'mel', type: 'sine' },
+      { t: 10, note: 12, dur: 1.0, vol: 0.62, voice: 'mel', type: 'sine' },
+      { t: 12, note: 9,  dur: 1.4, vol: 0.60, voice: 'mel', type: 'sine' },
+      { t: 16, note: 7,  dur: 1.0, vol: 0.62, voice: 'mel', type: 'sine' },
+      { t: 18, note: 9,  dur: 1.0, vol: 0.64, voice: 'mel', type: 'sine' },
+      { t: 20, note: 12, dur: 1.0, vol: 0.66, voice: 'mel', type: 'sine' },
+      { t: 22, note: 14, dur: 1.4, vol: 0.70, voice: 'mel', type: 'sine' },
+      { t: 24, note: 17, dur: 1.0, vol: 0.70, voice: 'mel', type: 'sine' },
+      { t: 26, note: 12, dur: 1.0, vol: 0.64, voice: 'mel', type: 'sine' },
+      { t: 28, note: 9,  dur: 1.0, vol: 0.60, voice: 'mel', type: 'sine' },
+      { t: 30, note: 5,  dur: 2.0, vol: 0.62, voice: 'mel', type: 'sine' },
+      { t: 0,  note: -7, dur: 3.2, vol: 0.42, voice: 'pad', type: 'triangle' },
+      { t: 0,  note: -3, dur: 3.2, vol: 0.36, voice: 'pad', type: 'triangle' },
+      { t: 0,  note: 0,  dur: 3.2, vol: 0.32, voice: 'pad', type: 'triangle' },
+      { t: 8,  note: -2, dur: 3.2, vol: 0.42, voice: 'pad', type: 'triangle' },
+      { t: 8,  note: 2,  dur: 3.2, vol: 0.36, voice: 'pad', type: 'triangle' },
+      { t: 12, note: 0,  dur: 1.6, vol: 0.40, voice: 'pad', type: 'triangle' },
+      { t: 12, note: 4,  dur: 1.6, vol: 0.34, voice: 'pad', type: 'triangle' },
+      { t: 16, note: -7, dur: 3.2, vol: 0.42, voice: 'pad', type: 'triangle' },
+      { t: 16, note: -1, dur: 3.2, vol: 0.36, voice: 'pad', type: 'triangle' },
+      { t: 16, note: 2,  dur: 3.2, vol: 0.32, voice: 'pad', type: 'triangle' },
+      { t: 24, note: -7, dur: 4.0, vol: 0.44, voice: 'pad', type: 'triangle' },
+      { t: 24, note: -3, dur: 4.0, vol: 0.38, voice: 'pad', type: 'triangle' },
+      { t: 24, note: 0,  dur: 4.0, vol: 0.34, voice: 'pad', type: 'triangle' },
+      { t: 0,  note: -31, dur: 1.6, vol: 0.6, voice: 'bass', type: 'sine' },
+      { t: 4,  note: -24, dur: 1.6, vol: 0.5, voice: 'bass', type: 'sine' },
+      { t: 8,  note: -26, dur: 1.6, vol: 0.6, voice: 'bass', type: 'sine' },
+      { t: 12, note: -24, dur: 1.6, vol: 0.55, voice: 'bass', type: 'sine' },
+      { t: 16, note: -22, dur: 1.6, vol: 0.6, voice: 'bass', type: 'sine' },
+      { t: 20, note: -24, dur: 1.6, vol: 0.5, voice: 'bass', type: 'sine' },
+      { t: 24, note: -31, dur: 3.4, vol: 0.62, voice: 'bass', type: 'sine' },
+      { t: 0,  note: -43, dur: 14.5, vol: 0.36, voice: 'bass', type: 'sine' },
+    ],
+  },
+
+  // ending_stray: 길고양이(새 삶) 엔딩. 차분·존엄한 희망. G Lydian, 열린 채 끝. 16.64s 루프.
+  ending_stray: {
+    stepDur: 0.52, steps: 32, melType: 'sine', padType: 'sine', bassType: 'sine', melVol: 0.9, padVol: 0.68,
+    patterns: [
+      { t: 0,  note: 5,  dur: 1.6, vol: 0.58, voice: 'mel', type: 'sine' },
+      { t: 3,  note: 10, dur: 1.6, vol: 0.60, voice: 'mel', type: 'sine' },
+      { t: 6,  note: 14, dur: 2.0, vol: 0.62, voice: 'mel', type: 'sine' },
+      { t: 10, note: 16, dur: 1.8, vol: 0.56, voice: 'mel', type: 'sine' },
+      { t: 14, note: 12, dur: 2.2, vol: 0.55, voice: 'mel', type: 'sine' },
+      { t: 18, note: 10, dur: 1.8, vol: 0.52, voice: 'mel', type: 'sine' },
+      { t: 21, note: 14, dur: 1.6, vol: 0.54, voice: 'mel', type: 'sine' },
+      { t: 24, note: 17, dur: 2.0, vol: 0.56, voice: 'mel', type: 'sine' },
+      { t: 28, note: 12, dur: 1.4, vol: 0.46, voice: 'mel', type: 'sine' },
+      { t: 30, note: 10, dur: 2.4, vol: 0.44, voice: 'mel', type: 'sine' },
+      { t: 0,  note: -2, dur: 4.0, vol: 0.40, voice: 'pad', type: 'sine' },
+      { t: 0,  note: 2,  dur: 4.0, vol: 0.34, voice: 'pad', type: 'sine' },
+      { t: 0,  note: -7, dur: 4.0, vol: 0.30, voice: 'pad', type: 'sine' },
+      { t: 8,  note: -3, dur: 4.0, vol: 0.40, voice: 'pad', type: 'sine' },
+      { t: 8,  note: 0,  dur: 4.0, vol: 0.32, voice: 'pad', type: 'sine' },
+      { t: 16, note: -5, dur: 4.0, vol: 0.40, voice: 'pad', type: 'sine' },
+      { t: 16, note: -2, dur: 4.0, vol: 0.34, voice: 'pad', type: 'sine' },
+      { t: 16, note: 2,  dur: 4.0, vol: 0.28, voice: 'pad', type: 'sine' },
+      { t: 24, note: -9, dur: 4.0, vol: 0.40, voice: 'pad', type: 'sine' },
+      { t: 24, note: -5, dur: 4.0, vol: 0.32, voice: 'pad', type: 'sine' },
+      { t: 24, note: 4,  dur: 4.0, vol: 0.24, voice: 'pad', type: 'sine' },
+      { t: 0,  note: -26, dur: 3.6, vol: 0.55, voice: 'bass', type: 'sine' },
+      { t: 8,  note: -31, dur: 3.6, vol: 0.50, voice: 'bass', type: 'sine' },
+      { t: 16, note: -29, dur: 3.6, vol: 0.52, voice: 'bass', type: 'sine' },
+      { t: 24, note: -33, dur: 3.6, vol: 0.52, voice: 'bass', type: 'sine' },
+      { t: 0,  note: -38, dur: 17.0, vol: 0.34, voice: 'bass', type: 'sine' },
     ],
   },
 };

@@ -125,7 +125,7 @@ if (window.__loadStage && window.__debugClear) {
   if (r1.phase !== "ending") { console.log("FAIL: 엔딩 진입 안 됨 (phase=" + r1.phase + ")"); process.exit(1); }
   if (r1.endingType !== "stray") { console.log("FAIL: 엔딩 타입 (" + r1.endingType + ")"); process.exit(1); }
   // 엔딩 렌더 수 초간 무예외 + 스페이스로 타이틀 복귀
-  for (let i = 0; i < 180; i++) { clock += 16; if (theFrame) theFrame(clock); }
+  for (let i = 0; i < 220; i++) { clock += 16; if (theFrame) theFrame(clock); }   // 엔딩 입력 허용(>3.0s)까지 대기
   fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); clock += 16; if (theFrame) theFrame(clock);
   const r2 = window.__ziro();
   if (r2.phase !== "title") { console.log("FAIL: 엔딩 후 타이틀 복귀 안 됨 (phase=" + r2.phase + ")"); process.exit(1); }
@@ -183,6 +183,15 @@ if (window.__title && window.__sel) {
   if (window.__ziro().phase !== "play") { console.log("FAIL: 선택 스테이지 시작 안 됨 (" + window.__ziro().phase + ")"); process.exit(1); }
   console.log("SELECT OK — 타이틀→[Tab] 선택→[R] 시퀀스 재생→메뉴→[Space] 시작 (selIdx=" + selBefore + ", clearedMax=" + s0.clearedMax + ")");
   window.__title(); window.__loadStage(0);
+}
+
+// ── 랜덤 레이아웃 검증: 전 스테이지 반복 로드 → 조각·적 patrol이 가구 관통 없는지 ──
+if (window.__loadStage && window.__layoutCheck) {
+  let totalBad = 0, loads = 0;
+  for (let n = 0; n < 10; n++) for (let s = 0; s < 10; s++) { window.__loadStage(s); const r = window.__layoutCheck(); totalBad += r.bad; loads++; }
+  if (totalBad > 0) { console.log("FAIL: 랜덤 배치가 벽/가구에 겹침 (" + totalBad + "건 / " + loads + "회)"); process.exit(1); }
+  console.log("RANDOM OK — 전 10스테이지 " + loads + "회 랜덤 배치, 가구 관통 0건");
+  window.__loadStage(0);
 }
 
 const walk = ["d", "d", "s", "s", "a", "w", "d", "s"];

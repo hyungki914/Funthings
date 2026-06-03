@@ -232,7 +232,21 @@ def end_stray():    # 길고양이 — 새벽 골목, 물그릇, 다른 고양�
     cat(d, 260, 176, 0.7, col=(46, 56, 60), eye=(120, 210, 200))
     return particles(finish(im, vig=0.44), 16, (210, 235, 235), "dawn")
 
-ILL = {"s1": s1, "s2": s2, "s3": s3, "s4": s4, "s5": s5, "s6": s6, "s7": s7,
+def title_art():   # 타이틀 — 서정적. 따뜻한 빛을 올려다보는 지로 + 빛나는 발자국 길
+    im = vgrad([(0, (30, 26, 46)), (0.55, (24, 22, 38)), (1, (14, 14, 24))]); d = ImageDraw.Draw(im)
+    d.rectangle((0, 176, W, H), fill=(16, 15, 26))                       # 바닥
+    im = glow(im, 300, 40, 150, (255, 222, 160), 0.65)                  # 우상단 따뜻한 빛(창/달)
+    im = rays(im, 300, 30, (255, 232, 180), 7, 280, 1.8, 0.4)
+    d = ImageDraw.Draw(im)
+    for i, (fx, fy) in enumerate([(120, 176), (150, 168), (182, 158), (214, 146), (244, 132), (272, 116)]):  # 빛나는 발자국 길
+        a = 90 + i * 22
+        d.ellipse((fx-3, fy-2, fx+3, fy+2), fill=(110, 230, 180))
+        d.ellipse((fx-1, fy-4, fx+1, fy-2), fill=(150, 245, 200))
+    cat(d, 110, 184, 1.7, eye=(140, 245, 190))                          # 올려다보는 지로
+    return particles(finish(im, glow_r=3.6, vig=0.5), 26, (255, 240, 205), "title")
+
+ILL = {"title": title_art,
+       "s1": s1, "s2": s2, "s3": s3, "s4": s4, "s5": s5, "s6": s6, "s7": s7,
        "s8": s8, "s9": s9, "s10": s10, "reunite": end_reunite, "stray": end_stray}
 
 
