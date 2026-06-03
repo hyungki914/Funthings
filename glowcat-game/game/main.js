@@ -727,16 +727,16 @@
     }
 
     // 환경 단서: 미발견 조각을 거리 비례로 흐릿하게(글로우 OFF 보완 — '여기 뭔가 있다').
-    //   숨은 조각은 제외(Q로만). 거짓은 차갑게 깜빡여 미묘한 '어긋남' 신호.
+    //   숨은 조각은 제외(Q로만). 모든 조각이 동일하게 보인다 — 진짜·에코·거짓은
+    //   조사([E])해야만 구분된다(거짓을 미리 알고 무시하지 못하도록).
     for (const s of shards) {
       if (isDone(s) || s.hidden) continue;
       const c = shardCenter(s), d = dist(player.x, player.y, c.x, c.y);
       if (d > 120) continue;
-      const fal = s.type === "false";
-      const a = Math.max(0.1, Math.min(0.55, 1 - d / 120)) * (0.6 + 0.4 * Math.sin(performance.now() / (fal ? 170 : 320)));
-      ctx.save(); ctx.globalAlpha = a; ctx.shadowColor = fal ? "#caa15a" : "#34e2e2"; ctx.shadowBlur = 5;
-      ctx.fillStyle = fal ? "#caa15a" : "#34e2e2";
-      ctx.beginPath(); ctx.arc(c.x, c.y - 1, fal ? 2.0 : 2.6, 0, 7); ctx.fill(); ctx.restore();
+      const a = Math.max(0.1, Math.min(0.55, 1 - d / 120)) * (0.6 + 0.4 * Math.sin(performance.now() / 320));
+      ctx.save(); ctx.globalAlpha = a; ctx.shadowColor = "#34e2e2"; ctx.shadowBlur = 5;
+      ctx.fillStyle = "#34e2e2";
+      ctx.beginPath(); ctx.arc(c.x, c.y - 1, 2.6, 0, 7); ctx.fill(); ctx.restore();
     }
     // 페어 물건 — obj 조각은 그 물건을 기억과 함께 표시(랜덤 배치돼도 '그 물건 이야기'가 유지됨)
     for (const s of shards) {
