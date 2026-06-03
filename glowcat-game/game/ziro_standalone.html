@@ -2008,8 +2008,8 @@ if (typeof module !== 'undefined') module.exports = Journal;
                    facing: "down", flip: false, animT: 0, frame: 0, step: 0, w: 10, h: 8 };
   let recall = null, hintTimer = 0, hintTarget = null, setbackT = 0, flash = 0, muted = false, shake = 0;
   let trail = [], trailCD = 0, projecting = false; const illuminated = new Set();
-  const AURA_R = 46;              // 기억 비추기 aura 반경(전방위)
-  let lowLightTip = 0;           // '빛 부족' 안내 쿨다운
+  const AURA_R = 54;              // 기억 비추기 펄스 반경
+  let lowLightTip = 0, auraFx = 0, revealT = 0, projInvuln = 0, insightT = 0, stealthShown = false;
   // 온보딩/피드백 상태
   let elapsed = 0, lTutDone = false, corePulse = 0; let toasts = [];   // toasts: {text,color,t}
   let sawMurk = false;
@@ -2084,7 +2084,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
     const W = cv.width, H = cv.height, R = 33, bx = W - 66, by = H - 70;
     return [
       { id: "e",     label: "조사",   x: bx,        y: by,        r: 41, hold: false },
-      { id: "q",     label: "비추기", x: bx - 98,   y: by - 8,    r: R,  hold: true },
+      { id: "q",     label: "비추기", x: bx - 98,   y: by - 8,    r: R,  hold: false },
       { id: "l",     label: "추적",   x: bx - 74,   y: by - 84,   r: R,  hold: false },
       { id: "shift", label: "은신",   x: bx + 2,    y: by - 100,  r: R,  hold: "toggle" },
       { id: "tab",   label: "일지",   x: bx - 156,  y: by - 66,   r: R,  hold: false },
@@ -2182,19 +2182,24 @@ if (typeof module !== 'undefined') module.exports = Journal;
       player.animT += dt; if (player.animT > 0.16) { player.animT = 0; player.frame ^= 1; player.step = (player.step||0) + 1; }
     } else player.frame = 0;
 
-    // 기억 비추기(Q) — 빛 자원 소모 AURA(전방위). 숨은 조각 드러냄 + 주변 Murk 차단 + 피격 무효
-    illuminated.clear(); projecting = false;
+    // 기억 비추기(Q) — 빛 1 소모 펄스. 그림자가 추격을 멈추고 제자리(순찰)로 복귀 + 숨은 기억 드러냄.
+    illuminated.clear();
     if (lowLightTip > 0) lowLightTip -= dt;
-    if (keys["q"]) {
-      if (st.light > 0) {
-        projecting = true;
-        st.light = Math.max(0, st.light - C.PROJECT_COST * dt);
-        for (const s of D.shards) if (s.hidden && !isDone(s)) {
-          const c = shardCenter(s);
-          if (dist(player.x, player.y, c.x, c.y) <= AURA_R) illuminated.add(s.id);
+    if (auraFx > 0) auraFx -= dt; if (revealT > 0) revealT -= dt; if (projInvuln > 0) projInvuln -= dt;
+    if (edge["q"]) {
+      if (st.light >= 1) {
+        st.light -= 1; auraFx = 0.6; revealT = 3.0; projInvuln = 0.5;
+        for (const m of murks) if (dist(player.x, player.y, m.x, m.y) <= AURA_R + 10) {
+          m.chasing = false; m.warded = 2.0; m.lost = 0;
+          const dd = dist(player.x, player.y, m.x, m.y) || 1;
+          m.x += (m.x - player.x) / dd * 18; m.y += (m.y - player.y) / dd * 18;   // 한 번 밀어냄
         }
-      } else if (lowLightTip <= 0) { toasts.push({ text: "빛이 부족하다 — 기억을 모으거나 안전지대에서 회복", color: "#9fc5c5", t: 2.0 }); lowLightTip = 2.2; }
+        toasts.push({ text: "기억의 빛 — 그림자가 물러나 제자리로 돌아간다", color: "#9af6f6", t: 1.8 });
+        if (window.Audio2 && Audio2.chime) try { Audio2.chime(); } catch (e) {}
+      } else if (lowLightTip <= 0) { toasts.push({ text: "빛이 부족하다 — 기억을 모으거나 안전지대에서 회복", color: "#9fc5c5", t: 2.0 }); lowLightTip = 2.0; }
     }
+    // 노출 창(revealT) 동안 근처 숨은 기억 표시
+    if (revealT > 0) for (const s of D.shards) if (s.hidden && !isDone(s) && dist(player.x, player.y, shardCenter(s).x, shardCenter(s).y) <= 76) illuminated.add(s.id);
 
     // 발자국 추적(L) — 가장 가까운 미발견 코어로 시안 발자국 흔적(무료, 쿨다운)
     if (edge["l"]) lTutDone = true;
@@ -2206,32 +2211,31 @@ if (typeof module !== 'undefined') module.exports = Journal;
     }
     for (const p of trail) p.age += dt; trail = trail.filter(p => p.age < C.TRAIL_LIFE);
 
+    // 은신 안내(1회)
+    if (stealth && !stealthShown) { stealthShown = true; toasts.push({ text: "은신: 느리지만 잘 안 들킨다 · 멈추면 거의 안 보인다", color: "#7fb0b3", t: 2.8 }); }
+
     // Murk
     let danger = false;
+    const nearestWp = (m) => { let bw = m.patrol[0], bd = 1e9; for (const w of m.patrol) { const dd = (w.x - m.x) ** 2 + (w.y - m.y) ** 2; if (dd < bd) { bd = dd; bw = w; } } return bw; };
     for (const m of murks) {
       if (m.warded > 0) m.warded -= dt;
-      if (projecting && dist(player.x, player.y, m.x, m.y) <= AURA_R) {     // aura: 전방위로 밀어냄
-        const dd = dist(player.x, player.y, m.x, m.y) || 1;
-        m.x += (m.x - player.x) / dd * 72 * dt; m.y += (m.y - player.y) / dd * 72 * dt;
-        m.chasing = false; m.warded = 0.3;
-      }
-      const sees = Core.murkSees({ x: m.x, y: m.y, faceAngle: m.faceAngle, sight: m.sightPx, fov: m.fov }, player.x, player.y)
-                   && !stealth || (Core.murkSees({ x:m.x,y:m.y,faceAngle:m.faceAngle,sight:m.sightPx*0.6,fov:m.fov }, player.x, player.y) && stealth);
+      const warded = m.warded > 0;                                   // 비추기로 물러난 상태 → 제자리 복귀, 감지/공격 안 함
+      const sm = stealth ? (moving ? 0.45 : 0.28) : 1.0;             // 은신: 정지하면 거의 안 보임
+      const sees = !warded && Core.murkSees({ x: m.x, y: m.y, faceAngle: m.faceAngle, sight: m.sightPx * sm, fov: m.fov }, player.x, player.y);
       if (sees) { m.chasing = true; m.lost = 0;
-        if (!sawMurk) { sawMurk = true; toasts.push({ text: "들켰다! [Shift] 은신으로 피하라", color: "#ff7a7a", t: 2.8 }); } }
-      else if (m.chasing) { m.lost += dt; if (m.lost > 2.5) m.chasing = false; }
+        if (!sawMurk) { sawMurk = true; toasts.push({ text: "들켰다! [은신]으로 천천히 — 멈추면 거의 안 보인다", color: "#ff7a7a", t: 3.0 }); } }
+      else if (m.chasing) { m.lost += dt * (stealth ? 2.4 : 1); if (m.lost > 2.2) m.chasing = false; }
       let ax, ay, spd;
-      if (m.chasing) { ax = player.x; ay = player.y; spd = m.speed * 1.35; danger = true; }
-      else { const w = m.patrol[m.wp]; ax = w.x; ay = w.y; spd = m.speed;
-             if (dist(m.x, m.y, w.x, w.y) < 3) m.wp = (m.wp + 1) % m.patrol.length; }
-      const d = dist(m.x, m.y, ax, ay) || 1;
-      const nx = (ax - m.x) / d, ny = (ay - m.y) / d;
+      if (warded) { const w = nearestWp(m); ax = w.x; ay = w.y; spd = m.speed; }   // 제자리(가까운 순찰점)로 복귀
+      else if (m.chasing) { ax = player.x; ay = player.y; spd = m.speed * 1.35; danger = true; }
+      else { const w = m.patrol[m.wp]; ax = w.x; ay = w.y; spd = m.speed; if (dist(m.x, m.y, w.x, w.y) < 3) m.wp = (m.wp + 1) % m.patrol.length; }
+      const d = dist(m.x, m.y, ax, ay) || 1, nx = (ax - m.x) / d, ny = (ay - m.y) / d;
       m.x += nx * spd * dt; m.y += ny * spd * dt;
       if (Math.abs(nx) + Math.abs(ny) > 0.01) m.faceAngle = Math.atan2(ny, nx);
-      if (dist(m.x, m.y, player.x, player.y) < 11 && !projecting && !(m.warded > 0)) {   // 비추는 동안/직후엔 피격 무효
+      if (dist(m.x, m.y, player.x, player.y) < 11 && !warded && projInvuln <= 0) {   // 물러난 동안/펄스 직후엔 피격 무효
         if (Core.contact(st)) { flash = 0.18; shake = 4; if (window.Audio2) Audio2.sfx("contact"); }
       }
-      if (dist(m.x, m.y, player.x, player.y) < m.sightPx * 0.6) danger = true;
+      if (!warded && dist(m.x, m.y, player.x, player.y) < m.sightPx * 0.55) danger = true;
     }
 
     // 게이지 tick
@@ -2254,19 +2258,12 @@ if (typeof module !== 'undefined') module.exports = Journal;
     }
     if (edge["e"] && nearShard) doCollect(nearShard);
 
-    // 힌트(H) — 빛 1 소모, 가장 가까운 미발견 코어 방향. 빛 부족 시 안내.
+    // 통찰(H) — 빛 1 소모. 주변의 모든 미발견 기억을 드러내고 거짓을 ✗로 표시(추적 L과 차별화).
     if (edge["h"]) {
-      if (Core.useHint(st).ok) {
-        let best = null, bd = 1e9;
-        for (const s of D.shards) if (!isDone(s) && s.type === "core") {
-          const c = shardCenter(s), dd = dist(player.x, player.y, c.x, c.y);
-          if (dd < bd) { bd = dd; best = c; }
-        }
-        hintTarget = best; hintTimer = best ? 3.0 : 0;
-        if (!best) toasts.push({ text: "남은 코어 기억이 없다", color: "#9fc5c5", t: 1.6 });
-      } else toasts.push({ text: "빛이 부족하다 — 안전지대에서 회복", color: "#9fc5c5", t: 2.0 });
+      if (Core.useHint(st).ok) { insightT = 5.0; toasts.push({ text: "통찰 — 숨은 기억까지 드러난다 (✗ = 거짓)", color: "#8ef548", t: 2.2 }); }
+      else toasts.push({ text: "빛이 부족하다 — 안전지대에서 회복", color: "#9fc5c5", t: 2.0 });
     }
-    if (hintTimer > 0) hintTimer -= dt;
+    if (insightT > 0) insightT -= dt;
 
     // 음소거
     if (edge["m"] && window.Audio2) { muted = !muted; Audio2.setMuted(muted); }
@@ -2338,15 +2335,15 @@ if (typeof module !== 'undefined') module.exports = Journal;
     for (const p of trail) { const a = 1 - p.age / C.TRAIL_LIFE; ctx.save(); ctx.globalAlpha = 0.55 * a; ctx.fillStyle = "#34e2e2";
       ctx.beginPath(); ctx.ellipse(p.x, p.y + 1, 2.2, 1.6, 0, 0, 7); ctx.fill();
       ctx.beginPath(); ctx.arc(p.x - 1.6, p.y - 1.6, 0.8, 0, 7); ctx.arc(p.x + 1.6, p.y - 1.6, 0.8, 0, 7); ctx.fill(); ctx.restore(); }
-    // 기억 비추기 aura(전방위 발광 원) — 주변 그림자를 밀어내는 보호막
-    if (projecting) {
-      const ar = AURA_R, pul = 0.5 + 0.5 * Math.sin(performance.now() / 130), cyx = player.x, cyy = player.y - 2;
+    // 기억 비추기 펄스 — 확장하는 빛 고리(그림자를 밀어냄)
+    if (auraFx > 0) {
+      const f = auraFx / 0.6, t = 1 - f, ar = AURA_R * (0.45 + 0.75 * t), cyx = player.x, cyy = player.y - 2;
       ctx.save();
       const g = ctx.createRadialGradient(cyx, cyy, 3, cyx, cyy, ar);
-      g.addColorStop(0, "rgba(154,246,246,0.30)"); g.addColorStop(0.65, "rgba(52,226,226,0.12)"); g.addColorStop(1, "rgba(52,226,226,0)");
+      g.addColorStop(0, "rgba(154,246,246," + (0.32 * f) + ")"); g.addColorStop(0.7, "rgba(52,226,226," + (0.13 * f) + ")"); g.addColorStop(1, "rgba(52,226,226,0)");
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cyx, cyy, ar, 0, 7); ctx.fill();
-      ctx.globalAlpha = 0.35 + 0.35 * pul; ctx.strokeStyle = "#9af6f6"; ctx.lineWidth = 1.2;
-      ctx.beginPath(); ctx.arc(cyx, cyy, ar * (0.82 + 0.12 * pul), 0, 7); ctx.stroke();
+      ctx.globalAlpha = 0.8 * f; ctx.strokeStyle = "#9af6f6"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cyx, cyy, ar, 0, 7); ctx.stroke();
       ctx.restore();
     }
 
@@ -2385,25 +2382,34 @@ if (typeof module !== 'undefined') module.exports = Journal;
         }
       } else {
         const m = e.m;
-        // 시야콘 (감지 범위 시각화 — 평시 보라, 추격 빨강)
-        const hf = (m.fov * Math.PI / 180) / 2;
-        ctx.save(); ctx.globalAlpha = m.chasing ? 0.18 : 0.08; ctx.fillStyle = m.chasing ? "#ff5a5a" : "#7a5cff";
+        // 시야콘 (감지 범위 — 평시 보라/추격 빨강/물러남 약하게). 은신 중이면 흐려져 '덜 보임'을 전달.
+        const hf = (m.fov * Math.PI / 180) / 2, sneaking = (keys["shift"] || touch.sneak);
+        const cAlpha = (m.warded > 0 ? 0.03 : (m.chasing ? 0.18 : 0.08)) * (sneaking ? 0.45 : 1);
+        ctx.save(); ctx.globalAlpha = cAlpha; ctx.fillStyle = m.chasing ? "#ff5a5a" : "#7a5cff";
         ctx.beginPath(); ctx.moveTo(m.x, m.y);
-        ctx.arc(m.x, m.y, m.sightPx, m.faceAngle - hf, m.faceAngle + hf); ctx.closePath(); ctx.fill(); ctx.restore();
+        ctx.arc(m.x, m.y, m.sightPx * (sneaking ? 0.5 : 1), m.faceAngle - hf, m.faceAngle + hf); ctx.closePath(); ctx.fill(); ctx.restore();
         if (IMG.murk) glow(() => ctx.drawImage(IMG.murk, Math.round(m.x - IMG.murk.width/2), Math.round(m.y - IMG.murk.height/2)), m.chasing ? "#ff5a5a" : "#7a5cff", m.chasing ? 5 : 2);
       }
     }
 
-    // 힌트 화살표(H) — 코어 방향 점선 + 펄스 화살표(잘 보이게)
-    if (hintTimer > 0 && hintTarget) {
-      const a = Math.atan2(hintTarget.y - player.y, hintTarget.x - player.x);
-      const pul = 0.6 + 0.4 * Math.sin(performance.now() / 140);
-      ctx.save(); ctx.globalAlpha = 0.4 * pul; ctx.strokeStyle = "#8ef548"; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
-      ctx.beginPath(); ctx.moveTo(player.x + Math.cos(a) * 12, player.y + Math.sin(a) * 12);
-      ctx.lineTo(player.x + Math.cos(a) * 30, player.y + Math.sin(a) * 30); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
-      ctx.save(); ctx.globalAlpha = 0.7 + 0.3 * pul; ctx.translate(player.x + Math.cos(a) * 26, player.y + Math.sin(a) * 26); ctx.rotate(a);
-      ctx.fillStyle = "#8ef548"; ctx.shadowColor = "#8ef548"; ctx.shadowBlur = 4;
-      ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-4, -6); ctx.lineTo(-4, 6); ctx.closePath(); ctx.fill(); ctx.restore();
+    // 통찰(H) — 미발견 기억을 드러냄: 코어/에코는 ●(코어 더 큼), 거짓은 ✗
+    if (insightT > 0) {
+      const a = Math.min(1, insightT) * (0.65 + 0.35 * Math.sin(performance.now() / 150));
+      for (const s of D.shards) {
+        if (isDone(s)) continue;
+        const c = shardCenter(s);
+        ctx.save(); ctx.globalAlpha = a;
+        if (s.type === "false") {
+          ctx.strokeStyle = "#caa15a"; ctx.lineWidth = 2; ctx.shadowColor = "#caa15a"; ctx.shadowBlur = 4;
+          ctx.beginPath(); ctx.moveTo(c.x - 4, c.y - 5); ctx.lineTo(c.x + 4, c.y + 3);
+          ctx.moveTo(c.x + 4, c.y - 5); ctx.lineTo(c.x - 4, c.y + 3); ctx.stroke();
+        } else {
+          const col = s.type === "core" ? "#34e2e2" : "#9fc5c5";
+          ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 6;
+          ctx.beginPath(); ctx.arc(c.x, c.y - 1, s.type === "core" ? 3.4 : 2.4, 0, 7); ctx.fill();
+        }
+        ctx.restore();
+      }
     }
 
     // 피격 플래시
@@ -2440,14 +2446,18 @@ if (typeof module !== 'undefined') module.exports = Journal;
     ctx.fillText("드래그하여 이동", jcx, jcy + 78); ctx.restore();
     // 스킬 버튼(우하단)
     for (const b of touchButtons()) {
-      const on = (b.id === "shift" && touch.sneak) || (b.id === "q" && touch.holdQ !== null);
-      ctx.save();
+      const usesLight = (b.id === "q" || b.id === "h");
+      const noLight = usesLight && st.light < 1;
+      const on = (b.id === "shift" && touch.sneak) || (b.id === "q" && auraFx > 0);
+      ctx.save(); ctx.globalAlpha = noLight ? 0.5 : 1;
       ctx.fillStyle = on ? "rgba(52,226,226,.35)" : "rgba(10,16,20,.82)";
       ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.fill();
       ctx.strokeStyle = on ? "#9af6f6" : "#34e2e2"; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.stroke();
       ctx.fillStyle = "#eafaff"; ctx.font = "bold 13px 'Noto Sans KR',sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(b.label, b.x, b.y); ctx.textBaseline = "alphabetic"; ctx.restore();
+      ctx.fillText(b.label, b.x, b.y); ctx.textBaseline = "alphabetic";
+      if (usesLight) { ctx.font = "bold 10px 'Noto Sans KR',sans-serif"; ctx.fillStyle = noLight ? "#ff7a7a" : "#9af6f6"; ctx.fillText("빛 " + Math.floor(st.light), b.x, b.y + b.r + 11); }
+      ctx.restore();
     }
   }
 
@@ -2534,7 +2544,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
     ctx.fillStyle = "#16262a"; ctx.fillRect(26, 50, 100, 6);
     ctx.fillStyle = "#34e2e2"; ctx.fillRect(26, 50, 100 * (st.light / C.LIGHT_MAX), 6);
     ctx.fillStyle = "#9fc5c5"; ctx.font = "11px 'Noto Sans KR',sans-serif";
-    ctx.fillText("빛 " + (st.light||0).toFixed(1) + "   [Q]비추기·[H]힌트", 132, 56);
+    ctx.fillText("빛 " + Math.floor(st.light||0) + "   [Q]비추기 · [H]통찰", 132, 56);
     ctx.fillStyle = trailCD > 0 ? "#8aa7a9" : "#8ef548";
     ctx.fillText(trailCD > 0 ? "[L] 발자국 추적  " + trailCD.toFixed(0) + "s" : "[L] 발자국 추적 (사용가능)", 26, 70);
     ctx.fillStyle = "#9fc5c5"; ctx.fillText("[Tab] 기억 일지", 26, 86);
