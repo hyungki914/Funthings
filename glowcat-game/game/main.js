@@ -23,7 +23,7 @@
   }
 
   // ── 상태 ──────────────────────────────────────────────────
-  let phase = "title";   // title | intro | play | recall | setback | journal | transition
+  let phase = "title";   // title | intro | play | recall | setback | journal | realize | choice | ending | transition
   const player = { x: 0, y: 0, vx: 0, vy: 0, dir: Math.PI/2,
                    facing: "down", flip: false, animT: 0, frame: 0, step: 0, w: 10, h: 8 };
   let recall = null, hintTimer = 0, hintTarget = null, setbackT = 0, flash = 0, muted = false, shake = 0;
@@ -35,6 +35,8 @@
   let sawMurk = false, sawEcho = false, playerNoise = 0;
   // 인트로(콜드 오픈) / 스테이지 전환
   let introT = 0, transT = 0, veil = 0, hasNext = false;
+  // 깨달음(회상 몽타주) / 최종 선택 / 엔딩
+  let realizeT = 0, realizeI = 0, realizeLines = [], choiceSel = 0, endingType = null;
   const INTRO = [
     { at: 0.0, line: "…어둡다." },
     { at: 2.2, line: "여기는… 어디지." },
@@ -54,6 +56,19 @@
   function beginTransition() {
     phase = "transition"; transT = 0; hasNext = (chapterIdx + 1) < CHAPTERS.length;
     if (window.Audio2) try { if (Audio2.music) Audio2.music(null); Audio2.drone(0); Audio2.heartbeat(0); if (Audio2.chime) Audio2.chime(); } catch (e) {}  // 위험 오디오 정지 + 클리어 스팅어
+  }
+  // 깨달음(회상 몽타주) — 이 챕터에서 되찾은 코어 기억의 회상 → 챕터 깨달음(epiphany)을 한 줄씩.
+  //   마지막 줄 이후: 최종 챕터면 choice(받아들이기/다시 잊기), 아니면 다음 챕터 전환.
+  function beginRealize() {
+    realizeLines = [];
+    for (const id of (st.coreOrder || [])) {            // 획득 순서대로 코어 회상 회고
+      const s = D.shards.find(x => x.id === id);
+      if (s && s.recall) realizeLines.push({ kind: "memory", text: s.recall });
+    }
+    for (const line of (D.epiphany || [])) realizeLines.push({ kind: "epiphany", text: line });
+    if (!realizeLines.length) { beginTransition(); return; }   // 데이터 없으면 곧장 전환(폴백)
+    realizeI = 0; realizeT = 0; phase = "realize";
+    if (window.Audio2) try { if (Audio2.music) Audio2.music(null); Audio2.drone(0); Audio2.heartbeat(0); if (Audio2.chime) Audio2.chime(); } catch (e) {}
   }
   // 챕터 매니저 — 맵/엔티티를 idx 챕터로 (재)초기화 (data에 chapter2/3 추가 시 체이닝)
   function loadStage(idx) {
@@ -126,6 +141,13 @@
     if (phase === "title") { startIntro(); return; }
     if (phase === "intro") { skipIntro(); return; }
     if (phase === "recall") { closeRecall(); return; }
+    if (phase === "realize") { edge[" "] = true; return; }              // 탭하여 다음 줄
+    if (phase === "choice") {                                            // 선택지 탭 = 선택+결정
+      for (let i = 0; i < 2; i++) { const oy = cv.height/2 - 6 + i*70, w = 520, x = (cv.width - w)/2;
+        if (p.x >= x && p.x <= x+w && p.y >= oy && p.y <= oy+56) { choiceSel = i; edge[" "] = true; return; } }
+      return;
+    }
+    if (phase === "ending") { edge[" "] = true; return; }
     if (phase === "transition") { if (!hasNext) gotoTitle(); return; }
     if (phase === "journal") { edge["tab"] = true; return; }        // 탭하여 닫기
     if (phase !== "play" || !touchUI) return;
@@ -172,6 +194,25 @@
       } else if (!hasNext && transT > 1.2 && (edge[" "] || edge["enter"])) { gotoTitle(); }
       clearEdges(); return;
     }
+    if (phase === "realize") {                          // 회상 몽타주: 한 줄씩(자동 ~4.2s 또는 키/탭)
+      realizeT += dt;
+      if (edge[" "] || edge["enter"] || realizeT > 4.2) {
+        realizeT = 0; realizeI++;
+        if (realizeI >= realizeLines.length) {
+          if (D.isFinal) { phase = "choice"; choiceSel = 0; } else beginTransition();
+        } else if (window.Audio2 && Audio2.chime) try { Audio2.chime(); } catch (e) {}
+      }
+      clearEdges(); return;
+    }
+    if (phase === "choice") {                            // 최종 선택: 받아들이기(0) / 다시 잊기(1)
+      if (edge["w"] || edge["s"] || edge["arrowup"] || edge["arrowdown"]) choiceSel ^= 1;
+      if (edge[" "] || edge["enter"]) {
+        endingType = choiceSel === 0 ? "accept" : "forget"; phase = "ending"; transT = 0;
+        if (window.Audio2) try { Audio2.drone(0); Audio2.heartbeat(0); if (endingType === "accept" && Audio2.chime) Audio2.chime(); } catch (e) {}
+      }
+      clearEdges(); return;
+    }
+    if (phase === "ending") { transT += dt; if (transT > 2.4 && (edge[" "] || edge["enter"])) gotoTitle(); clearEdges(); return; }
     if (phase === "recall") { if (edge[" "] || edge["enter"]) closeRecall(); clearEdges(); return; }
     if (phase === "setback") { setbackT -= dt; if (setbackT <= 0) phase = "play"; clearEdges(); return; }
     if (phase === "journal") { if (edge["tab"] || edge["escape"]) phase = "play"; clearEdges(); return; }
@@ -317,8 +358,8 @@
     // 위험 오디오
     if (window.Audio2) { Audio2.drone(danger ? 0.8 : 0); Audio2.heartbeat(st.mem <= 2 ? 96 : 0); }
 
-    // 클리어 → 전환 시퀀스(부드러운 페이드 + 챕터 카드)
-    if (Core.chapterClear(st) && door && dist(player.x, player.y, door.x, door.y) < 14) beginTransition();
+    // 클리어 → 깨달음(회상 몽타주) → (최종) 선택/엔딩 또는 다음 챕터 전환
+    if (Core.chapterClear(st) && door && dist(player.x, player.y, door.x, door.y) < 14) beginRealize();
 
     if (flash > 0) flash -= dt; if (shake > 0) shake -= dt * 24;
     if (veil > 0) veil = Math.max(0, veil - dt);   // 방 진입 페이드인
@@ -367,8 +408,9 @@
 
     if (!ready) { ctx.restore(); hudText("로딩…", NW*S/2, NH*S/2, "#34e2e2", 20, true); return; }
 
-    // 배경
-    if (IMG.room1 && IMG.room1.width) ctx.drawImage(IMG.room1, 0, 0, NW, NH);
+    // 배경 — 현재 챕터의 bgKey(room1/room2/room3) 사용
+    const bg = IMG[D.bgKey] || IMG.room1;
+    if (bg && bg.width) ctx.drawImage(bg, 0, 0, NW, NH);
     else { ctx.fillStyle = "#10140d"; ctx.fillRect(0, 0, NW, NH); }
 
     // 문(클리어 가능 시 빛남)
@@ -462,6 +504,9 @@
     if (phase === "setback") overlayCenter("…어둡다. 여기는…", "#9ab", "방금 떠올린 기억이 다시 어둠에 잠겼다 · 같은 자리에서 되찾을 수 있다");
     if (phase === "cleared") overlayCenter("챕터 1 클리어 · 「지로의 방」", "#8ef548", "지로가 첫 기억들을 되찾았다.");
     if (phase === "intro") overlayIntro();
+    if (phase === "realize") overlayRealize();
+    if (phase === "choice") overlayChoice();
+    if (phase === "ending") overlayEnding();
     if (phase === "transition") overlayTransition();
     if (phase === "journal" && window.Journal) { try { Journal.draw(ctx, cv, st, D, IMG); } catch (e) { console.error(e); } }
     if (veil > 0) { ctx.save(); ctx.fillStyle = "rgba(3,5,9," + Math.min(1, veil / 0.8) + ")"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.restore(); }
@@ -536,6 +581,105 @@
       ctx.fillText(hasNext ? "지로가 첫 기억들을 되찾았다 — 다음 이야기로…" : "지로가 첫 기억들을 되찾았다.", cv.width / 2, cv.height / 2 + 54);
       if (!hasNext) { ctx.fillStyle = "#8ef548"; ctx.font = "13px 'Noto Sans KR',sans-serif"; ctx.fillText("[Space] 처음으로", cv.width / 2, cv.height / 2 + 86); }
     }
+    ctx.restore();
+  }
+
+  // 깨달음(회상 몽타주) — 되찾은 코어 회상 → 챕터 깨달음을 한 줄씩 페이드 인
+  function overlayRealize() {
+    ctx.save();
+    ctx.fillStyle = "#04070b"; ctx.fillRect(0, 0, cv.width, cv.height);
+    const line = realizeLines[Math.min(realizeI, realizeLines.length - 1)];
+    if (!line) { ctx.restore(); return; }
+    const epi = line.kind === "epiphany", appear = Math.min(1, realizeT / 0.8);
+    ctx.textAlign = "center";
+    // 은은한 중앙 빛무리(깨달음일 때 더 밝게)
+    ctx.globalAlpha = appear * (epi ? 0.5 : 0.3);
+    const gg = ctx.createRadialGradient(cv.width/2, cv.height/2 - 20, 10, cv.width/2, cv.height/2 - 20, 260);
+    gg.addColorStop(0, epi ? "rgba(142,245,72,0.16)" : "rgba(52,226,226,0.12)"); gg.addColorStop(1, "rgba(4,7,11,0)");
+    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(cv.width/2, cv.height/2 - 20, 260, 0, 7); ctx.fill();
+    ctx.globalAlpha = 0.75 * appear; ctx.fillStyle = epi ? "#8ef548" : "#34e2e2"; ctx.font = "14px 'Noto Sans KR',sans-serif";
+    ctx.fillText(epi ? "— 깨달음 —" : "— 되찾은 기억 —", cv.width/2, cv.height/2 - 78);
+    ctx.globalAlpha = appear; ctx.fillStyle = epi ? "#eafaff" : "#cfe6e6";
+    ctx.font = (epi ? "bold 22px" : "20px") + " 'Noto Sans KR',sans-serif";
+    wrapCenter(line.text, cv.width/2, cv.height/2 - 26, cv.width - 220, 32);
+    // 진행 점
+    const n = realizeLines.length, dotY = cv.height/2 + 116;
+    for (let i = 0; i < n; i++) { ctx.globalAlpha = i <= realizeI ? 0.95 : 0.3;
+      ctx.fillStyle = i <= realizeI ? (realizeLines[i].kind === "epiphany" ? "#8ef548" : "#34e2e2") : "#27343a";
+      ctx.beginPath(); ctx.arc(cv.width/2 - (n-1)*7 + i*14, dotY, 3, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 0.5; ctx.fillStyle = "#5a7375"; ctx.font = "13px 'Noto Sans KR',sans-serif";
+    ctx.fillText("아무 키 / 클릭 — 계속", cv.width/2, cv.height - 38);
+    ctx.restore();
+  }
+
+  // 최종 선택 — 받아들이기 / 다시 잊기 (The Blank가 마주본다)
+  function overlayChoice() {
+    ctx.save();
+    ctx.fillStyle = "#04060a"; ctx.fillRect(0, 0, cv.width, cv.height);
+    const t = performance.now() / 1000;                       // The Blank — 중앙의 일렁이는 공백
+    ctx.globalAlpha = 0.6 + 0.18 * Math.sin(t * 1.4);
+    const g = ctx.createRadialGradient(cv.width/2, cv.height/2 - 30, 6, cv.width/2, cv.height/2 - 30, 230);
+    g.addColorStop(0, "rgba(0,0,0,0.6)"); g.addColorStop(0.55, "rgba(8,8,14,0.4)"); g.addColorStop(1, "rgba(4,6,10,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cv.width/2, cv.height/2 - 30, 230, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1; ctx.textAlign = "center";
+    ctx.fillStyle = "#9fb6b6"; ctx.font = "15px 'Noto Sans KR',sans-serif";
+    ctx.fillText("마지막 조각이 손끝에 닿는다. 텅 빈 자리 — The Blank가 너를 마주본다.", cv.width/2, cv.height/2 - 112);
+    ctx.fillStyle = "#eafaff"; ctx.font = "bold 24px 'Noto Sans KR',sans-serif";
+    ctx.fillText("이 진실을, 받아들이겠는가?", cv.width/2, cv.height/2 - 74);
+    const opts = [
+      { t: "받아들이기", s: "아픔째로 끌어안는다 — 함께한 시간은 사라지지 않는다", c: "#8ef548" },
+      { t: "다시 잊기",   s: "기억을 어둠 속으로 — 처음의 자리로 돌아간다",      c: "#7a5cff" }
+    ];
+    for (let i = 0; i < 2; i++) {
+      const oy = cv.height/2 - 6 + i*70, sel = choiceSel === i, w = 520, x = (cv.width - w)/2;
+      ctx.fillStyle = sel ? "rgba(52,226,226,.14)" : "rgba(10,16,20,.72)"; rrect(x, oy, w, 56, 10); ctx.fill();
+      ctx.strokeStyle = sel ? opts[i].c : "#27343a"; ctx.lineWidth = sel ? 2.5 : 1; rrect(x, oy, w, 56, 10); ctx.stroke();
+      ctx.fillStyle = sel ? "#eafaff" : "#9fb6b6"; ctx.font = "bold 20px 'Noto Sans KR',sans-serif";
+      ctx.fillText(opts[i].t, cv.width/2, oy + 26);
+      ctx.fillStyle = "#7f9b9b"; ctx.font = "13px 'Noto Sans KR',sans-serif"; ctx.fillText(opts[i].s, cv.width/2, oy + 46);
+    }
+    ctx.fillStyle = "#5a7375"; ctx.font = "13px 'Noto Sans KR',sans-serif";
+    ctx.fillText("↑↓ / W S 선택   ·   [Space] 결정", cv.width/2, cv.height - 34);
+    ctx.restore();
+  }
+
+  // 엔딩 — 진실(accept) / 회귀(forget)
+  function overlayEnding() {
+    const accept = endingType === "accept", fade = Math.min(1, transT / 1.4);
+    ctx.save();
+    if (accept) { const g = ctx.createRadialGradient(cv.width/2, cv.height/2, 20, cv.width/2, cv.height/2, cv.height);
+      g.addColorStop(0, "rgba(22,32,16,1)"); g.addColorStop(1, "rgba(4,8,5,1)"); ctx.fillStyle = g; }
+    else ctx.fillStyle = "#020305";
+    ctx.globalAlpha = fade; ctx.fillRect(0, 0, cv.width, cv.height); ctx.globalAlpha = 1;
+    if (transT < 1.0) { ctx.restore(); return; }
+    const ap = Math.min(1, (transT - 1.0) / 1.0); ctx.globalAlpha = ap; ctx.textAlign = "center";
+    if (accept) {
+      ctx.fillStyle = "#8ef548"; ctx.font = "16px 'Noto Sans KR',sans-serif";
+      ctx.fillText("— 진실 엔딩 —", cv.width/2, cv.height/2 - 124);
+      ctx.fillStyle = "#eafaff"; ctx.font = "18px 'Noto Sans KR',sans-serif";
+      wrapCenter("하루는 떠났다. 하지만 함께한 시간은, 어디로도 사라지지 않는다.", cv.width/2, cv.height/2 - 64, cv.width - 240, 28);
+      ctx.fillStyle = "#9fc5c5"; ctx.font = "15px 'Noto Sans KR',sans-serif";
+      ctx.fillText("비어 있던 이름표가, 마침내 또렷해진다 —", cv.width/2, cv.height/2 - 2);
+      const np = Math.min(1, (transT - 2.4) / 1.0);
+      if (np > 0) {
+        ctx.globalAlpha = np; ctx.shadowColor = "#34e2e2"; ctx.shadowBlur = 24;
+        ctx.fillStyle = "#9bf24a"; ctx.font = "bold 50px 'Noto Sans KR',sans-serif";
+        ctx.fillText("지로  ·  Ziro", cv.width/2, cv.height/2 + 66); ctx.shadowBlur = 0;
+        ctx.fillStyle = "#cfe6e6"; ctx.font = "15px 'Noto Sans KR',sans-serif";
+        ctx.fillText("하루가 불러주던, 세상에서 가장 따뜻한 소리.", cv.width/2, cv.height/2 + 104);
+      }
+    } else {
+      ctx.fillStyle = "#7a5cff"; ctx.font = "16px 'Noto Sans KR',sans-serif";
+      ctx.fillText("— 회귀 엔딩 —", cv.width/2, cv.height/2 - 92);
+      ctx.fillStyle = "#9ab"; ctx.font = "19px 'Noto Sans KR',sans-serif";
+      wrapCenter("나는 눈을 감았다. 아픈 기억은, 다시 어둠 속으로.", cv.width/2, cv.height/2 - 32, cv.width - 240, 28);
+      ctx.fillStyle = "#5a7375"; ctx.font = "17px 'Noto Sans KR',sans-serif";
+      ctx.fillText("…어둡다. 여기는… 어디지.", cv.width/2, cv.height/2 + 26);
+      ctx.fillText("나는… 나는 누구지?", cv.width/2, cv.height/2 + 56);
+    }
+    if (transT > 2.4) { ctx.globalAlpha = 0.5 + 0.3 * Math.sin(performance.now() / 400);
+      ctx.fillStyle = accept ? "#8ef548" : "#7f9b9b"; ctx.font = "13px 'Noto Sans KR',sans-serif";
+      ctx.fillText("[Space] 처음으로", cv.width/2, cv.height - 38); }
     ctx.restore();
   }
 
@@ -691,6 +835,15 @@
     for (const w of words) { const test = line ? line + " " + w : w;
       if (ctx.measureText(test).width > maxw && line) { ctx.fillText(line, x, yy); line = w; yy += lh; } else line = test; }
     if (line) ctx.fillText(line, x, yy); }
+  // 중앙 정렬 줄바꿈(세로 중앙) — 회상/엔딩 본문용. 호출 전 textAlign='center' 가정.
+  function wrapCenter(t, cx, y, maxw, lh) {
+    const words = (t||"").split(/\s+/); const lines = []; let line = "";
+    for (const w of words) { const test = line ? line + " " + w : w;
+      if (ctx.measureText(test).width > maxw && line) { lines.push(line); line = w; } else line = test; }
+    if (line) lines.push(line);
+    let yy = y - (lines.length - 1) * lh / 2;
+    for (const l of lines) { ctx.fillText(l, cx, yy); yy += lh; }
+  }
 
   // ── 루프 ──────────────────────────────────────────────────
   let last = performance.now();
@@ -698,7 +851,12 @@
     try { update(dt); } catch (e) { console.error(e); }
     draw(); requestAnimationFrame(frame); }
   // 디버그 스냅샷(테스트용, 무해): 상태 읽기 전용
-  if (typeof window !== 'undefined') { window.__ziro = () => ({ phase, px: player.x, py: player.y, mem: st ? st.mem : 0, ch: chapterIdx }); window.__loadStage = (i) => { loadStage(i); phase = "play"; }; }
+  if (typeof window !== 'undefined') {
+    window.__ziro = () => ({ phase, px: player.x, py: player.y, mem: st ? st.mem : 0, ch: chapterIdx,
+                             realizeI, realizeLen: realizeLines.length, choiceSel, endingType });
+    window.__loadStage = (i) => { loadStage(i); phase = "play"; };
+    window.__debugClear = () => { for (const s of D.shards) if (s.type === "core") Core.collect(st, s); beginRealize(); };  // 테스트용: 코어 수집 후 깨달음 진입
+  }
   loadStage(0);                 // 첫 챕터 초기화(맵·엔티티·상태)
   requestAnimationFrame(frame);
 })();

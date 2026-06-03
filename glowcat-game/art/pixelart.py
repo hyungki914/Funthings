@@ -228,6 +228,31 @@ def tile_rug():
         px[0, y] = px[15, y] = (*TPAL['q'], 255)
     return im
 
+def tile_grass(variant=0):
+    im = Image.new("RGBA", (16, 16)); px = im.load()
+    base, dk, lt = (28, 46, 30), (22, 38, 24), (36, 56, 36)
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = (*base, 255)
+    blades = [(3, 4), (8, 2), (12, 6), (5, 11), (11, 13), (14, 9)] if not variant \
+        else [(2, 7), (6, 5), (9, 10), (13, 3), (7, 13), (12, 12)]
+    for (x, y) in blades:
+        px[x, y] = (*lt, 255)
+        if y + 1 < 16: px[x, y + 1] = (*dk, 255)
+    return im
+
+def tile_path():
+    im = Image.new("RGBA", (16, 16)); px = im.load()
+    base, dk, lt = (60, 54, 44), (48, 43, 35), (74, 67, 54)
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = (*base, 255)
+    for x in range(16):
+        px[x, 0] = (*lt, 255); px[x, 15] = (*dk, 255)
+    for (x, y) in [(4, 5), (10, 9), (7, 12), (12, 3)]:
+        px[x, y] = (*dk, 255)
+    return im
+
 
 # ── 방 씬 ────────────────────────────────────────────────────────────────────
 def build_room(with_entities=True):
@@ -354,6 +379,60 @@ def build_room2(with_entities=False):
     return scene.convert("RGB")
 
 
+# ── 챕터3 「공원」 배경 (산책로 + 벤치 + 분수 + 나무) ─────────────────────────
+def build_room3(with_entities=False):
+    TW = 16; cols, rows = 22, 14
+    scene = Image.new("RGBA", (cols*TW, rows*TW), (20, 34, 22, 255))
+    g0, g1, path = tile_grass(0), tile_grass(1), tile_path()
+    def blit(img, tx, ty): scene.alpha_composite(img, (tx*TW, ty*TW))
+    for ty in range(rows):
+        for tx in range(cols):
+            blit(g1 if (tx*3 + ty*5) % 7 == 0 else g0, tx, ty)
+    # 산책로 — 중앙 세로(문→하단) + 하단 가로
+    for ty in range(2, 13):
+        for tx in range(9, 12): blit(path, tx, ty)
+    for tx in range(1, 21):
+        for ty in range(11, 13): blit(path, tx, ty)
+    d = ImageDraw.Draw(scene)
+    def hedge(x0, y0, x1, y1): d.rectangle((x0, y0, x1, y1), fill=(18, 40, 22), outline=(10, 24, 14))
+    hedge(0, 0, cols*TW, 2*TW); hedge(0, (rows-1)*TW, cols*TW, rows*TW)        # 경계 헤지
+    hedge(0, 0, TW, rows*TW); hedge((cols-1)*TW, 0, cols*TW, rows*TW)
+    d.rectangle((10*TW-2, 0, 11*TW+2, 2*TW), fill=(44, 62, 44), outline=(20, 36, 22))   # 상단 게이트(문)
+    def block(x0, y0, x1, y1, fill, outline, top=None):
+        d.rectangle((x0, y0, x1, y1), fill=fill, outline=outline)
+        if top: d.rectangle((x0, y0, x1, y0+2), fill=top)
+    def tree(cx, cy):
+        d.rectangle((cx+TW-3, cy+TW, cx+TW+3, cy+2*TW), fill=(58, 42, 28), outline=(28, 20, 12))   # 줄기
+        for (ox, oy, r, col) in [(TW, TW-4, 16, (30, 70, 36)), (TW-8, TW, 13, (36, 84, 42)),
+                                  (TW+8, TW, 13, (26, 62, 32)), (TW, TW+4, 12, (42, 96, 50))]:
+            d.ellipse((cx+ox-r, cy+oy-r, cx+ox+r, cy+oy+r), fill=col)
+    tree(3*TW, 3*TW); tree(17*TW, 3*TW); tree(3*TW, 10*TW)
+    # 벤치 (cols9~11, row4) — 등받이 + 다리
+    bx, by = 9*TW, 4*TW
+    d.rectangle((bx, by-8, bx+3*TW, by-2), fill=(86, 64, 42), outline=(34, 24, 14))
+    block(bx, by, bx+3*TW, by+TW, (74, 54, 34), (34, 24, 14), top=(96, 72, 46))
+    for legx in (bx+4, bx+3*TW-7):
+        d.rectangle((legx, by+TW, legx+3, by+TW+6), fill=(40, 28, 18))
+    # 분수 (cols14~16, rows9~11)
+    fx, fy = 14*TW, 9*TW
+    d.ellipse((fx, fy, fx+3*TW, fy+3*TW), fill=(78, 84, 92), outline=(40, 44, 50))
+    d.ellipse((fx+8, fy+8, fx+3*TW-8, fy+3*TW-8), fill=(26, 120, 130), outline=(40, 44, 50))
+    d.ellipse((fx+int(1.1*TW), fy+int(1.0*TW), fx+int(1.9*TW), fy+int(1.8*TW)), fill=(52, 226, 226))
+    # 가로등 (벤치 옆) — 안전지대 빛
+    lx, ly = 12*TW+4, 5*TW
+    d.rectangle((lx, ly, lx+3, ly+3*TW), fill=(40, 44, 50))
+    d.ellipse((lx-6, ly-10, lx+9, ly+5), fill=(214, 255, 154), outline=(147, 232, 74))
+    # AO 그림자
+    sh = Image.new("RGBA", scene.size, (0, 0, 0, 0)); sd = ImageDraw.Draw(sh)
+    for (x0, y0, x1, y1) in [(bx, by+TW-2, bx+3*TW, by+TW+10), (fx, fy+3*TW-6, fx+3*TW, fy+3*TW+8)]:
+        sd.ellipse((x0, y0, x1, y1), fill=(0, 0, 0, 90))
+    scene.alpha_composite(sh)
+    if with_entities:
+        scene.alpha_composite(draw_cat(), (10*TW-4, 11*TW))
+        scene.alpha_composite(draw_murk(), (17*TW, 6*TW)); scene.alpha_composite(draw_echo(), (6*TW, 7*TW))
+    return scene.convert("RGB")
+
+
 # ── Echo (청각 감지 적) — 흩날리는 옅은 잔상 ─────────────────────────────────
 def draw_echo():
     W, H = 22, 20
@@ -378,8 +457,9 @@ def export_game_assets():
     """game/assets.js — 배경+스프라이트를 base64 dataURI로 임베드(무서버 실행)."""
     bg = add_vignette(add_glow(build_room(with_entities=False)))     # 챕터1 방
     bg2 = add_vignette(add_glow(build_room2(with_entities=False)))   # 챕터2 집
+    bg3 = add_vignette(add_glow(build_room3(with_entities=False)))   # 챕터3 공원
     assets = {
-        "room1": _b64(bg), "room2": _b64(bg2),
+        "room1": _b64(bg), "room2": _b64(bg2), "room3": _b64(bg3),
         "ziro_d0": _b64(draw_cat(0)), "ziro_d1": _b64(draw_cat(1)), "ziro_d2": _b64(draw_cat(2)),
         "ziro_s0": _b64(draw_cat_side(0)), "ziro_s1": _b64(draw_cat_side(1)),
         "murk": _b64(draw_murk()), "echo": _b64(draw_echo()), "shard": _b64(draw_shard()),
@@ -490,6 +570,7 @@ if __name__ == "__main__":
     # 방 씬 (글로우+비네팅) → x4
     upscale(add_vignette(add_glow(build_room(True))), 4).save(f"{OUT}/room_scene.png")
     upscale(add_vignette(add_glow(build_room2(True))), 4).save(f"{OUT}/room2_scene.png")
+    upscale(add_vignette(add_glow(build_room3(True))), 4).save(f"{OUT}/room3_scene.png")
     comparison().save(f"{OUT}/comparison.png")
     export_game_assets()
     print("pixel art rendered ->", OUT)

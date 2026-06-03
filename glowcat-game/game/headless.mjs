@@ -84,6 +84,38 @@ if (window.__loadStage) {
   console.log("CHAPTER2 OK — 집 로드 + Echo 로직 무예외 이동 (px " + c2b.px.toFixed(0) + "→" + c2a.px.toFixed(0) + ")");
   window.__loadStage(0);   // 본 루프는 챕터1로 복귀
 }
+
+// ── 깨달음→선택→엔딩 플로우(최종 챕터): 코어 수집 후 회상 몽타주 → choice → ending 무예외 ──
+if (window.__loadStage && window.__debugClear) {
+  window.__loadStage(2);                                  // 챕터3(공원·최종) 로드
+  const r0 = window.__ziro();
+  if (r0.ch !== 2) { console.log("FAIL: 챕터3 로드 안 됨 (ch=" + r0.ch + ")"); process.exit(1); }
+  window.__debugClear();                                  // 코어 3 수집 → beginRealize
+  let r1 = window.__ziro();
+  if (r1.phase !== "realize") { console.log("FAIL: 깨달음 진입 안 됨 (phase=" + r1.phase + ")"); process.exit(1); }
+  const lines = r1.realizeLen;
+  if (!(lines >= 3)) { console.log("FAIL: 회상 줄 수 부족 (" + lines + ")"); process.exit(1); }
+  // 회상 줄을 스페이스로 끝까지 넘김 → choice 진입
+  for (let i = 0; i < lines + 2 && window.__ziro().phase === "realize"; i++) {
+    fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space"));
+    clock += 16; if (theFrame) theFrame(clock);
+  }
+  r1 = window.__ziro();
+  if (r1.phase !== "choice") { console.log("FAIL: 선택 화면 진입 안 됨 (phase=" + r1.phase + ")"); process.exit(1); }
+  // '다시 잊기'로 토글 후 결정 → ending(forget)
+  fire("keydown", ev("s", "KeyS")); fire("keyup", ev("s", "KeyS")); clock += 16; if (theFrame) theFrame(clock);
+  fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); clock += 16; if (theFrame) theFrame(clock);
+  r1 = window.__ziro();
+  if (r1.phase !== "ending") { console.log("FAIL: 엔딩 진입 안 됨 (phase=" + r1.phase + ")"); process.exit(1); }
+  if (r1.endingType !== "forget") { console.log("FAIL: 엔딩 타입 (" + r1.endingType + ")"); process.exit(1); }
+  // 엔딩 렌더 수 초간 무예외 + 스페이스로 타이틀 복귀
+  for (let i = 0; i < 180; i++) { clock += 16; if (theFrame) theFrame(clock); }
+  fire("keydown", ev(" ", "Space")); fire("keyup", ev(" ", "Space")); clock += 16; if (theFrame) theFrame(clock);
+  const r2 = window.__ziro();
+  if (r2.phase !== "title") { console.log("FAIL: 엔딩 후 타이틀 복귀 안 됨 (phase=" + r2.phase + ")"); process.exit(1); }
+  console.log("ENDING OK — 챕터3 클리어→깨달음 " + lines + "줄→선택→회귀 엔딩→타이틀 (무예외)");
+  window.__loadStage(0);
+}
 const walk = ["d", "d", "s", "s", "a", "w", "d", "s"];
 try {
   for (let i = 0; i < 700; i++) {

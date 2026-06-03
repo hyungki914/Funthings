@@ -76,3 +76,20 @@ for (const s of D2.shards) for (const q of D2.collision) assert.ok(!inRect(s.til
 assert.ok(!D2.collision.some(q => inRect(D2.spawn[0], D2.spawn[1], q)), "ch2 스폰 FREE");
 for (const m of D2.murks.concat(D2.echoes)) for (const p of m.patrol) for (const q of D2.collision.slice(4)) assert.ok(!inRect(p[0], p[1], q), "ch2 순찰점 가구밖: " + m.id);
 console.log("SMOKE2 OK — chapter2 집: 조각", D2.shards.length, "/ Echo", D2.echoes.length, "/ Murk", D2.murks.length);
+
+// ── 챕터3 「공원」(최종) 스키마 + 좌표 검산 ──
+const D3 = DATA.chapter3;
+assert.ok(D3 && D3.bgKey === "room3", "chapter3 존재(room3)");
+assert.equal(D3.isFinal, true, "chapter3 isFinal");
+assert.equal(D3.shards.filter(s => s.type === "core").length, 3, "ch3 코어 3");
+assert.ok(Array.isArray(D3.epiphany) && D3.epiphany.length >= 1, "ch3 epiphany 존재");
+assert.ok(Array.isArray(D3.murks) && D3.murks.length >= 1 && Array.isArray(D3.echoes) && D3.echoes.length >= 1, "ch3 Murk+Echo 공존");
+const st3 = Core.newState(D3);
+assert.equal(st3.coresNeeded, 3, "ch3 coresNeeded");
+for (const s of D3.shards) for (const q of D3.collision) assert.ok(!inRect(s.tile[0], s.tile[1], q), "ch3 조각 충돌밖: " + s.id);
+assert.ok(!D3.collision.some(q => inRect(D3.spawn[0], D3.spawn[1], q)), "ch3 스폰 FREE");
+for (const m of D3.murks.concat(D3.echoes)) for (const p of m.patrol) for (const q of D3.collision.slice(4)) assert.ok(!inRect(p[0], p[1], q), "ch3 순찰점 가구밖: " + m.id);
+// 깨달음/엔딩 데이터 정합: 모든 챕터에 epiphany, 최종에만 isFinal
+assert.ok(DATA.chapter1.epiphany && DATA.chapter2.epiphany && DATA.chapter3.epiphany, "전 챕터 epiphany 존재");
+assert.ok(!DATA.chapter1.isFinal && !DATA.chapter2.isFinal, "ch1/ch2 비최종");
+console.log("SMOKE3 OK — chapter3 공원(최종): 조각", D3.shards.length, "/ 깨달음", D3.epiphany.length, "줄 / isFinal");
