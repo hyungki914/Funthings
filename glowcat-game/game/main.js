@@ -42,7 +42,7 @@
   const player = { x: 0, y: 0, vx: 0, vy: 0, dir: Math.PI/2,
                    facing: "down", flip: false, animT: 0, frame: 0, step: 0, w: 10, h: 8 };
   let recall = null, hintTimer = 0, hintTarget = null, setbackT = 0, flash = 0, muted = false, shake = 0;
-  let paused = false, pauseSel = 0, reduceFlash = false;   // 일시정지 + 접근성(플래시 감소)
+  let paused = false, pauseSel = 0, reduceFlash = false, slowEnemies = false, cbAid = false, bigText = false;   // 일시정지 + 접근성
   let trail = [], trailCD = 0, projecting = false; const illuminated = new Set();
   const AURA_R = 54;              // 기억 비추기 펄스 반경
   let lowLightTip = 0, auraFx = 0, revealT = 0, projInvuln = 0, hintMsgT = 0, stealthShown = false; let hintMsg = "";
@@ -63,9 +63,9 @@
     const v = JSON.parse(localStorage.getItem(SAVE_KEY) || "{}");
     let c = Number.isFinite(v.clearedMax) ? Math.floor(v.clearedMax) : -1;
     clearedMax = Math.max(-1, Math.min(CHAPTERS.length - 1, c));
-    reduceFlash = !!v.reduceFlash; muted = !!v.muted;
+    reduceFlash = !!v.reduceFlash; muted = !!v.muted; slowEnemies = !!v.slowEnemies; cbAid = !!v.cbAid; bigText = !!v.bigText;
   } catch (e) { clearedMax = -1; } }
-  function saveProgress() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, clearedMax, reduceFlash, muted })); } catch (e) {} }
+  function saveProgress() { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, clearedMax, reduceFlash, muted, slowEnemies, cbAid, bigText })); } catch (e) {} }
   function markCleared(idx) { if (idx > clearedMax) { clearedMax = idx; saveProgress(); } }
   // 연출: 환경 파티클(ambient) + 조각 수집 링 FX
   let ambientKind = null, particles = [], collectFx = null;
@@ -136,13 +136,20 @@
       if (!tile) { shardsOut[i] = { ...s, tile: [s.tile[0], s.tile[1]] }; continue; }   // 폴백 원본
       pool.splice(pi, 1); placed.push(tile); shardsOut[i] = { ...s, tile: [tile[0], tile[1]] };
     }
-    const genPatrol = () => {                                       // 빈 타일 사각 루프(모서리·변 모두 빈칸)
-      for (let tn = 0; tn < 50; tn++) {
-        const a = reach[(Math.random()*reach.length)|0], w = 2 + ((Math.random()*3)|0), h = 2 + ((Math.random()*2)|0);
-        const pts = [];
-        for (let x = a[0]; x <= a[0]+w; x++) { pts.push([x, a[1]]); pts.push([x, a[1]+h]); }
-        for (let y = a[1]; y <= a[1]+h; y++) { pts.push([a[0], y]); pts.push([a[0]+w, y]); }
-        if (pts.every(p => tileFree(D, p[0], p[1]))) return [[a[0],a[1]],[a[0]+w,a[1]],[a[0]+w,a[1]+h],[a[0],a[1]+h]];
+    const segFree = (x0, y0, x1, y1) => {                          // 두 격자점 사이 직선의 모든 타일이 빈칸인가
+      const n = Math.max(Math.abs(x1-x0), Math.abs(y1-y0));
+      for (let s = 0; s <= n; s++) if (!tileFree(D, Math.round(x0+(x1-x0)*s/n), Math.round(y0+(y1-y0)*s/n))) return false;
+      return true;
+    };
+    const loopFree = wp => { for (let i = 0; i < wp.length; i++) { const a = wp[i], b = wp[(i+1)%wp.length]; if (!segFree(a[0],a[1],b[0],b[1])) return false; } return true; };
+    const genPatrol = () => {                                       // 형태 변주: 사각/세로·가로 왕복/L자 — 모든 변이 빈칸
+      for (let tn = 0; tn < 60; tn++) {
+        const a = reach[(Math.random()*reach.length)|0], shape = (Math.random()*3)|0;
+        let wp;
+        if (shape === 0) { const w = 2+((Math.random()*3)|0), h = 2+((Math.random()*2)|0); wp = [[a[0],a[1]],[a[0]+w,a[1]],[a[0]+w,a[1]+h],[a[0],a[1]+h]]; }       // 사각
+        else if (shape === 1) { const len = 3+((Math.random()*4)|0), v = Math.random() < 0.5; wp = v ? [[a[0],a[1]],[a[0],a[1]+len]] : [[a[0],a[1]],[a[0]+len,a[1]]]; }  // 왕복(직선)
+        else { const w = 2+((Math.random()*4)|0), h = 2+((Math.random()*3)|0); wp = [[a[0],a[1]],[a[0]+w,a[1]],[a[0]+w,a[1]+h]]; }                                       // L자
+        if (wp.every(p => tileFree(D, p[0], p[1])) && loopFree(wp)) return wp;
       }
       return null;
     };
@@ -213,6 +220,9 @@
   function pauseItems() { return [
     { k: "resume", label: "계속하기" },
     { k: "flash",  label: "플래시·화면흔들림 감소", val: reduceFlash },
+    { k: "slow",   label: "적 속도 느리게", val: slowEnemies },
+    { k: "cb",     label: "색약 보조 (적/위험 표식)", val: cbAid },
+    { k: "big",    label: "큰 자막", val: bigText },
     { k: "mute",   label: "음소거", val: muted },
     { k: "select", label: "스테이지 선택" },
     { k: "title",  label: "처음 화면으로" } ]; }
@@ -220,6 +230,9 @@
     if (window.Audio2 && Audio2.sfx) Audio2.sfx("select");
     if (k === "resume") paused = false;
     else if (k === "flash") { reduceFlash = !reduceFlash; saveProgress(); }
+    else if (k === "slow") { slowEnemies = !slowEnemies; saveProgress(); }
+    else if (k === "cb") { cbAid = !cbAid; saveProgress(); }
+    else if (k === "big") { bigText = !bigText; saveProgress(); }
     else if (k === "mute") { muted = !muted; if (window.Audio2) Audio2.setMuted(muted); saveProgress(); }
     else if (k === "select") { paused = false; openSelect(); }
     else if (k === "title") { paused = false; gotoTitle(); }
@@ -524,7 +537,7 @@
     if (stealth && !stealthShown) { stealthShown = true; toasts.push({ text: "은신: 느리지만 잘 안 들킨다 · 멈추면 거의 안 보인다", color: "#7fb0b3", t: 2.8 }); }
 
     // Murk
-    let danger = false;
+    let danger = false; const ef = slowEnemies ? 0.72 : 1;   // 접근성: 적 속도 느리게
     const nearestWp = (m) => { let bw = m.patrol[0], bd = 1e9; for (const w of m.patrol) { const dd = (w.x - m.x) ** 2 + (w.y - m.y) ** 2; if (dd < bd) { bd = dd; bw = w; } } return bw; };
     for (const m of murks) {
       if (m.warded > 0) m.warded -= dt;
@@ -540,7 +553,7 @@
       else if (m.chasing) { ax = player.x; ay = player.y; spd = m.speed * 1.35; danger = true; }
       else { const w = m.patrol[m.wp]; ax = w.x; ay = w.y; spd = m.speed; if (dist(m.x, m.y, w.x, w.y) < 3) m.wp = (m.wp + 1) % m.patrol.length; }
       const d = dist(m.x, m.y, ax, ay) || 1, nx = (ax - m.x) / d, ny = (ay - m.y) / d;
-      m.x += nx * spd * dt; m.y += ny * spd * dt;
+      m.x += nx * spd * dt * ef; m.y += ny * spd * dt * ef;
       if (Math.abs(nx) + Math.abs(ny) > 0.01) m.faceAngle = Math.atan2(ny, nx);
       if (dist(m.x, m.y, player.x, player.y) < 11 && !warded && projInvuln <= 0) {   // 물러난 동안/펄스 직후엔 피격 무효
         if (Core.contact(st)) { flash = 0.18; shake = 4; if (window.Audio2) Audio2.sfx("contact"); }
@@ -564,7 +577,7 @@
         if (dist(m.x, m.y, m.tx, m.ty) < 5 && !heard) m.chasing = false; }   // 마지막 소리 지점 도착 + 무음 → 포기
       else { const w = m.patrol[m.wp]; ax = w.x; ay = w.y; spd = m.speed; if (dist(m.x, m.y, w.x, w.y) < 3) m.wp = (m.wp + 1) % m.patrol.length; }
       const d = dist(m.x, m.y, ax, ay) || 1, nx = (ax - m.x) / d, ny = (ay - m.y) / d;
-      m.x += nx * spd * dt; m.y += ny * spd * dt;
+      m.x += nx * spd * dt * ef; m.y += ny * spd * dt * ef;
       if (dist(m.x, m.y, player.x, player.y) < 11 && !warded && projInvuln <= 0) {
         if (Core.contact(st)) { flash = 0.18; shake = 4; if (window.Audio2) Audio2.sfx("contact"); }
       }
@@ -777,6 +790,7 @@
         const m = e.ee;                                         // Echo(청각): 시야콘 없음. 추격 시 붉은 고리.
         if (m.chasing) { ctx.save(); ctx.globalAlpha = 0.14; ctx.strokeStyle = "#ff7a7a"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(m.x, m.y, 15, 0, 7); ctx.stroke(); ctx.restore(); }
         if (IMG.echo) glow(() => ctx.drawImage(IMG.echo, Math.round(m.x - IMG.echo.width/2), Math.round(m.y - IMG.echo.height/2)), m.chasing ? "#ff5a5a" : "#9af6f6", m.chasing ? 5 : 3);
+        cbMark(m);
       } else {
         const m = e.m;
         // 시야콘 (감지 범위 — 평시 보라/추격 빨강/물러남 약하게). 은신 중이면 흐려져 '덜 보임'을 전달.
@@ -786,6 +800,7 @@
         ctx.beginPath(); ctx.moveTo(m.x, m.y);
         ctx.arc(m.x, m.y, m.sightPx * (sneaking ? 0.5 : 1), m.faceAngle - hf, m.faceAngle + hf); ctx.closePath(); ctx.fill(); ctx.restore();
         if (IMG.murk) glow(() => ctx.drawImage(IMG.murk, Math.round(m.x - IMG.murk.width/2), Math.round(m.y - IMG.murk.height/2)), m.chasing ? "#ff5a5a" : "#7a5cff", m.chasing ? 5 : 2);
+        cbMark(m);
       }
     }
 
@@ -899,23 +914,23 @@
   }
 
   // 일시정지 메뉴 — 항목 + 접근성 토글(체크) + 호버 하이라이트
-  const pauseRowRect = (i) => ({ x: cv.width/2 - 170, y: cv.height/2 - 80 + i*46, w: 340, h: 38 });
+  const pauseRowRect = (i) => ({ x: cv.width/2 - 190, y: cv.height/2 - 138 + i*40, w: 380, h: 34 });
   function overlayPause() {
     ctx.save(); ctx.fillStyle = "rgba(4,7,11,.8)"; ctx.fillRect(0, 0, cv.width, cv.height);
-    ctx.textAlign = "center"; ctx.fillStyle = "#eafaff"; ctx.font = "bold 28px 'Noto Sans KR',sans-serif";
-    ctx.fillText("일시정지", cv.width/2, cv.height/2 - 110);
+    ctx.textAlign = "center"; ctx.fillStyle = "#eafaff"; ctx.font = "bold 26px 'Noto Sans KR',sans-serif";
+    ctx.fillText("일시정지", cv.width/2, cv.height/2 - 162);
     const items = pauseItems();
     for (let i = 0; i < items.length; i++) {
       const r = pauseRowRect(i), sel = pauseSel === i, it = items[i];
       ctx.fillStyle = sel ? "rgba(52,226,226,.18)" : "rgba(10,16,20,.7)"; rrect(r.x, r.y, r.w, r.h, 9); ctx.fill();
       ctx.strokeStyle = sel ? "#9af6f6" : "#2a4a4e"; ctx.lineWidth = sel ? 2.5 : 1.5; rrect(r.x, r.y, r.w, r.h, 9); ctx.stroke();
-      ctx.textAlign = "left"; ctx.fillStyle = sel ? "#eafaff" : "#cfe6e6"; ctx.font = "16px 'Noto Sans KR',sans-serif";
-      ctx.fillText(it.label, r.x + 18, r.y + 25);
+      ctx.textAlign = "left"; ctx.fillStyle = sel ? "#eafaff" : "#cfe6e6"; ctx.font = "15px 'Noto Sans KR',sans-serif";
+      ctx.fillText(it.label, r.x + 18, r.y + 22);
       if (it.val !== undefined) { ctx.textAlign = "right"; ctx.fillStyle = it.val ? "#8ef548" : "#5a7375";
-        ctx.font = "bold 15px 'Noto Sans KR',sans-serif"; ctx.fillText(it.val ? "켜짐 ✓" : "꺼짐", r.x + r.w - 18, r.y + 25); }
+        ctx.font = "bold 14px 'Noto Sans KR',sans-serif"; ctx.fillText(it.val ? "켜짐 ✓" : "꺼짐", r.x + r.w - 18, r.y + 22); }
     }
     ctx.textAlign = "center"; ctx.fillStyle = "#5a7375"; ctx.font = "12px 'Noto Sans KR',sans-serif";
-    ctx.fillText("↑↓ 이동 · [Space] 선택 · [ESC] 계속", cv.width/2, cv.height/2 + 160);
+    ctx.fillText("↑↓ 이동 · [Space] 선택/토글 · [ESC] 계속", cv.width/2, cv.height/2 + 190);
     ctx.restore();
   }
 
@@ -966,8 +981,8 @@
     ctx.globalAlpha = 0.85 * appear; ctx.fillStyle = epi ? "#8ef548" : "#34e2e2"; ctx.font = "14px 'Noto Sans KR',sans-serif";
     ctx.fillText(epi ? "— 깨달음 —" : "— 되찾은 기억 —", cv.width/2, baseY);
     ctx.globalAlpha = appear; ctx.fillStyle = epi ? "#eafaff" : "#dff1f1";
-    ctx.font = (epi ? "bold 22px" : "20px") + " 'Noto Sans KR',sans-serif";
-    wrapCenter(line.text, cv.width/2, baseY + 34, cv.width - 180, 30);
+    ctx.font = (epi ? "bold " + (bigText ? 27 : 22) : (bigText ? 25 : 20)) + "px 'Noto Sans KR',sans-serif";
+    wrapCenter(line.text, cv.width/2, baseY + 34, cv.width - 180, bigText ? 34 : 30);
     const n = realizeLines.length, dotY = cv.height - 42;
     for (let i = 0; i < n; i++) { ctx.globalAlpha = i <= realizeI ? 0.95 : 0.3;
       ctx.fillStyle = i <= realizeI ? (realizeLines[i].kind === "epiphany" ? "#8ef548" : "#34e2e2") : "#27343a";
@@ -1080,6 +1095,13 @@
   }
 
   function glow(fn, color, blur) { ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = blur; fn(); ctx.restore(); }
+  function cbMark(m) {            // 색약 보조: 추격 중인 적에 색과 무관한 표식(흰 점선 고리 + !)
+    if (!cbAid || !m.chasing) return;
+    ctx.save(); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
+    ctx.beginPath(); ctx.arc(m.x, m.y, 13, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#ffffff"; ctx.font = "bold 9px sans-serif"; ctx.textAlign = "center"; ctx.fillText("!", m.x, m.y - 12);
+    ctx.restore();
+  }
   function tag(t, x, y) { ctx.save(); ctx.font = "6px sans-serif"; ctx.textAlign = "center";
     const w = ctx.measureText(t).width + 6; ctx.fillStyle = "rgba(6,14,18,.85)"; ctx.fillRect(x - w/2, y - 7, w, 9);
     ctx.fillStyle = "#bfffff"; ctx.fillText(t, x, y); ctx.restore(); }
@@ -1294,8 +1316,8 @@
     ctx.fillStyle = recall.type === "false" ? "#e8c884" : "#34e2e2"; ctx.textAlign = "left";
     ctx.font = "bold 16px 'Noto Sans KR',sans-serif";
     ctx.fillText(recall.type === "false" ? "[회상 — 무언가 어긋난다]" : "[회상]", x + 24, y + 34);
-    ctx.fillStyle = "#eef7f7"; ctx.font = "18px 'Noto Sans KR',sans-serif";
-    wrap(recall.text, x + 24, y + 66, w - 48, 26);
+    ctx.fillStyle = "#eef7f7"; ctx.font = (bigText ? 22 : 18) + "px 'Noto Sans KR',sans-serif";
+    wrap(recall.text, x + 24, y + 66, w - 48, bigText ? 30 : 26);
     ctx.fillStyle = "#6b8a8c"; ctx.font = "14px 'Noto Sans KR',sans-serif"; ctx.textAlign = "right";
     ctx.fillText("[Space] 계속", x + w - 20, y + 124); ctx.restore();
   }

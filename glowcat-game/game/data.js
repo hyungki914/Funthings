@@ -413,7 +413,7 @@ DATA.chapter5 = {
 // =============================================================================
 DATA.chapter6 = {
   tile: 16, cols: 40, rows: 14, scale: 4, bgKey: 'street',
-  title: '길거리', music: 'town', ambient: 'leaves', controls: CTRL,
+  title: '길거리', music: 'dusk', ambient: 'leaves', controls: CTRL,
   spawn: [2, 7], coresNeeded: 3,
   collision: [
     [0, 0, 40, 2], [0, 13, 40, 1], [0, 0, 1, 14], [39, 0, 1, 14],
@@ -436,7 +436,7 @@ DATA.chapter6 = {
     { id: 'c_st_light', type: 'core', tile: [34, 11], radius: 1.3, identitySlot: 3,
       recall: '저녁 가로등. 불빛 아래에서 하루는 내 이름을 부르곤 했다 — 그 두 음절. 어딘가에서, 다시 불러주고 있을까.' },
     { id: 'e_st_bench', type: 'echo', tile: [6, 11], radius: 1.2, identitySlot: null,
-      recall: '길가 낡은 벤치. 둘이 잠깐 앉아 숨을 고르던 자리. 한쪽만 닳아 있다.' },
+      recall: '둘이 잠깐 앉아 숨을 고르던 시간의 기억. 그 온기가 한쪽에만, 아직 옅게 남아 있다.' },
     { id: 'e_st_glove', type: 'echo', tile: [25, 11], radius: 1.2, hidden: true, identitySlot: null,
       recall: '길가에 떨어진 한 짝의 장갑. 하루의 손을 닮은 온기가, 이제는 없다.' },
     { id: 'f_st', type: 'false', tile: [21, 4], radius: 1.3, identitySlot: null,
@@ -467,7 +467,7 @@ DATA.chapter6 = {
 // =============================================================================
 DATA.chapter7 = {
   tile: 16, cols: 24, rows: 16, scale: 4, bgKey: 'arcade',
-  title: '근처 상가', music: 'town', ambient: 'dust', controls: CTRL,
+  title: '근처 상가', music: 'room', ambient: 'dust', controls: CTRL,
   spawn: [11, 14], coresNeeded: 3,
   collision: [
     [0, 0, 24, 2], [0, 15, 24, 1], [0, 0, 1, 16], [23, 0, 1, 16],
@@ -539,7 +539,7 @@ DATA.chapter8 = {
     { id: 'c_gate_low', type: 'core', tile: [6, 12], radius: 1.3, identitySlot: 1,
       recall: '문 안쪽 첫 발자국. 여기서부터, 우리의 산책은 늘 시작됐다. 그리고 여기서, 나는 늘 가장 설렜다.' },
     { id: 'e_gate_lamp', type: 'echo', tile: [7, 11], radius: 1.2, identitySlot: null,
-      recall: '게이트 옆 가로등. 어둑할 때 둘이 돌아오던 길을 비추던 불빛. 아직 깜빡인다.' },
+      recall: '어둑할 때 둘이 돌아오던 길을 비추던 불빛의 기억. 그 따스한 깜빡임이, 아직 눈에 선하다.' },
     { id: 'e_gate_leaf', type: 'echo', tile: [15, 11], radius: 1.2, hidden: true, identitySlot: null,
       recall: '문틈에 낀 마른 잎 한 장. 계절이 몇 번이나 바뀌도록, 아무도 치우지 않았다.' },
     { id: 'f_gate', type: 'false', tile: [6, 7], radius: 1.3, identitySlot: null,

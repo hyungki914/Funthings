@@ -708,6 +708,37 @@ const MUSIC_THEMES = {
     ],
   },
 
+  // dusk(길거리 황혼): 외로운 A 단조 하행. town보다 쓸쓸·시린(이끔음 C#5/G#3). 중반 변별용.
+  dusk: {
+    stepDur: 0.36, steps: 32, melType: 'sine', padType: 'sine', bassType: 'sine', melVol: 0.92, padVol: 0.66,
+    patterns: [
+      { t: 0,  note: 7,  dur: 0.9, vol: 0.55, voice: 'mel', type: 'sine' },     // E5
+      { t: 3,  note: 5,  dur: 0.8, vol: 0.5,  voice: 'mel', type: 'sine' },     // D5
+      { t: 6,  note: 3,  dur: 1.1, vol: 0.5,  voice: 'mel', type: 'sine' },     // C5
+      { t: 9,  note: 0,  dur: 1.2, vol: 0.5,  voice: 'mel', type: 'sine' },     // A4
+      { t: 14, note: -4, dur: 1.0, vol: 0.45, voice: 'mel', type: 'sine' },     // F4
+      { t: 16, note: -2, dur: 1.0, vol: 0.5,  voice: 'mel', type: 'sine' },     // G4
+      { t: 18, note: 0,  dur: 1.4, vol: 0.5,  voice: 'mel', type: 'sine' },     // A4
+      { t: 22, note: 5,  dur: 1.0, vol: 0.5,  voice: 'mel', type: 'sine' },     // D5
+      { t: 24, note: 4,  dur: 1.2, vol: 0.5,  voice: 'mel', type: 'sine' },     // C#5(시린 이끔음)
+      { t: 28, note: 2,  dur: 0.9, vol: 0.45, voice: 'mel', type: 'sine' },     // B4
+      { t: 30, note: 0,  dur: 1.6, vol: 0.48, voice: 'mel', type: 'sine' },     // A4 여운
+      { t: 0,  note: -12, dur: 3.4, vol: 0.4,  voice: 'pad', type: 'sine' },    // A3 (Am)
+      { t: 0,  note: -9,  dur: 3.4, vol: 0.32, voice: 'pad', type: 'sine' },    // C4
+      { t: 8,  note: -16, dur: 3.4, vol: 0.4,  voice: 'pad', type: 'sine' },    // F3 (F)
+      { t: 8,  note: -12, dur: 3.4, vol: 0.32, voice: 'pad', type: 'sine' },    // A3
+      { t: 16, note: -19, dur: 3.4, vol: 0.4,  voice: 'pad', type: 'sine' },    // D3 (Dm)
+      { t: 16, note: -16, dur: 3.4, vol: 0.32, voice: 'pad', type: 'sine' },    // F3
+      { t: 24, note: -17, dur: 3.4, vol: 0.4,  voice: 'pad', type: 'sine' },    // E3 (E)
+      { t: 24, note: -13, dur: 3.4, vol: 0.3,  voice: 'pad', type: 'sine' },    // G#3 이끔음
+      { t: 0,  note: -24, dur: 3.0, vol: 0.55, voice: 'bass', type: 'sine' },   // A2
+      { t: 8,  note: -28, dur: 3.0, vol: 0.5,  voice: 'bass', type: 'sine' },   // F2
+      { t: 16, note: -31, dur: 3.0, vol: 0.5,  voice: 'bass', type: 'sine' },   // D2
+      { t: 24, note: -29, dur: 3.0, vol: 0.5,  voice: 'bass', type: 'sine' },   // E2
+      { t: 0,  note: -36, dur: 12.0, vol: 0.32, voice: 'bass', type: 'sine' },  // A1 sub
+    ],
+  },
+
   // blank(빈자리·엔딩): 가장 텅 빈 공간. 낮은 드론 + 해소 없는 4도 + 멀리서 단 하나의 부름.
   blank: {
     stepDur: 1.1, steps: 16, melType: 'sine', padType: 'sine', bassType: 'sine', melVol: 0.8, padVol: 0.65,
