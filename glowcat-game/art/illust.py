@@ -301,7 +301,9 @@ def _b64(im):
 # art/ext/<key>.png|jpg|jpeg|webp 가 있으면 절차생성 대신 그 그림을 임베드한다.
 # (회화 생성 AI로 만든 엔딩 일러스트 등을 코드 수정 없이 끼워 넣는 용도)
 EXT = os.path.join(HERE, "ext")
-EXT_W = 768                                          # 임베드 가로 상한(16:9 → 768×432)
+# 게임 캔버스 비율(1056×672 ≈ 1.571)에 맞춘 플레이트. drawIllCover 가 런타임에
+# cover 하므로, 같은 비율로 만들어 두면 잘림 없이 그림 전체가 보인다.
+PLATE_W, PLATE_H = 1056, 672
 
 def _ext_path(key):
     for ext in (".png", ".jpg", ".jpeg", ".webp"):
@@ -310,14 +312,19 @@ def _ext_path(key):
     return None
 
 def _ext_b64(path):
-    im = Image.open(path); im = im.convert("RGBA") if im.mode == "P" else im
-    # 16:9 캔버스에 맞춰 커버(중앙 크롭) → 게임 컷과 동일 비율
-    tw, th = EXT_W, EXT_W * H // W
-    sc = max(tw / im.width, th / im.height)
-    rs = im.resize((max(1, round(im.width*sc)), max(1, round(im.height*sc))), Image.LANCZOS)
-    L = (rs.width - tw)//2; T = (rs.height - th)//2
-    rs = rs.crop((L, T, L+tw, T+th)).convert("RGB")
-    buf = io.BytesIO(); rs.save(buf, "JPEG", quality=86, optimize=True)
+    src = Image.open(path).convert("RGB")
+    tw, th = PLATE_W, PLATE_H
+    # 배경: 화면을 가득 채우도록 cover 스케일 → 강한 블러 + 살짝 어둡게(사이드 여백 채움)
+    cs = max(tw / src.width, th / src.height)
+    bg = src.resize((max(1, round(src.width*cs)), max(1, round(src.height*cs))), Image.LANCZOS)
+    bl = (bg.width - tw)//2; bt = (bg.height - th)//2
+    bg = bg.crop((bl, bt, bl+tw, bt+th)).filter(ImageFilter.GaussianBlur(28))
+    bg = Image.eval(bg, lambda v: int(v*0.62))
+    # 전경: 그림 전체가 보이도록 contain 스케일 후 중앙 배치
+    fs = min(tw / src.width, th / src.height)
+    fg = src.resize((max(1, round(src.width*fs)), max(1, round(src.height*fs))), Image.LANCZOS)
+    plate = bg.copy(); plate.paste(fg, ((tw - fg.width)//2, (th - fg.height)//2))
+    buf = io.BytesIO(); plate.save(buf, "JPEG", quality=88, optimize=True)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
 def export_illustrations():
