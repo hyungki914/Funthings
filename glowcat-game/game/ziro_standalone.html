@@ -3383,7 +3383,7 @@ if (typeof module !== 'undefined') module.exports = Journal;
   }
   function makeLayout(D) {
     const orig = { shards: D.shards.map(s => ({ ...s })), murkP: (D.murks||[]).map(m => m.patrol), echoP: (D.echoes||[]).map(m => m.patrol) };
-    if (!RANDOMIZE || chapterIdx < 1) return orig;                 // 첫 각성(1장)만 의도된 배치 고정
+    if (!RANDOMIZE) return orig;                                   // 전 스테이지 매 진행마다 랜덤 배치
     const reach = reachableTiles(D);
     if (reach.length < D.shards.length + 8) return orig;            // 너무 좁으면 원본
     const sp = D.spawn, d2 = (a, b) => (a[0]-b[0])**2 + (a[1]-b[1])**2;
